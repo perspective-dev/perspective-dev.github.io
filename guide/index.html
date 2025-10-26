@@ -1,0 +1,302 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>What is Perspective - Perspective</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="md/perspective.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes.css">
+
+
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Perspective</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/perspective-dev/perspective" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <br />
+<a href="https://perspective-dev.github.io">
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="https://github.com/perspective-dev/perspective/raw/master/docs/static/svg/perspective-logo-dark.svg?raw=true">
+<img width="260" src="https://github.com/perspective-dev/perspective/raw/master/docs/static/svg/perspective-logo-light.svg?raw=true">
+</picture>
+</a>
+<br/><br/>
+<p><a href="https://github.com/perspective-dev/perspective/actions/workflows/build.yaml"><img src="https://img.shields.io/github/actions/workflow/status/perspective-dev/perspective/build.yaml?event=push&amp;style=for-the-badge" alt="Build Status" /></a>
+<a href="https://www.npmjs.com/package/@perspective-dev/client"><img src="https://img.shields.io/npm/v/@perspective-dev/client.svg?style=for-the-badge" alt="npm" /></a>
+<a href="https://pypi.python.org/pypi/perspective-python"><img src="https://img.shields.io/pypi/v/perspective-python.svg?style=for-the-badge" alt="PyPI" /></a>
+<a href="https://crates.io/crates/perspective"><img src="https://img.shields.io/crates/v/perspective?style=for-the-badge" alt="crates.io" /></a></p>
+<br/>
+<p>Perspective is an <i>interactive</i> analytics and data visualization component,
+which is especially well-suited for <i>large</i> and/or <i>streaming</i>
+datasets. Use it to create user-configurable reports, dashboards, notebooks and
+applications.</p>
+<h3 id="features"><a class="header" href="#features">Features</a></h3>
+<ul>
+<li>
+<p>A fast, memory efficient streaming query engine, written in C++ and compiled
+for <a href="https://webassembly.org/">WebAssembly</a>, <a href="https://www.python.org/">Python</a>
+and <a href="https://www.rust-lang.org/">Rust</a>, with read/write/streaming for
+<a href="https://arrow.apache.org/">Apache Arrow</a>, and a high-performance columnar
+expression language based on <a href="https://github.com/ArashPartow/exprtk">ExprTK</a>.</p>
+</li>
+<li>
+<p>A framework-agnostic User Interface packaged as a
+<a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements">Custom Element</a>,
+powered either in-browser via WebAssembly or virtually via WebSocket server
+(Python/Node/Rust).</p>
+</li>
+<li>
+<p>A <a href="https://jupyter.org/">JupyterLab</a> widget and Python client library, for
+interactive data analysis in a notebook, as well as <em>scalable</em> production
+applications.</p>
+</li>
+</ul>
+<h3 id="documentation"><a class="header" href="#documentation">Documentation</a></h3>
+<ul>
+<li><a href="https://perspective-dev.github.io/">Project Site</a></li>
+<li><a href="https://perspective-dev.github.io/guide/">User Guide</a></li>
+<li>Python API
+<ul>
+<li><a href="https://perspective-dev.github.io/python/index.html"><code>perspective</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/widget.html"><code>perspective.widget</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/aiohttp.htm"><code>perspective.handlers.aiohttp</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/starlett.htm"><code>perspective.handlers.starlette</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/tornado.htm"><code>perspective.handlers.tornado</code></a></li>
+</ul>
+</li>
+<li>JavaScript API
+<ul>
+<li><a href="https://perspective-dev.github.io/browser/modules/src_ts_perspective.browser.ts.html"><code>@perspective-dev/client</code> Browser</a></li>
+<li><a href="https://perspective-dev.github.io/node/modules/src_ts_perspective.node.ts.html"><code>@perspective-dev/client</code> Node.js</a></li>
+<li><a href="https://perspective-dev.github.io/viewer/modules/perspective-viewer.html"><code>@perspective-dev/viewer</code></a></li>
+<li><a href="https://perspective-dev.github.io/react/index.html"><code>@perspective-dev/react</code></a></li>
+</ul>
+</li>
+<li>Rust API
+<ul>
+<li><a href="https://docs.rs/perspective/latest/perspective/"><code>perspective</code></a></li>
+<li><a href="https://docs.rs/perspective-client/latest/perspective_client/"><code>perspective-client</code></a></li>
+<li><a href="https://docs.rs/perspective-server/latest/perspective_server/"><code>perspective-server</code></a></li>
+<li><a href="https://docs.rs/perspective-python/latest/perspective_python/"><code>perspective-python</code></a></li>
+<li><a href="https://docs.rs/perspective-js/latest/perspective_js/"><code>perspective-js</code></a></li>
+<li><a href="https://docs.rs/perspective-viewer/latest/perspective_viewer/"><code>perspective-viewer</code></a></li>
+</ul>
+</li>
+</ul>
+<h3 id="examples"><a class="header" href="#examples">Examples</a></h3>
+<!-- Examples -->
+<table><tbody><tr><td>editable</td><td>file</td><td>fractal</td></tr><tr><td><a href="https://perspective-dev.github.io/block?example=editable"><img height="125" src="https://perspective-dev.github.io/blocks/editable/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=file"><img height="125" src="https://perspective-dev.github.io/blocks/file/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=fractal"><img height="125" src="https://perspective-dev.github.io/blocks/fractal/preview.png?"></img></a></td></tr><tr><td>market</td><td>raycasting</td><td>evictions</td></tr><tr><td><a href="https://perspective-dev.github.io/block?example=market"><img height="125" src="https://perspective-dev.github.io/blocks/market/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=raycasting"><img height="125" src="https://perspective-dev.github.io/blocks/raycasting/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=evictions"><img height="125" src="https://perspective-dev.github.io/blocks/evictions/preview.png?"></img></a></td></tr><tr><td>nypd</td><td>streaming</td><td>covid</td></tr><tr><td><a href="https://perspective-dev.github.io/block?example=nypd"><img height="125" src="https://perspective-dev.github.io/blocks/nypd/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=streaming"><img height="125" src="https://perspective-dev.github.io/blocks/streaming/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=covid"><img height="125" src="https://perspective-dev.github.io/blocks/covid/preview.png?"></img></a></td></tr><tr><td>webcam</td><td>movies</td><td>superstore</td></tr><tr><td><a href="https://perspective-dev.github.io/block?example=webcam"><img height="125" src="https://perspective-dev.github.io/blocks/webcam/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=movies"><img height="125" src="https://perspective-dev.github.io/blocks/movies/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=superstore"><img height="125" src="https://perspective-dev.github.io/blocks/superstore/preview.png?"></img></a></td></tr><tr><td>citibike</td><td>olympics</td><td>dataset</td></tr><tr><td><a href="https://perspective-dev.github.io/block?example=citibike"><img height="125" src="https://perspective-dev.github.io/blocks/citibike/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=olympics"><img height="125" src="https://perspective-dev.github.io/blocks/olympics/preview.png?"></img></a></td><td><a href="https://perspective-dev.github.io/block?example=dataset"><img height="125" src="https://perspective-dev.github.io/blocks/dataset/preview.png?"></img></a></td></tr></tbody></table>
+<!-- Examples -->
+<h3 id="media"><a class="header" href="#media">Media</a></h3>
+<table><tbody>
+<tr>
+<td><a href="https://github.com/timkpaine"><code>@timkpaine</code></a></td>
+<td><a href="https://github.com/timbess"><code>@timbess</code></a></td>
+<td><a href="https://github.com/sc1f"><code>@sc1f</code></a></td>
+</tr>
+<tr>
+<td><a href="https://www.youtube.com/watch?v=v5Y5ftlGNhU"><img width="240" src="https://img.youtube.com/vi/v5Y5ftlGNhU/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=lDpIu4dnp78"><img width="240" src="https://img.youtube.com/vi/lDpIu4dnp78/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=IO-HJsGdleE"><img width="240"  src="https://img.youtube.com/vi/IO-HJsGdleE/0.jpg" /></a></td>
+</tr>
+<tr>
+<td><a href="https://github.com/texodus"><code>@texodus</code></a></td>
+<td><a href="https://github.com/texodus"><code>@texodus</code></a></td>
+<td></td>
+</tr>
+<tr>
+<td><a href="https://www.youtube.com/watch?v=no0qChjvdgQ"><img width="240" src="https://img.youtube.com/vi/no0qChjvdgQ/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=0ut-ynvBpGI"><img width="240" src="https://img.youtube.com/vi/0ut-ynvBpGI/0.jpg" /></a></td>
+<td></td>
+</tr>
+</tbody></table>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+                            <a rel="next prefetch" href="explanation/architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+                    <a rel="next prefetch" href="explanation/architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

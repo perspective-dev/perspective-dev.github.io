@@ -1,0 +1,1 @@
+(globalThis.webpackChunk_perspective_dev_docs=globalThis.webpackChunk_perspective_dev_docs||[]).push([[235],{8552:e=>{e.exports=JSON.parse('{"name":"docusaurus-plugin-content-pages","id":"default"}')}}]);
