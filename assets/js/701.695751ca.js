@@ -1,0 +1,1 @@
+(globalThis.webpackChunk_perspective_dev_docs=globalThis.webpackChunk_perspective_dev_docs||[]).push([[701],{5701:(e,p,s)=>{e.exports=s.p+"054d1d4750f39a87.wasm"}}]);
