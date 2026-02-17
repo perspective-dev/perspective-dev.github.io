@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -195,7 +195,7 @@ Perspective will release the GIL for almost all operations. Interactive
 performance on the client is very good and identical to client-only
 architecture. Updates and edits are seamlessly synchonized across clients via
 their virtual server counterparts using websockets and Apache Arrow.</p>
-<h4 id="python-and-tornado-server"><a class="header" href="#python-and-tornado-server">Python and Tornado server</a></h4>
+<h2 id="python-and-tornado-server"><a class="header" href="#python-and-tornado-server">Python and Tornado server</a></h2>
 <pre><code class="language-python">from perspective import Server, PerspectiveTornadoHandler
 
 server = Server()
@@ -212,8 +212,8 @@ app.listen(8080)
 loop = tornado.ioloop.IOLoop.current()
 loop.start()
 </code></pre>
-<h4 id="javascript-client"><a class="header" href="#javascript-client">Javascript client</a></h4>
-<p>Perspective’s websocket client interfaces with the Python server. then
+<h2 id="javascript-client"><a class="header" href="#javascript-client">Javascript client</a></h2>
+<p>Perspective’s websocket client interfaces with the Python server, then
 <em>replicates</em> the server-side Table.</p>
 <pre><code class="language-javascript">const websocket = await perspective.websocket("ws://localhost:8080");
 const server_table = await websocket.open_table("my_table");

@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -187,10 +187,55 @@ plugins.</p>
 Component will be available in any standard HTML on your site. A simple example:</p>
 <pre><code class="language-html">&lt;perspective-viewer id="view1"&gt;&lt;/perspective-viewer&gt;
 &lt;script type="module"&gt;
-    const viewer = document.createElement("perspective-viewer");
-    await viewer.load(table);
+    import perspective from "@perspective-dev/client";
+    import "@perspective-dev/viewer";
+
+    const worker = await perspective.worker();
+    const table = await worker.table(data);
+    document.getElementById("view1").load(table);
 &lt;/script&gt;
 </code></pre>
+<h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
+<p><code>&lt;perspective-viewer&gt;</code> can be configured via HTML attributes or JavaScript
+properties. When set as attributes, the viewer will apply the configuration on
+initialization:</p>
+<pre><code class="language-html">&lt;perspective-viewer
+    columns='["Sales", "Profit"]'
+    group-by='["Region"]'
+    sort='[["Sales", "desc"]]'&gt;
+&lt;/perspective-viewer&gt;
+</code></pre>
+<h2 id="ui-features"><a class="header" href="#ui-features">UI Features</a></h2>
+<p>The viewer provides an interactive side panel with:</p>
+<ul>
+<li><strong>Column list</strong> - drag and drop columns to configure <code>group_by</code>, <code>split_by</code>,
+<code>sort</code>, and <code>filter</code> fields.</li>
+<li><strong>New Column</strong> button - opens an expression editor for creating computed
+columns via the <a href="../../explanation/view/config/expressions.html">expression language</a>.</li>
+<li><strong>Plugin selector</strong> - switch between visualization plugins such as Datagrid,
+X/Y Line, X/Y Scatter, Treemap, Sunburst, and Heatmap.</li>
+<li><strong>Theme</strong> selector - toggle between available themes.</li>
+<li><strong>Export</strong> - download the current view as CSV or Arrow.</li>
+<li><strong>Copy</strong> - copy the current view to the clipboard.</li>
+<li><strong>Reset</strong> - restore the viewer to its default configuration.</li>
+</ul>
+<h2 id="methods"><a class="header" href="#methods">Methods</a></h2>
+<p>Key methods on the <code>&lt;perspective-viewer&gt;</code> element:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>load(table)</code></td><td>Bind a <code>Table</code> to the viewer</td></tr>
+<tr><td><code>restore(config)</code></td><td>Apply a saved configuration object</td></tr>
+<tr><td><code>save()</code></td><td>Serialize the current configuration</td></tr>
+<tr><td><code>reset(all)</code></td><td>Reset configuration (pass <code>true</code> to also reset expressions)</td></tr>
+<tr><td><code>getTable()</code></td><td>Get the bound <code>Table</code></td></tr>
+<tr><td><code>flush()</code></td><td>Wait for any pending UI updates to complete</td></tr>
+</tbody>
+</table>
+</div>
 
                     </main>
 
@@ -200,7 +245,7 @@ Component will be available in any standard HTML on your site. A simple example:
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../how_to/javascript/theming.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../how_to/javascript/loading_data.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -214,7 +259,7 @@ Component will be available in any standard HTML on your site. A simple example:
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../how_to/javascript/theming.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../how_to/javascript/loading_data.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

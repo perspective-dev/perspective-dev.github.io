@@ -37,10 +37,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-86b914e2.js"></script>
+        <script src="../../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -181,35 +181,169 @@
                     <main>
                         <h1 id="expressions"><a class="header" href="#expressions">Expressions</a></h1>
 <p>The <code>expressions</code> property specifies <em>new</em> columns in Perspective that are
-created using existing column values or arbitary scalar values defined within
+created using existing column values or arbitrary scalar values defined within
 the expression. In <code>&lt;perspective-viewer&gt;</code>, expressions are added using the “New
 Column” button in the side panel.</p>
-<p>A custom name can be added to an expression by making the first line a comment:</p>
+<p>Expressions are strings parsed by Perspective’s expression engine (based on
+<a href="https://github.com/ArashPartow/exprtk">ExprTK</a>). Column names are referenced by
+wrapping them in double quotes, e.g. <code>"Sales"</code>:</p>
 <div class="javascript">
 <pre><code class="language-javascript">const view = await table.view({
-    expressions: { '"a" + "b"': '"a" + "b"' },
+    expressions: {
+        "Profit Ratio": '"Profit" / "Sales"',
+    },
 });
 </code></pre>
 </div>
 
 <div class="python">
-<pre><code class="language-python">view = table.view(expressions=['"a" + "b"'])
+<pre><code class="language-python">view = table.view(expressions={'Profit Ratio': '"Profit" / "Sales"'})
 </code></pre>
 </div>
 
 <div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    expressions: Some(Expressions([
+        ("Profit Ratio", "\"Profit\" / \"Sales\"".into())
+    ].into_iter().collect())),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
 </div>
 
+<h2 id="type-conversion-and-coercion"><a class="header" href="#type-conversion-and-coercion">Type Conversion and Coercion</a></h2>
+<p>Perspective expressions are strongly typed — each column and literal has a fixed
+type, and most operators require matching types on both sides. To work across
+types, use the conversion functions:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>to_string(x)</code></td><td>Convert any type to string</td></tr>
+<tr><td><code>to_integer(x)</code></td><td>Convert to integer (null if not parsable)</td></tr>
+<tr><td><code>to_float(x)</code></td><td>Convert to float (null if not parsable)</td></tr>
+<tr><td><code>to_boolean(x)</code></td><td>Convert to boolean (truthy/falsy)</td></tr>
+<tr><td><code>integer(x)</code></td><td>Alias for <code>to_integer(x)</code></td></tr>
+<tr><td><code>float(x)</code></td><td>Alias for <code>to_float(x)</code></td></tr>
+<tr><td><code>datetime(x)</code></td><td>Construct a datetime from a POSIX timestamp (ms since epoch)</td></tr>
+<tr><td><code>date(y, m, d)</code></td><td>Construct a date from year, month, day</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="how-coercion-works"><a class="header" href="#how-coercion-works">How coercion works</a></h3>
+<p>Perspective does not implicitly coerce types. For example, you cannot directly
+add an <code>integer</code> to a <code>float</code> — you must cast one side explicitly. Similarly,
+<code>datetime</code> and <code>date</code> values are not numeric: to perform arithmetic on them, you
+must first convert to a numeric representation, do the math, then convert back.</p>
+<p>Internally, <code>datetime</code> values are stored as milliseconds since the Unix epoch
+(1970-01-01T00:00:00Z). Converting a <code>datetime</code> to a <code>float</code> yields this
+millisecond timestamp, and <code>datetime()</code> accepts a millisecond timestamp to
+produce a <code>datetime</code>.</p>
+<h3 id="example-offsetting-a-datetime-by-7-days"><a class="header" href="#example-offsetting-a-datetime-by-7-days">Example: offsetting a datetime by 7 days</a></h3>
+<p>This expression takes a <code>"Shipped Date"</code> column, converts it to its
+millisecond-epoch representation, adds 7 days worth of milliseconds (7 ×
+24 × 60 × 60 × 1000 = 604800000), and converts the result back
+to a <code>datetime</code>:</p>
+<pre><code>// Due Date
+datetime(float("Shipped Date") + 604800000)
+</code></pre>
+<h2 id="operators"><a class="header" href="#operators">Operators</a></h2>
+<p>Standard arithmetic and comparison operators are supported:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operator</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>+</code>, <code>-</code>, <code>*</code>, <code>/</code></td><td>Arithmetic</td></tr>
+<tr><td><code>%</code></td><td>Modulo</td></tr>
+<tr><td><code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code></td><td>Comparison</td></tr>
+<tr><td><code>and</code>, <code>or</code>, <code>not</code></td><td>Logical</td></tr>
+<tr><td><code>if ... else ...</code></td><td>Conditional</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="numeric-functions"><a class="header" href="#numeric-functions">Numeric Functions</a></h2>
+<p>ExprTK provides a rich set of built-in numeric functions including <code>abs</code>,
+<code>ceil</code>, <code>floor</code>, <code>round</code>, <code>exp</code>, <code>log</code>, <code>log10</code>, <code>sqrt</code>, <code>min</code>, <code>max</code>, <code>pow</code>,
+<code>clamp</code>, <code>iclamp</code>, <code>inrange</code>, and trigonometric functions (<code>sin</code>, <code>cos</code>, <code>tan</code>,
+<code>asin</code>, <code>acos</code>, <code>atan</code>).</p>
+<h2 id="string-functions"><a class="header" href="#string-functions">String Functions</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>concat(a, b, ...)</code></td><td>Concatenate strings</td></tr>
+<tr><td><code>upper(s)</code></td><td>Convert to uppercase</td></tr>
+<tr><td><code>lower(s)</code></td><td>Convert to lowercase</td></tr>
+<tr><td><code>length(s)</code></td><td>String length</td></tr>
+<tr><td><code>contains(s, substr)</code></td><td>Whether <code>s</code> contains <code>substr</code></td></tr>
+<tr><td><code>order(col, 'B', 'C', 'A')</code></td><td>Custom sort order for a string column</td></tr>
+<tr><td><code>match(s, pattern)</code></td><td>Regex partial match (returns boolean)</td></tr>
+<tr><td><code>match_all(s, pattern)</code></td><td>Regex full match (returns boolean)</td></tr>
+<tr><td><code>search(s, pattern)</code></td><td>First capturing group match</td></tr>
+<tr><td><code>indexof(s, pattern)</code></td><td>Start index of first regex match</td></tr>
+<tr><td><code>substring(s, start, end)</code></td><td>Substring from <code>start</code> (inclusive) to <code>end</code> (exclusive)</td></tr>
+<tr><td><code>replace(s, repl, pattern)</code></td><td>Replace first regex match</td></tr>
+<tr><td><code>replace_all(s, repl, pattern)</code></td><td>Replace all regex matches</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="datedatetime-functions"><a class="header" href="#datedatetime-functions">Date/Datetime Functions</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>today()</code></td><td>Current date</td></tr>
+<tr><td><code>now()</code></td><td>Current datetime</td></tr>
+<tr><td><code>date(year, month, day)</code></td><td>Construct a date</td></tr>
+<tr><td><code>datetime(timestamp_ms)</code></td><td>Construct a datetime from a POSIX timestamp (ms since epoch)</td></tr>
+<tr><td><code>hour_of_day(dt)</code></td><td>Hour component (0-23)</td></tr>
+<tr><td><code>day_of_week(dt)</code></td><td>Day of the week as a string</td></tr>
+<tr><td><code>month_of_year(dt)</code></td><td>Month of the year as a string</td></tr>
+<tr><td><code>bucket(dt, unit)</code></td><td>Bucket datetime by unit: <code>'s'</code>, <code>'m'</code>, <code>'h'</code>, <code>'D'</code>, <code>'W'</code>, <code>'M'</code>, <code>'Y'</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>bucket</code> also works on numeric columns: <code>bucket("Price", 10)</code> rounds values down
+to the nearest multiple of 10.</p>
+<h2 id="other-functions"><a class="header" href="#other-functions">Other Functions</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>is_null(x)</code></td><td>Whether the value is null</td></tr>
+<tr><td><code>is_not_null(x)</code></td><td>Whether the value is not null</td></tr>
+<tr><td><code>percent_of(a, b)</code></td><td><code>a</code> as a percentage of <code>b</code></td></tr>
+<tr><td><code>inrange(low, val, high)</code></td><td>Whether <code>val</code> is between <code>low</code> and <code>high</code> (inclusive)</td></tr>
+<tr><td><code>min(a, b, ...)</code></td><td>Minimum of inputs</td></tr>
+<tr><td><code>max(a, b, ...)</code></td><td>Maximum of inputs</td></tr>
+<tr><td><code>random()</code></td><td>Random float between 0.0 and 1.0</td></tr>
+<tr><td><code>col(name)</code></td><td>Look up a column by string name at runtime</td></tr>
+<tr><td><code>vlookup(col, key)</code></td><td>Look up a value in another column by row key</td></tr>
+</tbody>
+</table>
+</div>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../../explanation/view/config/filter.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../../explanation/view/config/selection_and_ordering.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../../explanation/view/config/flattening.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../../explanation/view/advanced.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -219,11 +353,11 @@ Column” button in the side panel.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../../explanation/view/config/filter.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../../explanation/view/config/selection_and_ordering.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../../explanation/view/config/flattening.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../../explanation/view/advanced.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

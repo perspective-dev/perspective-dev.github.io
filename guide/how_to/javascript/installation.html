@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Installation via NPM - Perspective</title>
+        <title>Installation and Module Structure - Perspective</title>
 
 
         <!-- Custom HTML head -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,9 +179,40 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="javascript-npm-installation"><a class="header" href="#javascript-npm-installation">JavaScript NPM Installation</a></h1>
-<p>Perspective releases contain several different builds for use in most
-environments.</p>
+                        <h1 id="javascript-installation-and-module-structure"><a class="header" href="#javascript-installation-and-module-structure">JavaScript Installation and Module Structure</a></h1>
+<p>Perspective is designed for flexibility, allowing developers to pick and choose
+which modules they need. The main modules are:</p>
+<ul>
+<li>
+<p><code>@perspective-dev/client</code>
+The data engine library, as both a browser ES6 and Node.js module. Provides a
+WebAssembly, WebWorker (browser) and Process (node.js) runtime.</p>
+</li>
+<li>
+<p><code>@perspective-dev/viewer</code>
+A user-configurable visualization widget, bundled as a
+<a href="https://www.webcomponents.org/introduction">Web Component</a>. This module
+includes the core data engine module as a dependency.</p>
+</li>
+</ul>
+<p><code>&lt;perspective-viewer&gt;</code> by itself only implements a trivial debug renderer, which
+prints the currently configured <code>view()</code> as a CSV. Plugin modules for popular
+JavaScript libraries, such as <a href="https://d3fc.io/">d3fc</a>, are packaged separately
+and must be imported individually.</p>
+<ul>
+<li>
+<p><code>@perspective-dev/viewer-datagrid</code>
+A custom high-performance data-grid component based on HTML <code>&lt;table&gt;</code>.</p>
+</li>
+<li>
+<p><code>@perspective-dev/viewer-d3fc</code>
+A <code>&lt;perspective-viewer&gt;</code> plugin for the <a href="https://d3fc.io">d3fc</a> charting
+library.</p>
+</li>
+</ul>
+<p>When imported after <code>@perspective-dev/viewer</code>, the plugin modules will register
+themselves automatically, and the renderers they export will be available in the
+<code>plugin</code> dropdown in the <code>&lt;perspective-viewer&gt;</code> UI.</p>
 <h2 id="browser"><a class="header" href="#browser">Browser</a></h2>
 <p>Perspective’s WebAssembly data engine is available via NPM in the same package
 as its Node.js counterpart, <code>@perspective-dev/client</code>. The Perspective Viewer UI
@@ -203,7 +234,7 @@ without Plugins would be rather boring!</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../how_to/javascript.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../explanation/view/advanced.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -217,7 +248,7 @@ without Plugins would be rather boring!</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../how_to/javascript.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../explanation/view/advanced.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

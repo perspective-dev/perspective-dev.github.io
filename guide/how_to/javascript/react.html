@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -184,128 +184,58 @@
 using the perspective-viewer web component in the context of React.</p>
 <p>Before trying this example, please take a look at
 <a href="./importing.html">how to bootstrap perspective</a>.</p>
-<p>A simple example:</p>
-<pre><code class="language-typescript">    const resp = await req;
-    const buffer = await resp.arrayBuffer();
-    return await WORKER.table(buffer);
-}
+<h2 id="perspectiveviewer"><a class="header" href="#perspectiveviewer"><code>PerspectiveViewer</code></a></h2>
+<p>A simple example using the <code>PerspectiveViewer</code> component:</p>
+<pre><code class="language-typescript">import React, { useCallback, useEffect, useRef } from "react";
+import {
+    PerspectiveViewer,
+} from "@perspective-dev/react";
+import perspective from "@perspective-dev/client";
 
-const CONFIG: pspViewer.ViewerConfigUpdate = {
-    group_by: ["State"],
-};
+function App() {
+    const worker = useRef(null);
 
-// # React application
-
-// The React application itself
-
-interface ToolbarState {
-    mounted: boolean;
-    table?: Promise&lt;psp.Table&gt;;
-    config: pspViewer.ViewerConfigUpdate;
-    layout: perspective_workspace.PerspectiveWorkspaceConfig;
-}
-
-const App: React.FC = () =&gt; {
-    const [state, setState] = React.useState&lt;ToolbarState&gt;(() =&gt; ({
-        mounted: true,
-        table: createNewSuperstoreTable(),
-        layout: {
-            detail: { main: null },
-            sizes: [],
-            viewers: {},
-        },
-        config: { ...CONFIG },
-    }));
-
-    React.useEffect(() =&gt; {
-        return () =&gt; {
-            state.table?.then((table) =&gt; table?.delete({ lazy: true }));
-        };
+    useEffect(() =&gt; {
+        (async () =&gt; {
+            worker.current = await perspective.worker();
+            const resp = await fetch("data.arrow");
+            const arrow = await resp.arrayBuffer();
+            await worker.current.table(arrow, { name: "my_table" });
+        })();
     }, []);
 
-    const onClickOverwrite = () =&gt; {
-        state.table?.then((table) =&gt; table?.delete({ lazy: true }));
-        const table = createNewSuperstoreTable();
-        setState({ ...state, table });
-    };
-
-    const onClickDelete = () =&gt; {
-        state.table?.then((table) =&gt; table?.delete({ lazy: true }));
-        setState({ ...state, table: undefined });
-    };
-
-    const onClickToggleMount = () =&gt;
-        setState((old) =&gt; ({ ...old, mounted: !state.mounted }));
-
-    const onConfigUpdate = (config: pspViewer.ViewerConfigUpdate) =&gt; {
-        console.log("Config Update Event", config);
-        delete config.table;
-        setState({ ...state, config });
-    };
-
-    const onLayoutUpdate = (
-        layout: perspective_workspace.PerspectiveWorkspaceConfig,
-    ) =&gt; {
-        console.log("Layout Update Event", layout);
-
-        // delete config.table;
-        setState({ ...state, layout });
-    };
-
-    const onClick = (detail: pspViewer.PerspectiveClickEventDetail) =&gt; {
-        console.log("Click Event,", detail);
-    };
-
-    const onSelect = (detail: pspViewer.PerspectiveSelectEventDetail) =&gt; {
-        console.log("Select Event", detail);
-    };
-
     return (
-        &lt;div className="container"&gt;
-            &lt;div className="toolbar"&gt;
-                &lt;button onClick={onClickToggleMount}&gt;Toggle Mount&lt;/button&gt;
-                &lt;button onClick={onClickOverwrite}&gt;Overwrite Superstore&lt;/button&gt;
-                &lt;button onClick={onClickDelete}&gt;Delete Table&lt;/button&gt;
-            &lt;/div&gt;
-            {state.mounted &amp;&amp; (
-                &lt;&gt;
-                    &lt;PerspectiveViewer client={state.table} /&gt;
-                    &lt;PerspectiveViewer
-                        className="my-perspective-viewer"
-                        client={state.table}
-                        config={state.config}
-                        onClick={onClick}
-                        onConfigUpdate={onConfigUpdate}
-                        onSelect={onSelect}
-                    /&gt;
-                    &lt;PerspectiveWorkspace
-                        client={WORKER}
-                        layout={state.layout}
-                        onLayoutUpdate={onLayoutUpdate}
-                    /&gt;
-                &lt;/&gt;
-            )}
-        &lt;/div&gt;
+            &lt;PerspectiveViewer
+                client={worker.current}
+                config={{group_by: ["State"], columns: ["Sales"]}}
+            /&gt;
     );
-};
-
-createRoot(document.getElementById("root")!).render(&lt;App /&gt;);
+}
 </code></pre>
-<p>This adds a perspective table to the provider at the root of the app and allows
-us to create viewers referencing those tables anywhere within that context. Any
-views or viewers associated with the React component are automatically cleaned
-up as part of the lifecycle of the component, but tables are still the
-responsibility of the caller to cleanup currently.</p>
+<h2 id="perspectiveworkspace"><a class="header" href="#perspectiveworkspace"><code>PerspectiveWorkspace</code></a></h2>
+<p>For multi-viewer layouts, use <code>PerspectiveWorkspace</code>:</p>
+<pre><code class="language-typescript">import { PerspectiveWorkspace } from "@perspective-dev/react";
+
+const WORKSPACE_CONFIG =  // ...
+
+function Dashboard() {
+    return (
+        &lt;PerspectiveWorkspace
+            client={perspective.worker()}
+            config={WORKSPACE_CONFIG} /&gt;
+    );
+}
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../how_to/javascript/plugin_settings.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../how_to/javascript/virtual_server/custom.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../how_to/python.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../explanation/python.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -315,11 +245,11 @@ responsibility of the caller to cleanup currently.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../how_to/javascript/plugin_settings.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../how_to/javascript/virtual_server/custom.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../how_to/python.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../explanation/python.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

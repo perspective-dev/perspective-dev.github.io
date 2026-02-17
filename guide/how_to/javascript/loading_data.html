@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Loading data from a Table - Perspective</title>
+        <title>Loading data - Perspective</title>
 
 
         <!-- Custom HTML head -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -210,16 +210,46 @@ await viewer2.load(table);
 // Both `viewer1` and `viewer2` will reflect this update
 await table.update([{ x: 5, y: "e", z: true }]);
 </code></pre>
+<h2 id="loading-from-a-virtual-table"><a class="header" href="#loading-from-a-virtual-table">Loading from a virtual <code>Table</code></a></h2>
+<p>Loading a virtual (server-only) <code>Table</code> works just like loading a local/Web
+Worker <code>Table</code> — just pass the virtual <code>Table</code> to <code>viewer.load()</code>. In the
+browser:</p>
+<pre><code class="language-javascript">const elem = document.getElementsByTagName("perspective-viewer")[0];
+
+// Bind to the server's worker instead of instantiating a Web Worker.
+const websocket = await perspective.websocket(
+    window.location.origin.replace("http", "ws")
+);
+
+// Bind the viewer to the preloaded data source.  `table` and `view` objects
+// live on the server.
+const server_table = await websocket.open_table("table_one");
+await elem.load(server_table);
+</code></pre>
+<p>Alternatively, data can be <em>cloned</em> from a server-side virtual <code>Table</code> into a
+client-side WebAssembly <code>Table</code>. The browser clone will be synced via delta
+updates transferred via Apache Arrow IPC format, but local <code>View</code>s created will
+be calculated locally on the client browser.</p>
+<pre><code class="language-javascript">const worker = await perspective.worker();
+const server_view = await server_table.view();
+const client_table = worker.table(server_view);
+await elem.load(client_table);
+</code></pre>
+<p><code>&lt;perspective-viewer&gt;</code> instances bound in this way are otherwise no different
+than <code>&lt;perspective-viewer&gt;</code>s which rely on a Web Worker, and can even share a
+host application with Web Worker-bound <code>table()</code>s. The same <code>promise</code>-based API
+is used to communicate with the server-instantiated <code>view()</code>, only in this case
+it is over a websocket.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../how_to/javascript/custom_themes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../how_to/javascript/viewer.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../how_to/javascript/loading_virtual_data.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../how_to/javascript/theming.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -229,11 +259,11 @@ await table.update([{ x: 5, y: "e", z: true }]);
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../how_to/javascript/custom_themes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../how_to/javascript/viewer.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../how_to/javascript/loading_virtual_data.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../how_to/javascript/theming.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

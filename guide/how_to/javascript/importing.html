@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -180,7 +180,16 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="javascript---importing-with-or-without-a-bundler"><a class="header" href="#javascript---importing-with-or-without-a-bundler">JavaScript - Importing with or without a bundler</a></h1>
+<p>Perspective requires the browser to have access to Perspective’s <code>.wasm</code>
+binaries <em>in addition</em> to the bundled <code>.js</code> files, and as a result the build
+process requires a few extra steps. Perspective’s NPM releases come with
+multiple prebuilt configurations.</p>
 <h2 id="esm-builds-with-a-bundler"><a class="header" href="#esm-builds-with-a-bundler">ESM builds with a bundler</a></h2>
+<p>The recommended builds for production use are packaged as ES Modules and require
+a <em>bootstrapping</em> step in order to acquire the <code>.wasm</code> binaries and initialize
+Perspective’s JavaScript with them. Because they have no hard-coded dependencies
+on the <code>.wasm</code> paths, they are ideal for use with JavaScript bundlers such as
+ESBuild, Rollup, Vite or Webpack.</p>
 <p>ESM builds must be <em>bootstrapped</em> with their <code>.wasm</code> binaries to initialize. The
 <code>wasm</code> binaries can be found in their respective <code>dist/wasm</code> directories.</p>
 <pre><code class="language-javascript">import perspective_viewer from "@perspective-dev/viewer";
@@ -265,16 +274,23 @@ await Promise.all([
     },
 }
 </code></pre>
-<h2 id="inline-builds-with-a-bundler"><a class="header" href="#inline-builds-with-a-bundler">Inline builds with a bundler <!-- How to --></a></h2>
+<h2 id="inline-builds-with-a-bundler"><a class="header" href="#inline-builds-with-a-bundler">Inline builds with a bundler</a></h2>
+<p><span class="warning">Inline builds are deprecated and will be removed in a
+future release.</span></p>
+<p>Perspective’s <em>Inline</em> Builds work by <em>inlining</em> WebAssembly binary content as
+a base64-encoded string. While inline builds work with most bundlers and <em>do
+not</em> require bootstrapping, there is an inherent file-size and boot-performance
+penalty. Prefer your bundler’s inlining features and Perspective ESM builds
+where possible.</p>
 <pre><code class="language-javascript">import "@perspective-dev/viewer/dist/esm/perspective-viewer.inline.js";
 import psp from "@perspective-dev/client/dist/esm/perspective.inline.js";
 </code></pre>
-<h2 id="cdn-builds"><a class="header" href="#cdn-builds">CDN builds <!-- How to --></a></h2>
-<p>Perspective CDN builds are in ES Module format, thus to include them via a CDN
-they must be imported from a <code>&lt;script type="module"&gt;</code>. While this will work fine
-downloading Perspective’s assets directly as a <code>src</code> attribute, as you’ll
-generally want to <em>do</em> something with the library its best to use an <code>import</code>
-statement:</p>
+<h2 id="cdn-builds"><a class="header" href="#cdn-builds">CDN builds</a></h2>
+<p>Perspective’s CDN builds are good for non-bundled scenarios, such as importing
+directly from a <code>&lt;script&gt;</code> tag. CDN builds <em>do not</em> require <em>bootstrapping</em> the
+WebAssembly binaries, but they also generally <em>do not</em> work with bundlers.</p>
+<p>CDN builds are in ES Module format, thus to include them via a CDN they must be
+imported from a <code>&lt;script type="module"&gt;</code>:</p>
 <pre><code class="language-html">&lt;script type="module"&gt;
     import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/cdn/perspective-viewer.js";
     import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid/dist/cdn/perspective-viewer-datagrid.js";

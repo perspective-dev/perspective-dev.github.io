@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Using a dedicated Worker, SharedWorker, or ServiceWorker - Perspective</title>
+        <title>Customizing perspective.worker() - Perspective</title>
 
 
         <!-- Custom HTML head -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,28 +179,60 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="using-a-custom-webworker"><a class="header" href="#using-a-custom-webworker">Using a custom WebWorker</a></h1>
-<p>The <code>Client.worker</code> constructor by default creates a dedicated <code>Worker</code> bound to
-the page context. Alternatively, <code>Client.worker</code> can take a <code>Worker</code>,
-<code>SharedWorker</code> or <code>ServiceWorker</code> instance as a first argument, which load the
-worker script disted at
+                        <h1 id="customizing-perspectiveworker"><a class="header" href="#customizing-perspectiveworker">Customizing <code>perspective.worker()</code></a></h1>
+<p><code>perspective.worker()</code> creates a <code>Client</code> that connects to a Perspective data
+engine. By default it spins up a dedicated <code>Worker</code> running the built-in
+WebAssembly engine, but you can pass an argument to change this behavior:</p>
+<ul>
+<li>A <strong><code>Worker</code></strong>, <strong><code>SharedWorker</code></strong>, or <strong><code>ServiceWorker</code></strong> — runs the
+built-in engine in a different worker context.</li>
+<li>A <strong><code>MessagePort</code></strong> from <code>createMessageHandler()</code> — connects to a
+<a href="virtual_server/custom.html">Virtual Server</a> instead of the built-in engine.</li>
+</ul>
+<h2 id="built-in-engine-with-a-custom-worker"><a class="header" href="#built-in-engine-with-a-custom-worker">Built-in engine with a custom Worker</a></h2>
+<p>Pass a <code>Worker</code>, <code>SharedWorker</code>, or <code>ServiceWorker</code> that loads the worker script
+distributed at
 <code>"@perspective-dev/client/dist/cdn/perspective-server.worker.js"</code>.</p>
 <p><span class="warning"><code>SharedWorker</code> and <code>ServiceWorker</code> have more complicated
 behavior compared to a dedicated <code>Worker</code>, and will need special consideration
 to integrate (or debug).</span></p>
-<h2 id="dedicated-worker"><a class="header" href="#dedicated-worker">Dedicated <code>Worker</code></a></h2>
+<h3 id="dedicated-worker"><a class="header" href="#dedicated-worker">Dedicated <code>Worker</code></a></h3>
 <pre><code class="language-javascript">const worker = await perspective.worker(new Worker(url));
 </code></pre>
-<h2 id="sharedworker"><a class="header" href="#sharedworker"><code>SharedWorker</code></a></h2>
+<h3 id="sharedworker"><a class="header" href="#sharedworker"><code>SharedWorker</code></a></h3>
 <pre><code class="language-javascript">const worker = await perspective.worker(new SharedWorker(url));
 </code></pre>
-<h2 id="serviceworker"><a class="header" href="#serviceworker"><code>ServiceWorker</code></a></h2>
+<h3 id="serviceworker"><a class="header" href="#serviceworker"><code>ServiceWorker</code></a></h3>
 <pre><code class="language-javascript">const registration = await navigator.serviceWorker.register(url, {
     scope: "", // Your scope here
 });
 
 const worker = await perspective.worker(registration.active);
 </code></pre>
+<h2 id="virtual-server"><a class="header" href="#virtual-server">Virtual Server</a></h2>
+<p>Instead of the built-in WebAssembly engine, <code>perspective.worker()</code> can connect
+to a Virtual Server — an adapter that translates Perspective queries into
+operations on an external data source such as
+<a href="virtual_server/duckdb.html">DuckDB</a> or
+<a href="virtual_server/clickhouse.html">ClickHouse</a>.</p>
+<p>Use <code>perspective.createMessageHandler()</code> with a <code>VirtualServerHandler</code> to create
+a <code>MessagePort</code>, then pass it to <code>worker()</code>:</p>
+<pre><code class="language-javascript">import perspective from "@perspective-dev/client";
+
+const handler = {
+    /* VirtualServerHandler implementation */
+};
+
+const server = perspective.createMessageHandler(handler);
+const client = await perspective.worker(server);
+const table = await client.open_table("my_table");
+</code></pre>
+<p>The returned <code>Client</code> works identically to one backed by the built-in engine —
+you can pass it to <code>&lt;perspective-viewer&gt;.load()</code>, call <code>open_table()</code>, etc. The
+difference is that queries are fulfilled by your handler rather than the WASM
+engine.</p>
+<p>For the full <code>VirtualServerHandler</code> interface and a worked example, see
+<a href="virtual_server/custom.html">Implementing a custom Virtual Server</a>.</p>
 
                     </main>
 

@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -198,8 +198,8 @@ for i in range(10):
 </code></pre>
 <p>The <code>name</code> provided is important, as it enables Perspective in JavaScript to
 look up a <code>Table</code> and get a handle to it over the network. Otherwise, <code>name</code>
-will be assigned randomlu and the <code>Client</code> must look this up with
-<code>CLient.get_hosted_table_names()</code></p>
+will be assigned randomly and the <code>Client</code> must look this up with
+<code>Client.get_hosted_table_names()</code></p>
 <h2 id="clientserver-replicated-mode"><a class="header" href="#clientserver-replicated-mode">Client/Server Replicated Mode</a></h2>
 <p>Using Tornado and
 <a href="python.html#perspectivetornadohandler"><code>PerspectiveTornadoHandler</code></a>, as well as
@@ -216,7 +216,7 @@ distributed Perspective offers consistently high performance over large numbers
 of clients and large datasets.</p>
 <p><em><em>server.py</em></em></p>
 <pre><code class="language-python">from perspective import Server
-from perspective.hadnlers.tornado import PerspectiveTornadoHandler
+from perspective.handlers.tornado import PerspectiveTornadoHandler
 
 # Create an instance of Server, and host a Table
 SERVER = Server()
@@ -276,7 +276,7 @@ dataset, see
 instead of creating a <code>View</code>, the client calls <code>load(server_table)</code>: In Python,
 use <code>Server</code> and <code>PerspectiveTornadoHandler</code> to create a websocket server that
 exposes a <code>Table</code>. In this example, <code>table</code> is a proxy for the <code>Table</code> we
-created on the server. All API methods are available on <em>proxies</em>, the.g.us
+created on the server. All API methods are available on <em>proxies</em>, e.g.
 calling <code>view()</code>, <code>schema()</code>, <code>update()</code> on <code>table</code> will pass those operations
 to the Python <code>Table</code>, execute the commands, and return the result back to
 Javascript.</p>

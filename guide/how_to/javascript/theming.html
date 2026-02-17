@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -228,16 +228,39 @@ the <code>theme</code> attribute:</p>
 <pre><code class="language-javascript">const viewer = document.querySelector("perspective-viewer");
 await viewer.restore({ theme: "Pro Dark" });
 </code></pre>
+<h2 id="custom-themes"><a class="header" href="#custom-themes">Custom Themes</a></h2>
+<p>The best way to write a new theme is to
+<a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes">fork and modify an existing theme</a>,
+which are <em>just</em> collections of regular CSS variables (no preprocessor is
+required, though Perspective’s own themes use one). <code>&lt;perspective-viewer&gt;</code> is
+not “themed” by default and will lack icons and label text in addition to colors
+and fonts, so starting from an empty theme forces you to define <em>every</em>
+theme-able variable to get a functional UI.</p>
+<h3 id="icons-and-translation"><a class="header" href="#icons-and-translation">Icons and Translation</a></h3>
+<p>UI icons are defined by CSS variables provided by
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/icons.less"><code>@perspective-dev/viewer/dist/css/icons.css</code></a>.
+These variables must be defined for the UI icons to work - there are no default
+icons without a theme.</p>
+<p>UI text is also defined in CSS variables provided by
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/intl.less"><code>@perspective-dev/viewer/dist/css/intl.css</code></a>,
+and has identical import requirements. Some <em>example definitions</em>
+(automatically-translated sans-editing) can be found
+<a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes/intl"><code>@perspective-dev/viewer/dist/css/intl/</code> folder</a>.</p>
+<p>Importing the pre-built <code>themes.css</code> stylesheet as well as a custom theme will
+define Icons and Translation globally as a side-effect. You can still customize
+icons in this mode with rules (of the appropriate specificity), <em>but</em> if you do
+not still remember to define these variables yourself, your theme will not work
+without the base <code>themes.css</code> package available.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../how_to/javascript/viewer.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../how_to/javascript/loading_data.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../how_to/javascript/custom_themes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../how_to/javascript/save_restore.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -247,11 +270,11 @@ await viewer.restore({ theme: "Pro Dark" });
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../how_to/javascript/viewer.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../how_to/javascript/loading_data.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../how_to/javascript/custom_themes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../how_to/javascript/save_restore.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

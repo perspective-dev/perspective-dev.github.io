@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-f6839ee1.js";
+            window.path_to_searchindex_js = "../../searchindex-5eec4477.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-86b914e2.js"></script>
+        <script src="../../toc-26212d63.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -233,16 +233,15 @@ treat the index as a primary key:</p>
 table = perspective.table(data, index="index")
 </code></pre>
 <h2 id="time-zone-handling"><a class="header" href="#time-zone-handling">Time Zone Handling</a></h2>
-<p>When parsing <code>"datetime"</code> strings, times are assumed <em>local time</em> unless an
-explicit timezone offset is parsed. All <code>"datetime"</code> columns (regardless of
-input time zone) are <em>output</em> to the user as <code>datetime.datetime</code> objects in
-<em>local time</em> according to the Python runtime.</p>
-<p>This behavior is consistent with Perspective’s behavior in JavaScript. For more
-details, see this in-depth
-<a href="https://github.com/perspective-dev/perspective/pull/867">explanation</a> of
-<code>perspective-python</code> semantics around time zone handling.</p>
-<pre><code>
-</code></pre>
+<p>When parsing <code>"datetime"</code> strings, times without an explicit timezone offset are
+interpreted as <em>UTC</em>. Strings with a timezone offset (e.g., <code>+05:00</code>) are
+converted to UTC. All <code>"datetime"</code> values are stored internally as milliseconds
+since the Unix epoch, and are <em>output</em> as integer timestamps (milliseconds since
+epoch) from methods like <code>to_columns()</code> and <code>to_json()</code>.</p>
+<p>Python <code>datetime</code> objects are serialized to strings before parsing. Naive
+<code>datetime</code> objects (without <code>tzinfo</code>) produce strings without timezone
+information and are therefore treated as UTC. Timezone-aware <code>datetime</code> objects
+include their offset in the serialized string, which is used to convert to UTC.</p>
 
                     </main>
 
