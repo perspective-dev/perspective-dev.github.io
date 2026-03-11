@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-62f69d0d.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-9576af53.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-5eec4477.js";
+            window.path_to_searchindex_js = "searchindex-2f9f2396.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-26212d63.js"></script>
+        <script src="toc-90463f6b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -300,11 +300,10 @@ predicate), then filter on that column:</p>
 </code></pre>
 <!-- _Related: [#1192](https://github.com/perspective-dev/perspective/issues/1192)_ -->
 <h3 id="how-do-i-update-filters-programmatically"><a class="header" href="#how-do-i-update-filters-programmatically">How do I update filters programmatically?</a></h3>
-<p>Set the
-<a href="./explanation/view/config/selection_and_ordering.html#filter"><code>filter</code></a>
+<p>Set the <a href="./explanation/view/config/selection_and_ordering.html#filter"><code>filter</code></a>
 property on a <code>View</code> config, or use the <code>&lt;perspective-viewer&gt;</code>
-<a href="./how_to/javascript/save_restore.html"><code>.restore()</code></a> method to update filters
-at runtime.</p>
+<a href="./how_to/javascript/save_restore.html"><code>.restore()</code></a> method to update filters at
+runtime.</p>
 <!-- _Related: [#935](https://github.com/perspective-dev/perspective/issues/935)_ -->
 <h3 id="does-date-filtering-support-ranges"><a class="header" href="#does-date-filtering-support-ranges">Does date filtering support ranges?</a></h3>
 <p>Date columns can be
@@ -391,9 +390,8 @@ integration.</p>
 [#2801](https://github.com/perspective-dev/perspective/discussions/2801)_ -->
 <h3 id="how-do-i-listen-for-data-updates"><a class="header" href="#how-do-i-listen-for-data-updates">How do I listen for data updates?</a></h3>
 <p>Use <code>view.on_update()</code> to register a callback that fires when the underlying
-table data changes. See
-<a href="./how_to/javascript/events.html">Listening for events</a> and
-<a href="./explanation/view/advanced.html#update-callbacks">Advanced View Operations</a>.</p>
+table data changes. See <a href="./how_to/javascript/events.html">Listening for events</a>
+and <a href="./explanation/view/advanced.html#update-callbacks">Advanced View Operations</a>.</p>
 <!-- _Related: [#1152](https://github.com/perspective-dev/perspective/issues/1152),
 [#2912](https://github.com/perspective-dev/perspective/discussions/2912)_ -->
 <h2 id="server-architecture"><a class="header" href="#server-architecture">Server Architecture</a></h2>
@@ -498,20 +496,20 @@ with an <code>index</code> option, and pass the index values to remove.</p>
 <h2 id="viewer-configuration"><a class="header" href="#viewer-configuration">Viewer Configuration</a></h2>
 <h3 id="how-do-i-save-and-restore-the-viewer-state"><a class="header" href="#how-do-i-save-and-restore-the-viewer-state">How do I save and restore the viewer state?</a></h3>
 <p>Use
-<a href="./how_to/javascript/save_restore.html"><code>viewer.save()</code> and <code>viewer.restore()</code></a>
-to serialize and deserialize the full viewer configuration.</p>
+<a href="./how_to/javascript/save_restore.html"><code>viewer.save()</code> and <code>viewer.restore()</code></a> to
+serialize and deserialize the full viewer configuration.</p>
 <!-- _Related: [#1501](https://github.com/perspective-dev/perspective/issues/1501),
 [#1560](https://github.com/perspective-dev/perspective/issues/1560)_ -->
 <h3 id="can-i-hide-the-configuration-panel"><a class="header" href="#can-i-hide-the-configuration-panel">Can I hide the configuration panel?</a></h3>
 <p>The settings panel can be toggled programmatically via
-<code>await viewer.restore({ settings: true })</code>.</p>
+<code>await viewer.restore({ settings: false })</code>.</p>
 <!-- _Related:
 [#2581](https://github.com/perspective-dev/perspective/discussions/2581),
 [#1085](https://github.com/perspective-dev/perspective/issues/1085)_ -->
 <h3 id="can-i-collapse-row-groups-by-default"><a class="header" href="#can-i-collapse-row-groups-by-default">Can I collapse row groups by default?</a></h3>
-<p>Row group expansion state is not persisted or configurable via the API by
-default, but can be closed imperatively via
-<a href="./explanation/view/advanced.html"><code>view.set_depth()</code></a>.</p>
+<p>Row group can be closed imperatively via
+<a href="./explanation/view/advanced.html"><code>view.set_depth()</code></a>. Expansion state is not
+persisted or configurable via the <code>save</code>/<code>restore</code> API currently.</p>
 <!-- _Related:
 [#2695](https://github.com/perspective-dev/perspective/discussions/2695),
 [#2861](https://github.com/perspective-dev/perspective/issues/2861)_ -->

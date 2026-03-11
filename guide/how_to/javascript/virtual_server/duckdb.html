@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-62f69d0d.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-9576af53.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-5eec4477.js";
+            window.path_to_searchindex_js = "../../../searchindex-2f9f2396.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-26212d63.js"></script>
+        <script src="../../../toc-90463f6b.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -215,17 +215,6 @@ const client = await perspective.worker(messageHandler);
 const table = await client.open_table("my_table");
 document.getElementById("viewer").load(table);
 </code></pre>
-<h2 id="supported-features"><a class="header" href="#supported-features">Supported features</a></h2>
-<p>The DuckDB virtual server supports:</p>
-<ul>
-<li><code>group_by</code> — aggregation via DuckDB’s <code>GROUP BY</code></li>
-<li><code>split_by</code> — column pivoting</li>
-<li><code>sort</code> — ordering results</li>
-<li><code>filter</code> — all standard filter operators</li>
-<li><code>expressions</code> — computed columns via DuckDB SQL expressions</li>
-<li>Full set of DuckDB aggregate functions (<code>sum</code>, <code>avg</code>, <code>count</code>, <code>min</code>, <code>max</code>,
-<code>product</code>, <code>string_agg</code>, etc.)</li>
-</ul>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/esbuild-duckdb-virtual">Browser DuckDB example</a></li>
