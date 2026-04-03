@@ -10,13 +10,13 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.3.0/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.3.0/dist/cdn/perspective-workspace.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.3.0/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-d3fc@4.3.0/dist/cdn/perspective-viewer-d3fc.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.4.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.4.0/dist/cdn/perspective-workspace.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.4.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-d3fc@4.4.0/dist/cdn/perspective-viewer-d3fc.js";
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-openlayers/dist/cdn/perspective-viewer-openlayers.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.3.0/dist/cdn/perspective.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.4.0/dist/cdn/perspective.js";
 
 let DATA_URL = "nypdccrb.arrow";
 

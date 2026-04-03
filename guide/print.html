@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-9576af53.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-d648cb7e.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-2f9f2396.js";
+            window.path_to_searchindex_js = "searchindex-ab849656.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-90463f6b.js"></script>
+        <script src="toc-362b2ca2.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -1506,6 +1506,112 @@ table.update(data).await?;
 </div>
 
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="join"><a class="header" href="#join">Join</a></h1>
+<p><code>Client::join</code> creates a read-only <code>Table</code> by joining two source tables on a
+shared key column. The <code>left</code> and <code>right</code> arguments can be <code>Table</code> objects or
+string table names (as returned by <code>get_hosted_table_names()</code>). The resulting
+table is <em>reactive</em>: whenever either source table is updated, the join is
+automatically recomputed and any <code>View</code> derived from the joined table will
+update accordingly.</p>
+<p>Joined tables support the full <code>View</code> API — you can apply <code>group_by</code>,
+<code>split_by</code>, <code>sort</code>, <code>filter</code>, <code>expressions</code>, and all other <code>View</code> operations on
+the result, just as you would with any other <code>Table</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="join-types"><a class="header" href="#join-types">Join Types</a></h1>
+<p><code>Client::join</code> supports three join types, specified via the <code>join_type</code> option.
+The default is <code>"inner"</code>.</p>
+<h2 id="inner-join-default"><a class="header" href="#inner-join-default">Inner Join (default)</a></h2>
+<p>An inner join includes only rows where the key column exists in <em>both</em> source
+tables. Rows from either table that have no match in the other are excluded.</p>
+<h2 id="left-join"><a class="header" href="#left-join">Left Join</a></h2>
+<p>A left join includes all rows from the left table. For left rows that have no
+match in the right table, right-side columns are filled with <code>null</code>.</p>
+<h2 id="outer-join"><a class="header" href="#outer-join">Outer Join</a></h2>
+<p>An outer join includes all rows from both tables. Unmatched rows on either side
+have their missing columns filled with <code>null</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>join_type</code></th><th>Left-only rows</th><th>Right-only rows</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"inner"</code></td><td>excluded</td><td>excluded</td></tr>
+<tr><td><code>"left"</code></td><td>included</td><td>excluded</td></tr>
+<tr><td><code>"outer"</code></td><td>included</td><td>included</td></tr>
+</tbody>
+</table>
+</div>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="join-options"><a class="header" href="#join-options">Join Options</a></h1>
+<h2 id="on--join-key-column"><a class="header" href="#on--join-key-column"><code>on</code> — Join Key Column</a></h2>
+<p>The <code>on</code> parameter specifies the column name used to match rows between the left
+and right tables. This column must exist in the left table and, by default, must
+also exist in the right table with the same name and compatible type.</p>
+<p>The join key column becomes the index of the resulting table.</p>
+<h2 id="right_on--different-right-key-column"><a class="header" href="#right_on--different-right-key-column"><code>right_on</code> — Different Right Key Column</a></h2>
+<p>When the join key has a different name in the right table, use <code>right_on</code> to
+specify the right table’s column name. The left table’s column name (<code>on</code>) is
+used in the output schema; the right key column is excluded from the result.</p>
+<p>The <code>on</code> and <code>right_on</code> columns must have compatible types. An error is thrown
+if the types do not match.</p>
+<h2 id="join_type--join-type"><a class="header" href="#join_type--join-type"><code>join_type</code> — Join Type</a></h2>
+<p>Controls which rows are included in the result. See
+<a href="#join-types">Join Types</a> for details.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"inner"</code></td><td>Only rows with matching keys in both tables (default)</td></tr>
+<tr><td><code>"left"</code></td><td>All left rows; unmatched right columns are <code>null</code></td></tr>
+<tr><td><code>"outer"</code></td><td>All rows from both tables; unmatched columns are <code>null</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="name--table-name"><a class="header" href="#name--table-name"><code>name</code> — Table Name</a></h2>
+<p>An optional name for the resulting joined table. If omitted, a random name is
+generated. This name is used to identify the table in the server’s hosted table
+registry.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="reactivity-and-constraints"><a class="header" href="#reactivity-and-constraints">Reactivity and Constraints</a></h1>
+<h2 id="reactive-updates"><a class="header" href="#reactive-updates">Reactive Updates</a></h2>
+<p>Joined tables are fully reactive. When either source table receives an
+<code>update()</code>, the join is automatically recomputed and any <code>View</code> created from the
+joined table will reflect the new data. This includes:</p>
+<ul>
+<li>Updates that modify existing rows in either source table.</li>
+<li>New rows added to either source table that create new matches.</li>
+<li>Chained joins — if a joined table is itself used as input to another join,
+updates propagate through the entire chain.</li>
+</ul>
+<h2 id="duplicate-keys"><a class="header" href="#duplicate-keys">Duplicate Keys</a></h2>
+<p>Like SQL, <code>join()</code> produces a cross-product for each matching key value. When
+multiple rows in the left table share the same key, each is paired with every
+matching row in the right table (and vice versa). The number of output rows for
+a given key is <code>left_count × right_count</code>.</p>
+<p>This behavior depends on whether the source tables are <em>indexed</em>:</p>
+<ul>
+<li><strong>Unindexed tables</strong> (no <code>index</code> option) — rows are appended, so duplicate
+keys accumulate naturally. Each <code>update()</code> appends new rows, which may
+introduce additional duplicates.</li>
+<li><strong>Indexed tables</strong> (<code>index</code> set to the join key) — each key appears at most
+once per table, so the join produces at most one row per key. Updates replace
+existing rows in-place rather than appending.</li>
+</ul>
+<h2 id="read-only"><a class="header" href="#read-only">Read-Only</a></h2>
+<p>Joined tables are read-only. Calling <code>update()</code>, <code>remove()</code>, <code>clear()</code>, or
+<code>replace()</code> on a joined table will throw an error. Data can only change
+indirectly, by updating the source tables.</p>
+<h2 id="column-name-conflicts"><a class="header" href="#column-name-conflicts">Column Name Conflicts</a></h2>
+<p>The left and right tables must not have overlapping column names (other than the
+join key). If a non-key column name appears in both tables, <code>join()</code> throws an
+error. Rename columns in your source data or use <code>View</code> expressions to avoid
+conflicts.</p>
+<h2 id="source-table-deletion"><a class="header" href="#source-table-deletion">Source Table Deletion</a></h2>
+<p>A source table cannot be deleted while a joined table depends on it. You must
+delete the joined table first, then delete the source tables.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="javascript-installation-and-module-structure"><a class="header" href="#javascript-installation-and-module-structure">JavaScript Installation and Module Structure</a></h1>
 <p>Perspective is designed for flexibility, allowing developers to pick and choose
 which modules they need. The main modules are:</p>
@@ -1846,6 +1952,60 @@ engine.</p>
 <p>For the full <code>VirtualServerHandler</code> interface and a worked example, see
 <a href="#implementing-a-custom-virtual-server">Implementing a custom Virtual Server</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="joining-tables"><a class="header" href="#joining-tables">Joining Tables</a></h1>
+<p><code>perspective.join()</code> creates a read-only <code>Table</code> by joining two source tables on
+a shared key column. The result is reactive — it updates automatically when
+either source table changes. See <a href="#join"><code>Join</code></a> for
+conceptual details.</p>
+<h2 id="basic-inner-join"><a class="header" href="#basic-inner-join">Basic Inner Join</a></h2>
+<pre><code class="language-javascript">const orders = await perspective.table([
+    { id: 1, product_id: 101, qty: 5 },
+    { id: 2, product_id: 102, qty: 3 },
+    { id: 3, product_id: 101, qty: 7 },
+]);
+
+const products = await perspective.table([
+    { product_id: 101, name: "Widget" },
+    { product_id: 102, name: "Gadget" },
+]);
+
+const joined = await perspective.join(orders, products, "product_id");
+const view = await joined.view();
+const json = await view.to_json();
+// [
+//   { product_id: 101, id: 1, qty: 5, name: "Widget" },
+//   { product_id: 101, id: 3, qty: 7, name: "Widget" },
+//   { product_id: 102, id: 2, qty: 3, name: "Gadget" },
+// ]
+</code></pre>
+<h2 id="join-types-1"><a class="header" href="#join-types-1">Join Types</a></h2>
+<p>Pass <code>join_type</code> in the options to select inner, left, or outer join behavior:</p>
+<pre><code class="language-javascript">// Left join: all left rows, nulls for unmatched right columns
+const left_joined = await perspective.join(left, right, "id", {
+    join_type: "left",
+});
+
+// Outer join: all rows from both tables
+const outer_joined = await perspective.join(left, right, "id", {
+    join_type: "outer",
+});
+</code></pre>
+<h2 id="reactive-updates-1"><a class="header" href="#reactive-updates-1">Reactive Updates</a></h2>
+<p>The joined table recomputes automatically when either source table is updated:</p>
+<pre><code class="language-javascript">const left = await perspective.table([{ id: 1, x: 10 }]);
+const right = await perspective.table([{ id: 2, y: "b" }]);
+
+const joined = await perspective.join(left, right, "id");
+const view = await joined.view();
+
+let json = await view.to_json();
+// [] — no matching keys yet
+
+await right.update([{ id: 1, y: "a" }]);
+json = await view.to_json();
+// [{ id: 1, x: 10, y: "a" }] — new match detected
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="perspective-viewer-custom-element-library"><a class="header" href="#perspective-viewer-custom-element-library"><code>&lt;perspective-viewer&gt;</code> Custom Element library</a></h1>
 <p><code>&lt;perspective-viewer&gt;</code> provides a complete graphical UI for configuring the
 <code>perspective</code> library and formatting its output to the provided visualization
@@ -2025,11 +2185,11 @@ and fonts, so starting from an empty theme forces you to define <em>every</em>
 theme-able variable to get a functional UI.</p>
 <h3 id="icons-and-translation"><a class="header" href="#icons-and-translation">Icons and Translation</a></h3>
 <p>UI icons are defined by CSS variables provided by
-<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/icons.less"><code>@perspective-dev/viewer/dist/css/icons.css</code></a>.
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/icons.css"><code>@perspective-dev/viewer/dist/css/icons.css</code></a>.
 These variables must be defined for the UI icons to work - there are no default
 icons without a theme.</p>
 <p>UI text is also defined in CSS variables provided by
-<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/intl.less"><code>@perspective-dev/viewer/dist/css/intl.css</code></a>,
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/intl.css"><code>@perspective-dev/viewer/dist/css/intl.css</code></a>,
 and has identical import requirements. Some <em>example definitions</em>
 (automatically-translated sans-editing) can be found
 <a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes/intl"><code>@perspective-dev/viewer/dist/css/intl/</code> folder</a>.</p>
@@ -2737,6 +2897,55 @@ const table = websocket.open_table("data_source");
 document.getElementById("viewer").load(table);
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="joining-tables-1"><a class="header" href="#joining-tables-1">Joining Tables</a></h1>
+<p><code>perspective.join()</code> creates a read-only <code>Table</code> by joining two source tables on
+a shared key column. The result is reactive — it updates automatically when
+either source table changes. See <a href="#join"><code>Join</code></a> for
+conceptual details.</p>
+<h2 id="basic-inner-join-1"><a class="header" href="#basic-inner-join-1">Basic Inner Join</a></h2>
+<pre><code class="language-python">orders = perspective.table([
+    {"id": 1, "product_id": 101, "qty": 5},
+    {"id": 2, "product_id": 102, "qty": 3},
+    {"id": 3, "product_id": 101, "qty": 7},
+])
+
+products = perspective.table([
+    {"product_id": 101, "name": "Widget"},
+    {"product_id": 102, "name": "Gadget"},
+])
+
+joined = perspective.join(orders, products, "product_id")
+view = joined.view()
+json = view.to_json()
+</code></pre>
+<h2 id="join-types-2"><a class="header" href="#join-types-2">Join Types</a></h2>
+<p>Pass <code>join_type</code> to select inner, left, or outer join behavior:</p>
+<pre><code class="language-python"># Left join: all left rows, nulls for unmatched right columns
+left_joined = perspective.join(left, right, "id", join_type="left")
+
+# Outer join: all rows from both tables
+outer_joined = perspective.join(left, right, "id", join_type="outer")
+</code></pre>
+<h2 id="reactive-updates-2"><a class="header" href="#reactive-updates-2">Reactive Updates</a></h2>
+<p>The joined table recomputes automatically when either source table is updated:</p>
+<pre><code class="language-python">left = perspective.table([{"id": 1, "x": 10}])
+right = perspective.table([{"id": 2, "y": "b"}])
+
+joined = perspective.join(left, right, "id")
+view = joined.view()
+
+json = view.to_json()
+# [] — no matching keys yet
+
+right.update([{"id": 1, "y": "a"}])
+json = view.to_json()
+# [{"id": 1, "x": 10, "y": "a"}] — new match detected
+</code></pre>
+<h2 id="async-client"><a class="header" href="#async-client">Async Client</a></h2>
+<p>The async client has the same API:</p>
+<pre><code class="language-python">joined = await client.join(orders, products, "product_id", join_type="left")
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="perspectivewidget-for-jupyterlab"><a class="header" href="#perspectivewidget-for-jupyterlab"><code>PerspectiveWidget</code> for JupyterLab</a></h1>
 <p>Building on top of the API provided by <code>perspective.Table</code>, the
 <code>PerspectiveWidget</code> is a JupyterLab plugin that offers the entire functionality
@@ -3001,6 +3210,63 @@ let data = UpdateData::Arrow(feather.into());
 let mut options = TableInitOptions::default();
 options.set_name("my_data_source");
 client.table(data.into(), options).await?;
+<span class="boring">}</span></code></pre>
+<h1 id="joining-tables-2"><a class="header" href="#joining-tables-2">Joining Tables</a></h1>
+<p><code>Client::join</code> creates a read-only <code>Table</code> by joining two source tables on a
+shared key column. The result is reactive — it updates automatically when
+either source table changes. See <a href="#join"><code>Join</code></a> for
+conceptual details.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let orders = client.table(
+    TableData::Update(UpdateData::JsonRows(
+        "[{\"id\":1,\"product_id\":101,\"qty\":5},{\"id\":2,\"product_id\":102,\"qty\":3}]".into(),
+    )),
+    TableInitOptions::default(),
+).await?;
+
+let products = client.table(
+    TableData::Update(UpdateData::JsonRows(
+        "[{\"product_id\":101,\"name\":\"Widget\"},{\"product_id\":102,\"name\":\"Gadget\"}]".into(),
+    )),
+    TableInitOptions::default(),
+).await?;
+
+let joined = client.join(
+    (&amp;orders).into(),
+    (&amp;products).into(),
+    "product_id",
+    JoinOptions::default(),
+).await?;
+
+let view = joined.view(None).await?;
+let json = view.to_json().await?;
+<span class="boring">}</span></code></pre>
+<p>Use <code>JoinOptions</code> to configure the join type, table name, or <code>right_on</code> column:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let options = JoinOptions {
+    join_type: Some(JoinType::Left),
+    name: Some("orders_with_products".into()),
+    right_on: None,
+};
+
+let joined = client.join(
+    (&amp;orders).into(),
+    (&amp;products).into(),
+    "product_id",
+    options,
+).await?;
+<span class="boring">}</span></code></pre>
+<p>You can also join by table name strings instead of <code>Table</code> references:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let joined = client.join(
+    "orders".into(),
+    "products".into(),
+    "product_id",
+    JoinOptions::default(),
+).await?;
 <span class="boring">}</span></code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="tutorial-a-tornado-server-in-python"><a class="header" href="#tutorial-a-tornado-server-in-python">Tutorial: A tornado server in Python</a></h1>
