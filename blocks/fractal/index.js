@@ -10,11 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-d3fc/dist/cdn/perspective-viewer-d3fc.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.0/dist/cdn/perspective-viewer-charts.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client/dist/cdn/perspective.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.0/dist/cdn/perspective.js";
 
 function generate_mandelbrot(params) {
     return `
@@ -56,6 +56,7 @@ c`;
 function generate_layout(params) {
     return {
         plugin: "Heatmap",
+        table: "raw_data",
         settings: true,
         group_by: [`floor("index" / ${params.resolution})`],
         split_by: [`"index" % ${params.resolution}`],
@@ -116,10 +117,16 @@ const make_run_click_callback = (worker, state) => async () => {
 
     window.run.disabled = true;
     if (!state.table) {
-        state.table = await worker.table({
-            index: "integer",
-        });
-        window.viewer.load(Promise.resolve(state.table));
+        state.table = await worker.table(
+            {
+                index: "integer",
+            },
+            {
+                name: "raw_data",
+            },
+        );
+
+        window.viewer.load(worker);
     }
 
     const run = document.getElementById("run");
@@ -143,8 +150,6 @@ function set_runnable() {
     window.run.disabled = false;
 }
 
-const heatmap_plugin = await window.viewer.getPlugin("Heatmap");
-heatmap_plugin.max_cells = 100000;
 make_range(xmin, xmax, "X");
 make_range(ymin, ymax, "Y");
 window.resolution.addEventListener("input", set_runnable);
@@ -154,4 +159,5 @@ run.addEventListener(
     "click",
     make_run_click_callback(await perspective.worker(), {}),
 );
+
 run.dispatchEvent(new Event("click"));

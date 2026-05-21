@@ -10,11 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-d3fc/dist/cdn/perspective-viewer-d3fc.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.0/dist/cdn/perspective-viewer-charts.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client/dist/cdn/perspective.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.0/dist/cdn/perspective.js";
 
 const MSG_BATCH_TIMEOUT = 50;
 const MSG_PER_BATCH = 10;
@@ -250,8 +250,12 @@ async function init_tables() {
     const gui_worker = await perspective.worker();
     const market_table = await market_worker.table(SCHEMA, { index: "id" });
     const market_view = await market_table.view();
-    const gui_table = await gui_worker.table(market_view, { index: "id" });
-    return { market_table, gui_table };
+    const gui_table = await gui_worker.table(market_view, {
+        index: "id",
+        name: "gui",
+    });
+
+    return { market_table, gui_table, gui_worker };
 }
 
 async function init_layouts() {
@@ -261,14 +265,15 @@ async function init_layouts() {
 
 const INIT_TASK = [init_tables(), init_layouts()];
 
-const [{ market_table, gui_table }, layouts] = await Promise.all(INIT_TASK);
+const [{ market_table, gui_table, gui_worker }, layouts] =
+    await Promise.all(INIT_TASK);
 const market = new Market(market_table, skew_model);
 const settings = !/(iPad|iPhone|iPod)/g.test(navigator.userAgent);
 const select = document.querySelector("select");
 const button = document.querySelector("button");
 const viewer = document.querySelector("perspective-viewer");
-viewer.load(gui_table);
-viewer.restore({ theme: "Pro Dark", settings, ...layouts[0] });
+viewer.load(gui_worker);
+viewer.restore({ theme: "Pro Dark", table: "gui", settings, ...layouts[0] });
 await market.poll(progress);
 for (const layout of layouts) {
     const option = document.createElement("option");

@@ -14,6 +14,10 @@
                 right: 0;
             }
 
+            body {
+                overflow: hidden;
+            }
+
             perspective-viewer {
                 --d3fc-positive--gradient: linear-gradient(#94d0ff, #8795e8, #966bff, #ad8cff, #c774e8, #c774a9, #ff6ad5, #ff6a8b, #ff8b8b, #ffa58b, #ffde8b, #cdde8b, #8bde8b, #20de8b) !important;
                 --d3fc-negative--gradient: linear-gradient(#94d0ff, #8795e8, #966bff, #ad8cff, #c774e8, #c774a9, #ff6ad5, #ff6a8b, #ff8b8b, #ffa58b, #ffde8b, #cdde8b, #8bde8b, #20de8b) !important;
@@ -22,16 +26,14 @@
         </style>
     </head>
     <body>
-        <perspective-workspace id="workspace">
-            <perspective-viewer table="movies"></perspective-viewer>
-        </perspective-workspace>
+        <perspective-workspace id="workspace"> </perspective-workspace>
         <script type="module">
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/cdn/perspective-viewer.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace/dist/cdn/perspective-workspace.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid/dist/cdn/perspective-viewer-datagrid.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-d3fc/dist/cdn/perspective-viewer-d3fc.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.0/dist/cdn/perspective-viewer.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.5.0/dist/cdn/perspective-workspace.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.0/dist/cdn/perspective-viewer-datagrid.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.0/dist/cdn/perspective-viewer-charts.js";
 
-            import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client/dist/cdn/perspective.js";
+            import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.0/dist/cdn/perspective.js";
 
             const SCHEMA = {
                 Title: "string",
@@ -54,7 +56,7 @@
 
             const MOVIES_URL = "https://vega.github.io/editor/data/movies.json";
 
-            const datasource = async () => {
+            (async () => {
                 const request = fetch(MOVIES_URL);
                 const worker = await perspective.worker();
                 const response = await request;
@@ -62,16 +64,14 @@
                 for (const row of json) {
                     row["Release Date"] = row["Release Date"] ? new Date(row["Release Date"]) || null : null;
                 }
-                const table = await worker.table(SCHEMA);
+
+                const table = await worker.table(SCHEMA, { name: "movies" });
                 table.update(json);
-                return table;
-            };
-
-            let req = await fetch("layout.json");
-            let layout = await req.json();
-
-            window.workspace.tables.set("movies", datasource());
-            window.workspace.restore(layout);
+                let req = await fetch("layout.json");
+                let layout = await req.json();
+                await window.workspace.load(worker);
+                await window.workspace.restore(layout);
+            })();
         </script>
     </body>
 </html>
