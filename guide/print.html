@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-e745ee6e.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-d9908d61.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-ed7dc2db.js";
+            window.path_to_searchindex_js = "searchindex-db208032.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-1b076223.js"></script>
@@ -1691,6 +1691,19 @@ const worker = await perspective.worker();
 const viewer = document.createElement("perspective-viewer");
 </code></pre>
 <p>The exact syntax will vary slightly depending on the bundler.</p>
+<h3 id="memory64-wasm64"><a class="header" href="#memory64-wasm64">Memory64 (wasm64)</a></h3>
+<p><code>@perspective-dev/server</code> also ships a WebAssembly Memory64 build of the
+engine, <code>dist/wasm/perspective-server.memory64.wasm</code>, which raises the
+engine’s heap ceiling from 4GB to 16GB (at some engine performance cost).
+<code>init_server</code> accepts both binaries at once — register each as a <em>thunk</em> and
+only the selected binary is ever downloaded. The wasm64 binary is used
+whenever the browser supports Memory64; registering only the wasm32 binary
+(as above) opts out.</p>
+<pre><code class="language-javascript">perspective.init_server({
+    wasm32: () =&gt; fetch(SERVER_WASM),
+    wasm64: () =&gt; fetch(SERVER_WASM64),
+});
+</code></pre>
 <h3 id="vite"><a class="header" href="#vite">Vite</a></h3>
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm?url";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm?url";
@@ -2279,6 +2292,19 @@ Chrome developer console:</p>
 <pre><code class="language-javascript">// Copy to clipboard
 copy(await document.querySelector("perspective-viewer").save());
 </code></pre>
+<h2 id="multi-panel-viewers"><a class="header" href="#multi-panel-viewers">Multi-panel viewers</a></h2>
+<p><code>save()</code> and <code>restore()</code> operate on a <em>single</em> panel — the <em>active</em> one by
+default, or a specific panel via their optional <code>{ panel }</code> selector (e.g.
+<code>await elem.save({ panel: "my-panel" })</code>). If <code>restore()</code>’s <code>panel</code> names no
+existing panel, a new panel is created with that id.</p>
+<p>A <code>&lt;perspective-viewer&gt;</code> may host multiple panels. To serialize or restore the
+<em>whole element</em> — every panel plus the layout and cross-filter state — use
+<code>saveWorkspace()</code> and <code>restoreWorkspace()</code> instead:</p>
+<pre><code class="language-javascript">const workspace_token = await elem.saveWorkspace();
+await elem.restoreWorkspace(workspace_token);
+</code></pre>
+<p>A <code>saveWorkspace()</code> token is a <code>WorkspaceConfig</code> (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the single-panel <code>restore()</code> will
+<em>not</em> restore the layout (its <code>panels</code>/<code>layout</code> keys are ignored).</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="listening-for-events"><a class="header" href="#listening-for-events">Listening for events</a></h1>
 <p>The <code>&lt;perspective-viewer&gt;</code> Custom Element fires all the same HTML <code>Event</code>s that
@@ -2537,20 +2563,6 @@ function App() {
     );
 }
 </code></pre>
-<h2 id="perspectiveworkspace"><a class="header" href="#perspectiveworkspace"><code>PerspectiveWorkspace</code></a></h2>
-<p>For multi-viewer layouts, use <code>PerspectiveWorkspace</code>:</p>
-<pre><code class="language-typescript">import { PerspectiveWorkspace } from "@perspective-dev/react";
-
-const WORKSPACE_CONFIG =  // ...
-
-function Dashboard() {
-    return (
-        &lt;PerspectiveWorkspace
-            client={perspective.worker()}
-            config={WORKSPACE_CONFIG} /&gt;
-    );
-}
-</code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="what-is-perspective-python"><a class="header" href="#what-is-perspective-python">What is <code>perspective-python</code></a></h1>
 <p>Perspective for Python uses the exact same C++ data engine used by the
@@ -2704,6 +2716,14 @@ epoch) from methods like <code>to_columns()</code> and <code>to_json()</code>.</
 <code>datetime</code> objects (without <code>tzinfo</code>) produce strings without timezone
 information and are therefore treated as UTC. Timezone-aware <code>datetime</code> objects
 include their offset in the serialized string, which is used to convert to UTC.</p>
+<p><code>"date"</code> values are timezone-agnostic calendar days with no time component.
+They are <em>output</em> as integer timestamps at <em>UTC midnight</em> of the calendar day
+(equivalent to Arrow <code>date32</code> day arithmetic), and integer timestamp <em>input</em> to
+a <code>"date"</code> column is likewise interpreted as UTC. The host process timezone
+never affects <code>"date"</code> values — a <code>Viewer</code> renders them in UTC, recovering the
+stored calendar day exactly. Datetime expression functions such as
+<code>bucket("x", 'D')</code>, <code>day_of_week("x")</code> and <code>hour_of_day("x")</code> also compute in
+UTC.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="dataframe-and-arrow-compatibility"><a class="header" href="#dataframe-and-arrow-compatibility">DataFrame and Arrow Compatibility</a></h1>
 <p><code>perspective-python</code> accepts a <code>Table</code> constructor argument from any of the

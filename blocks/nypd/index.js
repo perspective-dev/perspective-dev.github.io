@@ -10,12 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.1/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.5.1/dist/cdn/perspective-workspace.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.1/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.1/dist/cdn/perspective-viewer-charts.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.0.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.0.0/dist/cdn/perspective-viewer-charts.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.1/dist/cdn/perspective.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/cdn/perspective.js";
 
 let DATA_URL = "nypdccrb.arrow";
 
@@ -61,11 +60,11 @@ async function fetch_progress(url) {
 }
 
 DARK_THEME = await fetch(
-    "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace/dist/css/pro-dark.css",
+    "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/css/pro-dark.css",
 ).then((x) => x.text());
 
 LIGHT_THEME = await fetch(
-    "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace/dist/css/pro.css",
+    "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/css/pro.css",
 ).then((x) => x.text());
 
 document.body.innerHTML = `
@@ -84,23 +83,13 @@ document.body.innerHTML = `
             <a href="https://github.com/texodus/nypd-ccrb">NYCLU/CCRB Data</a>
             <a href="https://github.com/perspective-dev/perspective">Built With Perspective</a>
         </div>
-        <perspective-workspace id='workspace'></perspective-workspace>
+        <perspective-viewer id='workspace'></perspective-viewer>
     `.trim();
 
 toggle_theme();
 
-window.workspace.addEventListener(
-    "workspace-new-view",
-    ({ detail: { widget } }) => {
-        widget.viewer.setAttribute("theme", theme_style_node.dataset.theme);
-    },
-);
-
-window.workspace.addTable(
-    "ccrb",
-    (async () => worker.table(await fetch_progress(DATA_URL)))(),
-    // worker.table(await fetch_progress(DATA_URL))
-);
+await worker.table(await fetch_progress(DATA_URL), { name: "ccrb" });
+window.workspace.load(worker);
 
 if (LAYOUTS == undefined) {
     LAYOUTS = await (await fetch("./layout.json")).json();
@@ -108,7 +97,7 @@ if (LAYOUTS == undefined) {
 
 const layout_names = Object.keys(LAYOUTS);
 let selected_layout = LAYOUTS[layout_names[0]];
-await window.workspace.restore(selected_layout);
+await window.workspace.restoreWorkspace(selected_layout);
 
 function set_layout_options() {
     const layout_names = Object.keys(LAYOUTS);
@@ -128,8 +117,7 @@ window.layouts.addEventListener("change", async () => {
         return;
     }
 
-    window.workspace.innerHTML = "";
-    await window.workspace.restore(LAYOUTS[window.layouts.value]);
+    await window.workspace.restoreWorkspace(LAYOUTS[window.layouts.value]);
     window.name_input.value = window.layouts.value;
 });
 
@@ -162,7 +150,7 @@ window.reset.addEventListener("click", () => {
 });
 
 window.save.addEventListener("click", async () => {
-    const token = await window.workspace.save();
+    const token = await window.workspace.saveWorkspace();
     const new_name = window.name_input.value;
     LAYOUTS[new_name] = token;
     set_layout_options();

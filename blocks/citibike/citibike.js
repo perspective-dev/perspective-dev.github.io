@@ -11,7 +11,6 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.2.0/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.2.0/dist/cdn/perspective-workspace.js";
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.2.0/dist/cdn/perspective-viewer-datagrid.js";
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-d3fc@4.2.0/dist/cdn/perspective-viewer-d3fc.js";
 import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-openlayers/dist/cdn/perspective-viewer-openlayers.js";
@@ -77,7 +76,10 @@ async function main() {
     const schema = await merge_schemas(feeds);
 
     // Creating a table by joining feeds with an index
-    const table = await worker.table(schema, { index: "station_id" });
+    const table = await worker.table(schema, {
+        index: "station_id",
+        name: "citibike",
+    });
 
     // Load the `table` in the `<perspective-viewer>` DOM reference with the initial `feeds`.
     for (let feed of feeds) {
@@ -87,7 +89,7 @@ async function main() {
     // Start a recurring asyn call to `get_feed` and update the `table` with the response.
     get_feed("station_status", table.update.bind(table));
 
-    window.workspace.tables.set("citibike", Promise.resolve(table));
+    window.workspace.load(worker);
     const layout = await get_layout();
     window.workspace.restore(layout);
 }

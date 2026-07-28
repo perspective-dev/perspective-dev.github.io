@@ -10,19 +10,19 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.1/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.1/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.1/dist/cdn/perspective-viewer-charts.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.0.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.0.0/dist/cdn/perspective-viewer-charts.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.1/dist/cdn/perspective.js";
-import { DuckDBHandler } from "https://cdn.jsdelivr.net/npm/@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/cdn/perspective.js";
+import { DuckDBHandler } from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/esm/virtual_servers/duckdb.js";
 
 // Need to use jsDelivr's ESM features to load this as packaged.
 import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev18.0/+esm";
 
 const LOGGER = {
     log(entry) {
-        table2.update([{ timestamp: entry.timestamp, sql: entry.value }]);
+        // table2.update([{ timestamp: entry.timestamp, sql: entry.value }]);
     },
 };
 
@@ -30,31 +30,31 @@ const db = await initializeDuckDB();
 const server = perspective.createMessageHandler(new DuckDBHandler(db));
 const client = await perspective.worker(server);
 
-const logworker = await perspective.worker();
-const table2 = await logworker.table(
-    { timestamp: "datetime", sql: "string" },
-    { name: "logs", limit: 10_000 },
-);
+// const logworker = await perspective.worker();
+// const table2 = await logworker.table(
+//     { timestamp: "datetime", sql: "string" },
+//     { name: "logs", limit: 10_000 },
+// );
 
-const log_element = document.querySelector("#logger");
-log_element.load(logworker);
-log_element.restore({
-    table: "logs",
-    sort: [["timestamp", "desc"]],
-    title: "SQL Log",
-});
+// const log_element = document.querySelector("#logger");
+// log_element.load(logworker);
+// log_element.restore({
+//     table: "logs",
+//     sort: [["timestamp", "desc"]],
+//     title: "SQL Log",
+// });
 
-const log_element2 = document.querySelector("#logger2");
-log_element2.load(logworker);
-log_element2.restore({
-    table: "logs",
-    sort: [["timestamp", "desc"]],
-    columns: ["sql"],
-    group_by: ["1s"],
-    plugin: "Y Bar",
-    expressions: { "1s": `bucket("timestamp",'1s')` },
-    title: "SQL Timeline",
-});
+// const log_element2 = document.querySelector("#logger2");
+// log_element2.load(logworker);
+// log_element2.restore({
+//     table: "logs",
+//     sort: [["timestamp", "desc"]],
+//     columns: ["sql"],
+//     group_by: ["1s"],
+//     plugin: "Y Bar",
+//     expressions: { "1s": `bucket("timestamp",'1s')` },
+//     title: "SQL Timeline",
+// });
 
 async function initializeDuckDB() {
     const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
@@ -75,7 +75,7 @@ async function initializeDuckDB() {
 
 async function loadSampleData(db) {
     const response = await fetch(
-        "https://cdn.jsdelivr.net/npm/superstore-arrow/superstore.lz4.arrow",
+        "https://cdn.jsdelivr.net/npm/superstore-arrow@3.2.0/superstore.lz4.arrow",
     );
 
     const text = await response.arrayBuffer();

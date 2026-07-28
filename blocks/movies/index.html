@@ -1,12 +1,11 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
-        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@perspective-dev/server/dist/wasm/perspective-server.wasm" as="fetch" type="application/wasm" crossorigin="anonymous" />
-        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm" as="fetch" type="application/wasm" crossorigin="anonymous" />
-        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/css/pro-dark.css" />
-        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/workspace/dist/css/pro-dark.css" />
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@perspective-dev/server@5.0.0/dist/wasm/perspective-server.wasm" as="fetch" type="application/wasm" crossorigin="anonymous" />
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/wasm/perspective-viewer.wasm" as="fetch" type="application/wasm" crossorigin="anonymous" />
+        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/css/pro-dark.css" />
         <style>
-            perspective-workspace {
+            perspective-viewer {
                 left: 0;
                 position: absolute;
                 top: 0;
@@ -26,14 +25,13 @@
         </style>
     </head>
     <body>
-        <perspective-workspace id="workspace"> </perspective-workspace>
+        <perspective-viewer id="workspace"> </perspective-viewer>
         <script type="module">
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.1/dist/cdn/perspective-viewer.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.5.1/dist/cdn/perspective-workspace.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.1/dist/cdn/perspective-viewer-datagrid.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.1/dist/cdn/perspective-viewer-charts.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/cdn/perspective-viewer.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.0.0/dist/cdn/perspective-viewer-datagrid.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.0.0/dist/cdn/perspective-viewer-charts.js";
 
-            import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.1/dist/cdn/perspective.js";
+            import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/cdn/perspective.js";
 
             const SCHEMA = {
                 Title: "string",
@@ -70,7 +68,7 @@
                 let req = await fetch("layout.json");
                 let layout = await req.json();
                 await window.workspace.load(worker);
-                await window.workspace.restore(layout);
+                await window.workspace.restoreWorkspace(layout);
             })();
         </script>
     </body>

@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-e745ee6e.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-d9908d61.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-ed7dc2db.js";
+            window.path_to_searchindex_js = "../../searchindex-db208032.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-1b076223.js"></script>
@@ -261,6 +261,19 @@ Chrome developer console:</p>
 <pre><code class="language-javascript">// Copy to clipboard
 copy(await document.querySelector("perspective-viewer").save());
 </code></pre>
+<h2 id="multi-panel-viewers"><a class="header" href="#multi-panel-viewers">Multi-panel viewers</a></h2>
+<p><code>save()</code> and <code>restore()</code> operate on a <em>single</em> panel — the <em>active</em> one by
+default, or a specific panel via their optional <code>{ panel }</code> selector (e.g.
+<code>await elem.save({ panel: "my-panel" })</code>). If <code>restore()</code>’s <code>panel</code> names no
+existing panel, a new panel is created with that id.</p>
+<p>A <code>&lt;perspective-viewer&gt;</code> may host multiple panels. To serialize or restore the
+<em>whole element</em> — every panel plus the layout and cross-filter state — use
+<code>saveWorkspace()</code> and <code>restoreWorkspace()</code> instead:</p>
+<pre><code class="language-javascript">const workspace_token = await elem.saveWorkspace();
+await elem.restoreWorkspace(workspace_token);
+</code></pre>
+<p>A <code>saveWorkspace()</code> token is a <code>WorkspaceConfig</code> (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the single-panel <code>restore()</code> will
+<em>not</em> restore the layout (its <code>panels</code>/<code>layout</code> keys are ignored).</p>
 
                     </main>
 

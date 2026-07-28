@@ -1,0 +1,2 @@
+var t=class{selected;row;column_names;removeConfigs;insertConfigs;panel;constructor(e,i,n,r,s,o){this.selected=e,this.row=i,this.column_names=n,this.removeConfigs=r,this.insertConfigs=s,this.panel=o}get removeFilters(){return this.removeConfigs.flatMap(e=>e.filter??[])}get insertFilters(){return this.insertConfigs.flatMap(e=>e.filter??[])}};export{t as a};
+//# sourceMappingURL=chunk-GKKH2Y6Z.js.map

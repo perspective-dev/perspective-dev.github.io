@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-e745ee6e.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-d9908d61.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-ed7dc2db.js";
+            window.path_to_searchindex_js = "../../searchindex-db208032.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-1b076223.js"></script>
@@ -242,6 +242,14 @@ epoch) from methods like <code>to_columns()</code> and <code>to_json()</code>.</
 <code>datetime</code> objects (without <code>tzinfo</code>) produce strings without timezone
 information and are therefore treated as UTC. Timezone-aware <code>datetime</code> objects
 include their offset in the serialized string, which is used to convert to UTC.</p>
+<p><code>"date"</code> values are timezone-agnostic calendar days with no time component.
+They are <em>output</em> as integer timestamps at <em>UTC midnight</em> of the calendar day
+(equivalent to Arrow <code>date32</code> day arithmetic), and integer timestamp <em>input</em> to
+a <code>"date"</code> column is likewise interpreted as UTC. The host process timezone
+never affects <code>"date"</code> values — a <code>Viewer</code> renders them in UTC, recovering the
+stored calendar day exactly. Datetime expression functions such as
+<code>bucket("x", 'D')</code>, <code>day_of_week("x")</code> and <code>hour_of_day("x")</code> also compute in
+UTC.</p>
 
                     </main>
 

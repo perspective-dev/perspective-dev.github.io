@@ -2,10 +2,9 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no" />
-        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer/dist/css/pro.css" />
-        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/workspace/dist/css/pro.css" />
+        <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/css/pro.css" />
         <style>
-            perspective-workspace {
+            perspective-viewer {
                 flex: 1;
                 overflow: visible;
                 border: 1px solid #666;
@@ -86,18 +85,17 @@
                     <input id="num_boolean" min="0" max="50" type="number" placeholder="#" value="1" />
                 </div>
             </div>
-            <perspective-workspace id="psp_workspace">
+            <perspective-viewer id="psp_workspace">
                 <!-- <perspective-viewer editable id="viewer"></perspective-viewer>
             <perspective-viewer editable id="stats"></perspective-viewer> -->
-            </perspective-workspace>
+            </perspective-viewer>
         </div>
 
         <script type="module">
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@4.5.1/dist/cdn/perspective-viewer-datagrid.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@4.5.1/dist/cdn/perspective-viewer-charts.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@4.5.1/dist/cdn/perspective-viewer.js";
-            import "https://cdn.jsdelivr.net/npm/@perspective-dev/workspace@4.5.1/dist/cdn/perspective-workspace.js";
-            import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@4.5.1/dist/cdn/perspective.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.0.0/dist/cdn/perspective-viewer-datagrid.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.0.0/dist/cdn/perspective-viewer-charts.js";
+            import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/cdn/perspective-viewer.js";
+            import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/cdn/perspective.js";
 
             const client = await perspective.worker();
 
@@ -180,12 +178,10 @@
 
             const make_del_click_callback = (state) => async () => {
                 if (state.table) {
-                    // await viewer.eject();
-                    // await window.psp_workspace.removeTable("superstore");
-                    for (const viewer of window.psp_workspace.children) {
-                        const cfg = await viewer.save();
+                    for (const name of window.psp_workspace.getPanelNames()) {
+                        const cfg = await window.psp_workspace.save({ panel: name });
                         if (cfg.table === "superstore") {
-                            await viewer.eject();
+                            window.psp_workspace.removePanel(name);
                         }
                     }
 
@@ -224,7 +220,7 @@
             })();
 
             await window.psp_workspace.load(client);
-            await window.psp_workspace.restore(await fetch("layout.json").then((x) => x.json()));
+            await window.psp_workspace.restoreWorkspace(await fetch("layout.json").then((x) => x.json()));
         </script>
     </body>
 </html>
