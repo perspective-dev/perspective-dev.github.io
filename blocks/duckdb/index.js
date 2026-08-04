@@ -10,12 +10,12 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.0.0/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.0.0/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.0.0/dist/cdn/perspective-viewer-charts.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.1.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.1.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.1.0/dist/cdn/perspective-viewer-charts.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/cdn/perspective.js";
-import { DuckDBHandler } from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.0.0/dist/esm/virtual_servers/duckdb.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.1.0/dist/cdn/perspective.js";
+import { DuckDBHandler } from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.1.0/dist/esm/virtual_servers/duckdb.js";
 
 // Need to use jsDelivr's ESM features to load this as packaged.
 import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev18.0/+esm";
