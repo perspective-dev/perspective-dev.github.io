@@ -10,11 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.1.0/dist/cdn/perspective-viewer.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.1.0/dist/cdn/perspective-viewer-datagrid.js";
-import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.1.0/dist/cdn/perspective-viewer-charts.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.2.0/dist/cdn/perspective-viewer.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-datagrid@5.2.0/dist/cdn/perspective-viewer-datagrid.js";
+import "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer-charts@5.2.0/dist/cdn/perspective-viewer-charts.js";
 
-import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.1.0/dist/cdn/perspective.js";
+import perspective from "https://cdn.jsdelivr.net/npm/@perspective-dev/client@5.2.0/dist/cdn/perspective.js";
 
 let DATA_URL = "nypdccrb.arrow";
 
@@ -60,11 +60,11 @@ async function fetch_progress(url) {
 }
 
 DARK_THEME = await fetch(
-    "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.1.0/dist/css/pro-dark.css",
+    "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.2.0/dist/css/pro-dark.css",
 ).then((x) => x.text());
 
 LIGHT_THEME = await fetch(
-    "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.1.0/dist/css/pro.css",
+    "https://cdn.jsdelivr.net/npm/@perspective-dev/viewer@5.2.0/dist/css/pro.css",
 ).then((x) => x.text());
 
 document.body.innerHTML = `

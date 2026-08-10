@@ -1,2 +1,0 @@
-var a=(async()=>{let e=await import("./perspective-3BETUHUA.js"),r=await import("./perspective-viewer-AGT6LMAS.js"),i=import("./perspective-server-TG3NRONT.js"),n=import("./perspective-viewer-EXYUJWPP.js");return await Promise.all([e.init_server(i.then(t=>t.default)),r.init_client(n.then(t=>t.default))]),await e.worker()})();function o(){return a}export{o as a};
-//# sourceMappingURL=chunk-42FBQEUH.js.map

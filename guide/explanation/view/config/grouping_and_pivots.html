@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-1b076223.js"></script>
+        <script src="../../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -211,6 +211,44 @@ Code, which are grouped by City, which are in turn grouped by State.</p>
 <span class="boring">}</span></code></pre>
 </div>
 
+<h3 id="group_rollup_mode"><a class="header" href="#group_rollup_mode"><code>group_rollup_mode</code></a></h3>
+<p>The <code>group_rollup_mode</code> option controls how the grouped rows themselves render:</p>
+<ul>
+<li><code>"rollup"</code> (the default) - the full hierarchy, with a subtotal row for
+every group at every level and a grand total row, each addressable by its
+<code>__ROW_PATH__</code>.</li>
+<li><code>"flat"</code> - leaf rows only, one row per deepest-level group, with no
+subtotal or grand total rows. Useful for chart plugins and exports where
+subtotal rows would double-count.</li>
+<li><code>"total"</code> - the grand total row <em>only</em>. <code>"total"</code> is mutually exclusive
+with <code>group_by</code> (which is cleared when it is set) - it is the one shape
+an empty <code>group_by</code> cannot express, since no <code>group_by</code> at all yields the
+unaggregated dataset.</li>
+</ul>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    group_by: ["a"],
+    group_rollup_mode: "flat",
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(group_by=["a"], group_rollup_mode="flat")
+</code></pre>
+</div>
+
+<div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    group_by: Some(vec!["a".into()]),
+    group_rollup_mode: Some(GroupRollupMode::Flat),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
+</div>
+
 <h2 id="split-by"><a class="header" href="#split-by">Split By</a></h2>
 <p>A split by <em>splits</em> the dataset by the unique values of each column used as a
 split by. The underlying dataset is not aggregated, and a new column is created
@@ -234,6 +272,50 @@ pivot:</p>
 </span><span class="boring">fn main() {
 </span>let view = table.view(Some(ViewConfigUpdate {
     split_by: Some(vec!["a".into(), "c".into()]),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
+</div>
+
+<h3 id="split_rollup_mode"><a class="header" href="#split_rollup_mode"><code>split_rollup_mode</code></a></h3>
+<p>The <code>split_rollup_mode</code> option is the <code>split_by</code> counterpart to
+<a href="#group_rollup_mode"><code>group_rollup_mode</code></a>, controlling whether subtotal
+<em>column groups</em> are emitted:</p>
+<ul>
+<li><code>"flat"</code> (the default) - only full-depth split combinations appear as
+columns, e.g. <code>"CA|Sales"</code>. This is Perspective’s historical behavior.</li>
+<li><code>"rollup"</code> - additionally emits a grand-total column per aggregate (named
+by the bare column name, e.g. <code>"Sales"</code>, aggregating across every split
+group) and, when more than one <code>split_by</code> column is applied, a subtotal
+column per intermediate split group (e.g. <code>"CA|Sales"</code> alongside
+<code>"CA|First Class|Sales"</code>). Total and subtotal columns precede their
+groups, in pre-order.</li>
+</ul>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    group_by: ["State"],
+    split_by: ["Ship Mode"],
+    split_rollup_mode: "rollup",
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(
+    group_by=["State"],
+    split_by=["Ship Mode"],
+    split_rollup_mode="rollup",
+)
+</code></pre>
+</div>
+
+<div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    group_by: Some(vec!["State".into()]),
+    split_by: Some(vec!["Ship Mode".into()]),
+    split_rollup_mode: Some(SplitRollupMode::Rollup),
     ..ViewConfigUpdate::default()
 })).await?;
 <span class="boring">}</span></code></pre>
@@ -285,21 +367,199 @@ let view = table.view(Some(ViewConfigUpdate {
 <span class="boring">}</span></code></pre>
 </div>
 
-<p>The available aggregate functions depend on the column type:</p>
+<p>Every aggregate is described below, grouped by what it computes. Which of them
+a given column accepts depends on its type — see
+<a href="#availability-by-column-type">Availability by column type</a>.</p>
+<h3 id="sums-and-products"><a class="header" href="#sums-and-products">Sums and products</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sum</code></td><td>Total of the group’s values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum not null</code></td><td>As <code>sum</code>, but non-finite (<code>NaN</code>) values are skipped rather than poisoning the total</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum abs</code></td><td>Sum of the absolute values — <code>Σ abs(v)</code></td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>abs sum</code></td><td>Absolute value of the sum — <code>abs(Σ v)</code></td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>mul</code></td><td>Product of the group’s values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>gmv</code></td><td>Gross market value — leaf rows are a plain <code>sum</code>, parent rows sum the <em>absolute</em> subtotal of each immediate child group</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>pct sum parent</code></td><td>The group’s <code>sum</code> as a percentage of its parent row’s, <code>0</code>–<code>100</code>; <code>100</code> at the root, and <code>null</code> when the parent’s sum is <code>0</code></td><td><code>float</code></td></tr>
+<tr><td><code>pct sum total</code></td><td>The group’s <code>sum</code> as a percentage of the grand total, <code>0</code>–<code>100</code></td><td><code>float</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>A numeric aggregate widens to the input’s numeric class — <code>integer</code> columns
+accumulate as <code>integer</code>, <code>float</code> columns as <code>float</code>.</p>
+<h3 id="averages-and-dispersion"><a class="header" href="#averages-and-dispersion">Averages and dispersion</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>avg</code></td><td>Arithmetic mean of the non-null values</td><td><code>float</code></td></tr>
+<tr><td><code>weighted mean</code></td><td><code>Σ(value × weight) / Σ(weight)</code>, over rows where both the value and the weight are non-null and finite; <code>null</code> when the weights sum to <code>0</code>. Takes a <strong>weight column</strong> as an argument</td><td><code>float</code></td></tr>
+<tr><td><code>stddev</code></td><td>Population standard deviation</td><td><code>float</code></td></tr>
+<tr><td><code>var</code></td><td>Population variance — divides by <code>N</code>, not <code>N - 1</code></td><td><code>float</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>stddev</code> and <code>var</code> are <code>null</code> for a group of fewer than two non-null values.</p>
+<h3 id="extrema-and-order-statistics"><a class="header" href="#extrema-and-order-statistics">Extrema and order statistics</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>min</code>, <code>max</code></td><td>Smallest and largest of the group’s current values</td><td>input type</td></tr>
+<tr><td><code>min by</code>, <code>max by</code></td><td>The value from the row at which a <strong>second column</strong>, supplied as an argument, is smallest or largest</td><td>input type</td></tr>
+<tr><td><code>high</code>, <code>low</code></td><td>High and low <em>water mark</em> — the largest and smallest value this <code>View</code> has ever observed for the group, which never moves back when rows are updated or removed</td><td>input type</td></tr>
+<tr><td><code>high minus low</code></td><td><code>max - min</code> of the group’s current values, i.e. its range. Despite the name this uses <code>min</code>/<code>max</code>, not the water marks</td><td>input type</td></tr>
+<tr><td><code>median</code>, <code>q1</code>, <code>q3</code></td><td>The value at the 50%, 25% and 75% position of the group’s values; on <code>float</code> columns an exact split averages the two adjacent values</td><td>input type</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="positional"><a class="header" href="#positional">Positional</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>first</code></td><td>Value from the group’s earliest row</td><td>input type</td></tr>
+<tr><td><code>last by index</code></td><td>Value from the group’s latest row</td><td>input type</td></tr>
+<tr><td><code>last minus first</code></td><td><code>last by index</code> minus <code>first</code></td><td>input type</td></tr>
+<tr><td><code>last</code></td><td>Value from the group’s most recently <em>updated</em> row</td><td>input type</td></tr>
+</tbody>
+</table>
+</div>
+<p>“Earliest” and “latest” are by the <code>Table</code>’s <code>index</code> column, or by row order
+when the <code>Table</code> is unindexed. This is not the same as <code>last</code>, which tracks
+update recency rather than position.</p>
+<h3 id="cardinality-and-identity"><a class="header" href="#cardinality-and-identity">Cardinality and identity</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>count</code></td><td>Number of rows in the group</td><td><code>integer</code></td></tr>
+<tr><td><code>distinct count</code></td><td>Number of distinct values in the group</td><td><code>integer</code></td></tr>
+<tr><td><code>unique</code></td><td>The group’s value when every row shares one, otherwise <code>null</code></td><td>input type</td></tr>
+<tr><td><code>distinct leaf</code></td><td>As <code>unique</code>, but only on leaf rows — parent rows are blank</td><td>input type</td></tr>
+<tr><td><code>dominant</code></td><td>The most frequent non-null value, i.e. the mode; a tie resolves to whichever value reached the winning count first</td><td>input type</td></tr>
+<tr><td><code>any</code></td><td>The group’s first <em>truthy</em> value — any non-null value for <code>string</code> columns, the first non-zero for numbers and dates, the first <code>true</code> for <code>boolean</code> — or <code>null</code> if it has none</td><td>input type</td></tr>
+<tr><td><code>or</code></td><td>Identical to <code>any</code></td><td>input type</td></tr>
+<tr><td><code>and</code></td><td><code>true</code> when every value in the group is truthy, else <code>false</code></td><td><code>boolean</code></td></tr>
+<tr><td><code>join</code></td><td>The group’s distinct values, sorted and rendered as a <code>", "</code>-delimited string, truncated at 280 characters. Nulls render as <code>null</code></td><td><code>string</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="nulls"><a class="header" href="#nulls">Nulls</a></h3>
+<p>Null handling is not uniform, and is usually what makes two similar-looking
+aggregates differ:</p>
+<ul>
+<li><code>count</code> counts <strong>rows</strong>, not values — a group of 3 rows whose value is
+<code>null</code> counts <code>3</code>. This is not the same as the <code>count</code> <a href="./windows.html#aggregates">window
+aggregate</a>, which counts non-null values.</li>
+<li><code>distinct count</code> counts <code>null</code> as <strong>one distinct value</strong>, so a group of
+<code>[1, null, null]</code> counts <code>2</code>.</li>
+<li><code>sum</code>, <code>avg</code>, <code>stddev</code>, <code>var</code>, <code>dominant</code> and <code>weighted mean</code> skip nulls
+entirely. <code>avg</code> divides by the count of non-null values, so a group of all
+nulls is <code>null</code> rather than <code>0</code>.</li>
+<li><code>any</code> and <code>or</code> return the first <em>truthy</em> value, not the first non-null one —
+a numeric group of all <code>0</code>, or a <code>boolean</code> group of all <code>false</code>, aggregates
+to <code>null</code>.</li>
+<li><code>join</code> renders nulls into its output as the literal text <code>null</code>.</li>
+</ul>
+<h3 id="availability-by-column-type"><a class="header" href="#availability-by-column-type">Availability by column type</a></h3>
+<p>The aggregates a column accepts depend on its type:</p>
 <p><strong>Numeric columns</strong> (<code>integer</code>, <code>float</code>): <code>sum</code>, <code>abs sum</code>, <code>sum abs</code>,
-<code>sum not null</code>, <code>any</code>, <code>avg</code>, <code>mean</code>, <code>count</code>, <code>distinct count</code>, <code>dominant</code>,
-<code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>, <code>max</code>, <code>min</code>,
-<code>high minus low</code>, <code>last minus first</code>, <code>median</code>, <code>q1</code>, <code>q3</code>,
-<code>pct sum parent</code>, <code>pct sum total</code>, <code>stddev</code>, <code>var</code>, <code>unique</code>,
-<code>weighted mean</code>, <code>min by</code>, <code>max by</code>.</p>
-<p><strong>String columns</strong>: <code>count</code>, <code>any</code>, <code>distinct count</code>, <code>dominant</code>, <code>first</code>,
-<code>last</code>, <code>last by index</code>, <code>join</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>unique</code>, <code>min by</code>,
-<code>max by</code>.</p>
-<p><strong>Date/Datetime columns</strong>: <code>count</code>, <code>any</code>, <code>avg</code>, <code>distinct count</code>, <code>dominant</code>,
-<code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>, <code>max</code>, <code>min</code>, <code>median</code>,
-<code>q1</code>, <code>q3</code>, <code>unique</code>.</p>
-<p><strong>Boolean columns</strong>: <code>count</code>, <code>any</code>, <code>distinct count</code>, <code>dominant</code>, <code>first</code>,
-<code>last</code>, <code>last by index</code>, <code>unique</code>.</p>
+<code>sum not null</code>, <code>mul</code>, <code>gmv</code>, <code>any</code>, <code>avg</code>, <code>mean</code>, <code>count</code>, <code>distinct count</code>,
+<code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>,
+<code>max</code>, <code>min</code>, <code>min by</code>, <code>max by</code>, <code>high minus low</code>, <code>last minus first</code>,
+<code>median</code>, <code>q1</code>, <code>q3</code>, <code>pct sum parent</code>, <code>pct sum total</code>, <code>stddev</code>, <code>var</code>,
+<code>unique</code>, <code>weighted mean</code>.</p>
+<p><strong>String columns</strong>: <code>count</code>, <code>any</code>, <code>distinct count</code>, <code>distinct leaf</code>,
+<code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>join</code>, <code>median</code>, <code>q1</code>, <code>q3</code>,
+<code>unique</code>, <code>min by</code>, <code>max by</code>.</p>
+<p><strong>Date/Datetime columns</strong>: <code>count</code>, <code>any</code>, <code>avg</code>, <code>distinct count</code>,
+<code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>,
+<code>max</code>, <code>min</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>unique</code>.</p>
+<p><strong>Boolean columns</strong>: <code>count</code>, <code>any</code>, <code>and</code>, <code>or</code>, <code>distinct count</code>,
+<code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>unique</code>.</p>
+<div class="warning"><code>avg</code> on a <code>date</code> or
+<code>datetime</code> column returns a <code>float</code> — the mean of the
+column's underlying numeric representation — not a date.</div>
+
+<h3 id="argument-taking-aggregates"><a class="header" href="#argument-taking-aggregates">Argument-taking aggregates</a></h3>
+<p><code>weighted mean</code>, <code>min by</code> and <code>max by</code> each read a second column, and are
+written as a <code>[name, [argument]]</code> pair rather than a bare string:</p>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    aggregates: { a: ["weighted mean", ["b"]] },
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(aggregates={"a": ("weighted mean", ["b"])})
+</code></pre>
+</div>
+
+<div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    aggregates: Some(HashMap::from([(
+        "a".into(),
+        Aggregate::MultiAggregate("weighted mean".into(), vec!["b".into()]),
+    )])),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
+</div>
+
+<div class="warning">In Rust, <code>Aggregate::from(&amp;str)</code> splits on
+<code>" by "</code> to build a <code>MultiAggregate</code>. Single aggregates
+whose names contain that substring — <code>"last by index"</code> — must
+therefore be constructed as
+<code>Aggregate::SingleAggregate("last by index".into())</code> rather than
+<code>"last by index".into()</code>, which silently resolves to
+<code>last</code>.</div>
+
+<h3 id="aliases"><a class="header" href="#aliases">Aliases</a></h3>
+<p>Several aggregates answer to more than one name. Every name below is accepted
+anywhere an aggregate is, and each group refers to one function:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Canonical</th><th>Also accepted</th></tr>
+</thead>
+<tbody>
+<tr><td><code>avg</code></td><td><code>mean</code></td></tr>
+<tr><td><code>distinct count</code></td><td><code>distinct</code>, <code>distinctcount</code>, <code>distinct_count</code></td></tr>
+<tr><td><code>first</code></td><td><code>first by index</code></td></tr>
+<tr><td><code>last</code></td><td><code>last_value</code></td></tr>
+<tr><td><code>high</code></td><td><code>high_water_mark</code></td></tr>
+<tr><td><code>low</code></td><td><code>low_water_mark</code></td></tr>
+<tr><td><code>pct sum total</code></td><td><code>pct sum grand total</code>, <code>pct_sum_grand_total</code></td></tr>
+<tr><td><code>var</code></td><td><code>variance</code></td></tr>
+<tr><td><code>stddev</code></td><td><code>standard deviation</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Most multi-word aggregates also answer to a snake_case spelling —
+<code>sum_not_null</code>, <code>sum_abs</code>, <code>abs_sum</code>, <code>weighted_mean</code>, <code>distinct_leaf</code>,
+<code>pct_sum_parent</code>, <code>pct_sum_total</code>, <code>min_by</code>, <code>max_by</code>. Three do not, and are
+only accepted spelled with spaces: <code>high minus low</code>, <code>last minus first</code> and
+<code>last by index</code>.</p>
+<p>A few names the engine parses are <em>not implemented</em> — <code>identity</code>,
+<code>mean by count</code>, and <code>div</code>/<code>add</code>, which have no way to receive their operands
+from a <code>ViewConfig</code>. Naming one is rejected exactly as a misspelled aggregate
+is: the <code>View</code> fails to construct with an error naming the aggregate and the
+column it was given for, and the <code>Table</code> is left untouched.</p>
 
                     </main>
 

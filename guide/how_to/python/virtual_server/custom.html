@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-1b076223.js"></script>
+        <script src="../../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -181,13 +181,21 @@
                     <main>
                         <h1 id="implementing-a-custom-virtual-server"><a class="header" href="#implementing-a-custom-virtual-server">Implementing a custom Virtual Server</a></h1>
 <p>You can connect Perspective to any data source by subclassing
-<code>VirtualServerHandler</code> and wrapping it with <code>VirtualServer</code>.</p>
+<code>VirtualServerHandler</code>, wrapping it in a <code>VirtualServer</code>, and exposing that
+via a small <em>session factory</em> object which the WebSocket handlers use to give
+each connected client its own session.</p>
 <p>For background on virtual servers, see the
 <a href="../../../explanation/virtual_servers.html">Virtual Servers overview</a>.</p>
-<h2 id="example"><a class="header" href="#example">Example</a></h2>
-<pre><code class="language-python">from perspective import VirtualServerHandler, VirtualServer
+<h2 id="the-handler"><a class="header" href="#the-handler">The handler</a></h2>
+<p><code>VirtualServerHandler</code> is imported from <code>perspective.virtual_servers</code>. Only
+<code>get_hosted_tables</code>, <code>table_schema</code>, <code>table_size</code>, <code>table_make_view</code>,
+<code>view_delete</code> and <code>view_get_data</code> are required; the rest have defaults.</p>
+<pre><code class="language-python">from perspective.virtual_servers import VirtualServerHandler
 
-class MyModel(VirtualServerHandler):
+class MyHandler(VirtualServerHandler):
+    def __init__(self, db):
+        self.db = db
+
     def get_features(self):
         return {
             "group_by": True,
@@ -212,29 +220,75 @@ class MyModel(VirtualServerHandler):
     def table_size(self, table_name):
         return 1000
 
-    def table_make_view(self, table_name, view_id, config):
-        # Translate `config` (group_by, sort, filter, etc.) into a
-        # query against your data source. Store the query keyed by
-        # `view_id` for later data retrieval.
+    def table_make_view(self, table_name, view_name, config):
+        # Translate `config` (group_by, sort, filter, etc.) into a query
+        # against your data source. Store the query keyed by `view_name`
+        # for later data retrieval.
         pass
 
-    def view_delete(self, view_id):
-        # Clean up resources for this view
+    def view_delete(self, view_name):
+        # Clean up resources for this view. The UI does this automatically,
+        # and can recover if a view dies early.
         pass
 
-    def view_get_data(self, view_id, start_row, end_row, start_col, end_col, ctx):
-        # Execute the stored query with the given row/column window.
-        # Push results via `ctx`.
+    def view_get_data(self, view_name, config, viewport, data):
+        # Serialize the rectangular slice `viewport` of the temporary table
+        # `view_name` into `data`, a push-only `VirtualDataSlice`. Once a
+        # type has been pushed for a column name it must not change.
         pass
 </code></pre>
-<p>The <code>VirtualServer</code> instance can then be passed to a Tornado, Starlette, or
+<h3 id="optional-methods"><a class="header" href="#optional-methods">Optional methods</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Default</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>get_features()</code></td><td><code>columns</code> only</td><td>Which UI controls to enable — see <a href="../../../explanation/virtual_servers.html#features-declaration">Features declaration</a></td></tr>
+<tr><td><code>view_schema(view_name, config)</code></td><td><code>table_schema</code></td><td>Schema of a temporary table, when it differs from its source</td></tr>
+<tr><td><code>view_size(view_name)</code></td><td><code>table_size</code></td><td>Row count of a temporary table, when it differs from its source</td></tr>
+<tr><td><code>table_validate_expression(view_name, expression)</code></td><td>allow all</td><td>Type-check an expression column; enabled by <code>"expressions"</code> in <code>get_features</code></td></tr>
+<tr><td><code>view_get_min_max(view_name, column_name, config)</code></td><td>unsupported</td><td>Column bounds as a <code>(min, max)</code> tuple — required for gradient and sparkbar column styles</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="the-session-factory"><a class="header" href="#the-session-factory">The session factory</a></h2>
+<p>The WebSocket handlers call <code>new_session(callback)</code> once per connection, so
+the object passed as <code>perspective_server</code> must provide it. Wrap your handler
+in a <code>perspective.VirtualServer</code> — which owns the protocol — and return one
+session per client:</p>
+<pre><code class="language-python">import perspective
+
+class MyVirtualSession:
+    def __init__(self, callback, db):
+        self.session = perspective.VirtualServer(MyHandler(db))
+        self.callback = callback
+
+    def handle_request(self, msg):
+        self.callback(self.session.handle_request(msg))
+
+
+class MyVirtualServer:
+    def __init__(self, db):
+        self.db = db
+
+    def new_session(self, callback):
+        return MyVirtualSession(callback, self.db)
+</code></pre>
+<h2 id="serving-it"><a class="header" href="#serving-it">Serving it</a></h2>
+<p>A <code>MyVirtualServer</code> instance can then be passed to a Tornado, Starlette or
 AIOHTTP handler just like a regular <code>Server</code>:</p>
 <pre><code class="language-python">from perspective.handlers.tornado import PerspectiveTornadoHandler
 
 app = tornado.web.Application([
-    (r"/websocket", PerspectiveTornadoHandler, {"perspective_server": VirtualServer(MyModel)}),
+    (r"/websocket", PerspectiveTornadoHandler, {
+        "perspective_server": MyVirtualServer(db),
+    }),
 ])
 </code></pre>
+<p>The built-in <a href="./duckdb.html">DuckDB</a>, <a href="./clickhouse.html">ClickHouse</a> and
+<a href="./polars.html">Polars</a> implementations all follow exactly this shape and are
+worth reading as complete references.</p>
 
                     </main>
 

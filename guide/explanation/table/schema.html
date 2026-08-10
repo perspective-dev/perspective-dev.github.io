@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -194,6 +194,38 @@
 dictionary to the <code>Client::table</code> method, or by passing <em>data</em> to this method
 from which the schema is <em>inferred</em> (if CSV or JSON format) or inherited (if
 Arrow).</p>
+<h2 id="arrow-type-mapping"><a class="header" href="#arrow-type-mapping">Arrow type mapping</a></h2>
+<p>Perspective’s six column types are narrower than Arrow’s type system, so Arrow
+input is mapped on ingest:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Arrow type</th><th>Perspective type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>int8</code>, <code>int16</code>, <code>int32</code>, <code>int64</code>, <code>uint8</code>, <code>uint16</code>, <code>uint32</code>, <code>uint64</code></td><td><code>integer</code></td></tr>
+<tr><td><code>float</code>, <code>double</code></td><td><code>float</code></td></tr>
+<tr><td><code>decimal</code>, <code>decimal128</code></td><td><code>float</code></td></tr>
+<tr><td><code>bool</code></td><td><code>boolean</code></td></tr>
+<tr><td><code>date32</code>, <code>date64</code></td><td><code>date</code></td></tr>
+<tr><td><code>timestamp</code></td><td><code>datetime</code></td></tr>
+<tr><td><code>time32</code>, <code>time64</code></td><td><code>integer</code></td></tr>
+<tr><td><code>utf8</code>, <code>large_utf8</code>, <code>binary</code>, <code>dictionary</code>, <code>list</code>, <code>null</code></td><td><code>string</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Two mappings are worth calling out:</p>
+<ul>
+<li>Arrow <code>decimal</code> columns become <code>float</code> — a <code>DECIMAL</code> value of <code>3.14</code> reads
+as <code>3.14</code>, not as its unscaled integer representation.</li>
+<li>Arrow <code>time32</code>/<code>time64</code> (a time-of-day with no date component) becomes
+<code>integer</code>, not <code>datetime</code>. Use a <code>timestamp</code> column for a true <code>datetime</code>.</li>
+</ul>
+<p>Arrow types not listed above — including <code>decimal256</code> and the nested types —
+are rejected with an error rather than silently coerced.</p>
+<p>Arrow input is fully validated before its buffers are read. A malformed IPC
+payload — bad offsets, out-of-range dictionary indices, inconsistent chunk
+lengths — is rejected with an error rather than producing corrupt data.</p>
 <h2 id="type-inference"><a class="header" href="#type-inference">Type inference</a></h2>
 <p>When passing CSV or JSON data to the <code>Client::table</code> constructor, the type of
 each column is inferred automatically. In some cases, the inference algorithm

@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-db208032.js";
+            window.path_to_searchindex_js = "searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1b076223.js"></script>
+        <script src="toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -565,6 +565,38 @@ can be used to select an arbitrary set of columns from the <code>Table</code>.</
 dictionary to the <code>Client::table</code> method, or by passing <em>data</em> to this method
 from which the schema is <em>inferred</em> (if CSV or JSON format) or inherited (if
 Arrow).</p>
+<h2 id="arrow-type-mapping"><a class="header" href="#arrow-type-mapping">Arrow type mapping</a></h2>
+<p>Perspective’s six column types are narrower than Arrow’s type system, so Arrow
+input is mapped on ingest:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Arrow type</th><th>Perspective type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>int8</code>, <code>int16</code>, <code>int32</code>, <code>int64</code>, <code>uint8</code>, <code>uint16</code>, <code>uint32</code>, <code>uint64</code></td><td><code>integer</code></td></tr>
+<tr><td><code>float</code>, <code>double</code></td><td><code>float</code></td></tr>
+<tr><td><code>decimal</code>, <code>decimal128</code></td><td><code>float</code></td></tr>
+<tr><td><code>bool</code></td><td><code>boolean</code></td></tr>
+<tr><td><code>date32</code>, <code>date64</code></td><td><code>date</code></td></tr>
+<tr><td><code>timestamp</code></td><td><code>datetime</code></td></tr>
+<tr><td><code>time32</code>, <code>time64</code></td><td><code>integer</code></td></tr>
+<tr><td><code>utf8</code>, <code>large_utf8</code>, <code>binary</code>, <code>dictionary</code>, <code>list</code>, <code>null</code></td><td><code>string</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Two mappings are worth calling out:</p>
+<ul>
+<li>Arrow <code>decimal</code> columns become <code>float</code> — a <code>DECIMAL</code> value of <code>3.14</code> reads
+as <code>3.14</code>, not as its unscaled integer representation.</li>
+<li>Arrow <code>time32</code>/<code>time64</code> (a time-of-day with no date component) becomes
+<code>integer</code>, not <code>datetime</code>. Use a <code>timestamp</code> column for a true <code>datetime</code>.</li>
+</ul>
+<p>Arrow types not listed above — including <code>decimal256</code> and the nested types —
+are rejected with an error rather than silently coerced.</p>
+<p>Arrow input is fully validated before its buffers are read. A malformed IPC
+payload — bad offsets, out-of-range dictionary indices, inconsistent chunk
+lengths — is rejected with an error rather than producing corrupt data.</p>
 <h2 id="type-inference"><a class="header" href="#type-inference">Type inference</a></h2>
 <p>When passing CSV or JSON data to the <code>Client::table</code> constructor, the type of
 each column is inferred automatically. In some cases, the inference algorithm
@@ -964,6 +996,44 @@ Code, which are grouped by City, which are in turn grouped by State.</p>
 <span class="boring">}</span></code></pre>
 </div>
 
+<h3 id="group_rollup_mode"><a class="header" href="#group_rollup_mode"><code>group_rollup_mode</code></a></h3>
+<p>The <code>group_rollup_mode</code> option controls how the grouped rows themselves render:</p>
+<ul>
+<li><code>"rollup"</code> (the default) - the full hierarchy, with a subtotal row for
+every group at every level and a grand total row, each addressable by its
+<code>__ROW_PATH__</code>.</li>
+<li><code>"flat"</code> - leaf rows only, one row per deepest-level group, with no
+subtotal or grand total rows. Useful for chart plugins and exports where
+subtotal rows would double-count.</li>
+<li><code>"total"</code> - the grand total row <em>only</em>. <code>"total"</code> is mutually exclusive
+with <code>group_by</code> (which is cleared when it is set) - it is the one shape
+an empty <code>group_by</code> cannot express, since no <code>group_by</code> at all yields the
+unaggregated dataset.</li>
+</ul>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    group_by: ["a"],
+    group_rollup_mode: "flat",
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(group_by=["a"], group_rollup_mode="flat")
+</code></pre>
+</div>
+
+<div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    group_by: Some(vec!["a".into()]),
+    group_rollup_mode: Some(GroupRollupMode::Flat),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
+</div>
+
 <h2 id="split-by"><a class="header" href="#split-by">Split By</a></h2>
 <p>A split by <em>splits</em> the dataset by the unique values of each column used as a
 split by. The underlying dataset is not aggregated, and a new column is created
@@ -987,6 +1057,50 @@ pivot:</p>
 </span><span class="boring">fn main() {
 </span>let view = table.view(Some(ViewConfigUpdate {
     split_by: Some(vec!["a".into(), "c".into()]),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
+</div>
+
+<h3 id="split_rollup_mode"><a class="header" href="#split_rollup_mode"><code>split_rollup_mode</code></a></h3>
+<p>The <code>split_rollup_mode</code> option is the <code>split_by</code> counterpart to
+<a href="#group_rollup_mode"><code>group_rollup_mode</code></a>, controlling whether subtotal
+<em>column groups</em> are emitted:</p>
+<ul>
+<li><code>"flat"</code> (the default) - only full-depth split combinations appear as
+columns, e.g. <code>"CA|Sales"</code>. This is Perspective’s historical behavior.</li>
+<li><code>"rollup"</code> - additionally emits a grand-total column per aggregate (named
+by the bare column name, e.g. <code>"Sales"</code>, aggregating across every split
+group) and, when more than one <code>split_by</code> column is applied, a subtotal
+column per intermediate split group (e.g. <code>"CA|Sales"</code> alongside
+<code>"CA|First Class|Sales"</code>). Total and subtotal columns precede their
+groups, in pre-order.</li>
+</ul>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    group_by: ["State"],
+    split_by: ["Ship Mode"],
+    split_rollup_mode: "rollup",
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(
+    group_by=["State"],
+    split_by=["Ship Mode"],
+    split_rollup_mode="rollup",
+)
+</code></pre>
+</div>
+
+<div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    group_by: Some(vec!["State".into()]),
+    split_by: Some(vec!["Ship Mode".into()]),
+    split_rollup_mode: Some(SplitRollupMode::Rollup),
     ..ViewConfigUpdate::default()
 })).await?;
 <span class="boring">}</span></code></pre>
@@ -1038,21 +1152,199 @@ let view = table.view(Some(ViewConfigUpdate {
 <span class="boring">}</span></code></pre>
 </div>
 
-<p>The available aggregate functions depend on the column type:</p>
+<p>Every aggregate is described below, grouped by what it computes. Which of them
+a given column accepts depends on its type — see
+<a href="#availability-by-column-type">Availability by column type</a>.</p>
+<h3 id="sums-and-products"><a class="header" href="#sums-and-products">Sums and products</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sum</code></td><td>Total of the group’s values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum not null</code></td><td>As <code>sum</code>, but non-finite (<code>NaN</code>) values are skipped rather than poisoning the total</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum abs</code></td><td>Sum of the absolute values — <code>Σ abs(v)</code></td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>abs sum</code></td><td>Absolute value of the sum — <code>abs(Σ v)</code></td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>mul</code></td><td>Product of the group’s values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>gmv</code></td><td>Gross market value — leaf rows are a plain <code>sum</code>, parent rows sum the <em>absolute</em> subtotal of each immediate child group</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>pct sum parent</code></td><td>The group’s <code>sum</code> as a percentage of its parent row’s, <code>0</code>–<code>100</code>; <code>100</code> at the root, and <code>null</code> when the parent’s sum is <code>0</code></td><td><code>float</code></td></tr>
+<tr><td><code>pct sum total</code></td><td>The group’s <code>sum</code> as a percentage of the grand total, <code>0</code>–<code>100</code></td><td><code>float</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>A numeric aggregate widens to the input’s numeric class — <code>integer</code> columns
+accumulate as <code>integer</code>, <code>float</code> columns as <code>float</code>.</p>
+<h3 id="averages-and-dispersion"><a class="header" href="#averages-and-dispersion">Averages and dispersion</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>avg</code></td><td>Arithmetic mean of the non-null values</td><td><code>float</code></td></tr>
+<tr><td><code>weighted mean</code></td><td><code>Σ(value × weight) / Σ(weight)</code>, over rows where both the value and the weight are non-null and finite; <code>null</code> when the weights sum to <code>0</code>. Takes a <strong>weight column</strong> as an argument</td><td><code>float</code></td></tr>
+<tr><td><code>stddev</code></td><td>Population standard deviation</td><td><code>float</code></td></tr>
+<tr><td><code>var</code></td><td>Population variance — divides by <code>N</code>, not <code>N - 1</code></td><td><code>float</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>stddev</code> and <code>var</code> are <code>null</code> for a group of fewer than two non-null values.</p>
+<h3 id="extrema-and-order-statistics"><a class="header" href="#extrema-and-order-statistics">Extrema and order statistics</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>min</code>, <code>max</code></td><td>Smallest and largest of the group’s current values</td><td>input type</td></tr>
+<tr><td><code>min by</code>, <code>max by</code></td><td>The value from the row at which a <strong>second column</strong>, supplied as an argument, is smallest or largest</td><td>input type</td></tr>
+<tr><td><code>high</code>, <code>low</code></td><td>High and low <em>water mark</em> — the largest and smallest value this <code>View</code> has ever observed for the group, which never moves back when rows are updated or removed</td><td>input type</td></tr>
+<tr><td><code>high minus low</code></td><td><code>max - min</code> of the group’s current values, i.e. its range. Despite the name this uses <code>min</code>/<code>max</code>, not the water marks</td><td>input type</td></tr>
+<tr><td><code>median</code>, <code>q1</code>, <code>q3</code></td><td>The value at the 50%, 25% and 75% position of the group’s values; on <code>float</code> columns an exact split averages the two adjacent values</td><td>input type</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="positional"><a class="header" href="#positional">Positional</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>first</code></td><td>Value from the group’s earliest row</td><td>input type</td></tr>
+<tr><td><code>last by index</code></td><td>Value from the group’s latest row</td><td>input type</td></tr>
+<tr><td><code>last minus first</code></td><td><code>last by index</code> minus <code>first</code></td><td>input type</td></tr>
+<tr><td><code>last</code></td><td>Value from the group’s most recently <em>updated</em> row</td><td>input type</td></tr>
+</tbody>
+</table>
+</div>
+<p>“Earliest” and “latest” are by the <code>Table</code>’s <code>index</code> column, or by row order
+when the <code>Table</code> is unindexed. This is not the same as <code>last</code>, which tracks
+update recency rather than position.</p>
+<h3 id="cardinality-and-identity"><a class="header" href="#cardinality-and-identity">Cardinality and identity</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>count</code></td><td>Number of rows in the group</td><td><code>integer</code></td></tr>
+<tr><td><code>distinct count</code></td><td>Number of distinct values in the group</td><td><code>integer</code></td></tr>
+<tr><td><code>unique</code></td><td>The group’s value when every row shares one, otherwise <code>null</code></td><td>input type</td></tr>
+<tr><td><code>distinct leaf</code></td><td>As <code>unique</code>, but only on leaf rows — parent rows are blank</td><td>input type</td></tr>
+<tr><td><code>dominant</code></td><td>The most frequent non-null value, i.e. the mode; a tie resolves to whichever value reached the winning count first</td><td>input type</td></tr>
+<tr><td><code>any</code></td><td>The group’s first <em>truthy</em> value — any non-null value for <code>string</code> columns, the first non-zero for numbers and dates, the first <code>true</code> for <code>boolean</code> — or <code>null</code> if it has none</td><td>input type</td></tr>
+<tr><td><code>or</code></td><td>Identical to <code>any</code></td><td>input type</td></tr>
+<tr><td><code>and</code></td><td><code>true</code> when every value in the group is truthy, else <code>false</code></td><td><code>boolean</code></td></tr>
+<tr><td><code>join</code></td><td>The group’s distinct values, sorted and rendered as a <code>", "</code>-delimited string, truncated at 280 characters. Nulls render as <code>null</code></td><td><code>string</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="nulls"><a class="header" href="#nulls">Nulls</a></h3>
+<p>Null handling is not uniform, and is usually what makes two similar-looking
+aggregates differ:</p>
+<ul>
+<li><code>count</code> counts <strong>rows</strong>, not values — a group of 3 rows whose value is
+<code>null</code> counts <code>3</code>. This is not the same as the <code>count</code> <a href="#aggregates-1">window
+aggregate</a>, which counts non-null values.</li>
+<li><code>distinct count</code> counts <code>null</code> as <strong>one distinct value</strong>, so a group of
+<code>[1, null, null]</code> counts <code>2</code>.</li>
+<li><code>sum</code>, <code>avg</code>, <code>stddev</code>, <code>var</code>, <code>dominant</code> and <code>weighted mean</code> skip nulls
+entirely. <code>avg</code> divides by the count of non-null values, so a group of all
+nulls is <code>null</code> rather than <code>0</code>.</li>
+<li><code>any</code> and <code>or</code> return the first <em>truthy</em> value, not the first non-null one —
+a numeric group of all <code>0</code>, or a <code>boolean</code> group of all <code>false</code>, aggregates
+to <code>null</code>.</li>
+<li><code>join</code> renders nulls into its output as the literal text <code>null</code>.</li>
+</ul>
+<h3 id="availability-by-column-type"><a class="header" href="#availability-by-column-type">Availability by column type</a></h3>
+<p>The aggregates a column accepts depend on its type:</p>
 <p><strong>Numeric columns</strong> (<code>integer</code>, <code>float</code>): <code>sum</code>, <code>abs sum</code>, <code>sum abs</code>,
-<code>sum not null</code>, <code>any</code>, <code>avg</code>, <code>mean</code>, <code>count</code>, <code>distinct count</code>, <code>dominant</code>,
-<code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>, <code>max</code>, <code>min</code>,
-<code>high minus low</code>, <code>last minus first</code>, <code>median</code>, <code>q1</code>, <code>q3</code>,
-<code>pct sum parent</code>, <code>pct sum total</code>, <code>stddev</code>, <code>var</code>, <code>unique</code>,
-<code>weighted mean</code>, <code>min by</code>, <code>max by</code>.</p>
-<p><strong>String columns</strong>: <code>count</code>, <code>any</code>, <code>distinct count</code>, <code>dominant</code>, <code>first</code>,
-<code>last</code>, <code>last by index</code>, <code>join</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>unique</code>, <code>min by</code>,
-<code>max by</code>.</p>
-<p><strong>Date/Datetime columns</strong>: <code>count</code>, <code>any</code>, <code>avg</code>, <code>distinct count</code>, <code>dominant</code>,
-<code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>, <code>max</code>, <code>min</code>, <code>median</code>,
-<code>q1</code>, <code>q3</code>, <code>unique</code>.</p>
-<p><strong>Boolean columns</strong>: <code>count</code>, <code>any</code>, <code>distinct count</code>, <code>dominant</code>, <code>first</code>,
-<code>last</code>, <code>last by index</code>, <code>unique</code>.</p>
+<code>sum not null</code>, <code>mul</code>, <code>gmv</code>, <code>any</code>, <code>avg</code>, <code>mean</code>, <code>count</code>, <code>distinct count</code>,
+<code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>,
+<code>max</code>, <code>min</code>, <code>min by</code>, <code>max by</code>, <code>high minus low</code>, <code>last minus first</code>,
+<code>median</code>, <code>q1</code>, <code>q3</code>, <code>pct sum parent</code>, <code>pct sum total</code>, <code>stddev</code>, <code>var</code>,
+<code>unique</code>, <code>weighted mean</code>.</p>
+<p><strong>String columns</strong>: <code>count</code>, <code>any</code>, <code>distinct count</code>, <code>distinct leaf</code>,
+<code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>join</code>, <code>median</code>, <code>q1</code>, <code>q3</code>,
+<code>unique</code>, <code>min by</code>, <code>max by</code>.</p>
+<p><strong>Date/Datetime columns</strong>: <code>count</code>, <code>any</code>, <code>avg</code>, <code>distinct count</code>,
+<code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>,
+<code>max</code>, <code>min</code>, <code>median</code>, <code>q1</code>, <code>q3</code>, <code>unique</code>.</p>
+<p><strong>Boolean columns</strong>: <code>count</code>, <code>any</code>, <code>and</code>, <code>or</code>, <code>distinct count</code>,
+<code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>unique</code>.</p>
+<div class="warning"><code>avg</code> on a <code>date</code> or
+<code>datetime</code> column returns a <code>float</code> — the mean of the
+column's underlying numeric representation — not a date.</div>
+
+<h3 id="argument-taking-aggregates"><a class="header" href="#argument-taking-aggregates">Argument-taking aggregates</a></h3>
+<p><code>weighted mean</code>, <code>min by</code> and <code>max by</code> each read a second column, and are
+written as a <code>[name, [argument]]</code> pair rather than a bare string:</p>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    aggregates: { a: ["weighted mean", ["b"]] },
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(aggregates={"a": ("weighted mean", ["b"])})
+</code></pre>
+</div>
+
+<div class="rust">
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let view = table.view(Some(ViewConfigUpdate {
+    aggregates: Some(HashMap::from([(
+        "a".into(),
+        Aggregate::MultiAggregate("weighted mean".into(), vec!["b".into()]),
+    )])),
+    ..ViewConfigUpdate::default()
+})).await?;
+<span class="boring">}</span></code></pre>
+</div>
+
+<div class="warning">In Rust, <code>Aggregate::from(&amp;str)</code> splits on
+<code>" by "</code> to build a <code>MultiAggregate</code>. Single aggregates
+whose names contain that substring — <code>"last by index"</code> — must
+therefore be constructed as
+<code>Aggregate::SingleAggregate("last by index".into())</code> rather than
+<code>"last by index".into()</code>, which silently resolves to
+<code>last</code>.</div>
+
+<h3 id="aliases"><a class="header" href="#aliases">Aliases</a></h3>
+<p>Several aggregates answer to more than one name. Every name below is accepted
+anywhere an aggregate is, and each group refers to one function:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Canonical</th><th>Also accepted</th></tr>
+</thead>
+<tbody>
+<tr><td><code>avg</code></td><td><code>mean</code></td></tr>
+<tr><td><code>distinct count</code></td><td><code>distinct</code>, <code>distinctcount</code>, <code>distinct_count</code></td></tr>
+<tr><td><code>first</code></td><td><code>first by index</code></td></tr>
+<tr><td><code>last</code></td><td><code>last_value</code></td></tr>
+<tr><td><code>high</code></td><td><code>high_water_mark</code></td></tr>
+<tr><td><code>low</code></td><td><code>low_water_mark</code></td></tr>
+<tr><td><code>pct sum total</code></td><td><code>pct sum grand total</code>, <code>pct_sum_grand_total</code></td></tr>
+<tr><td><code>var</code></td><td><code>variance</code></td></tr>
+<tr><td><code>stddev</code></td><td><code>standard deviation</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Most multi-word aggregates also answer to a snake_case spelling —
+<code>sum_not_null</code>, <code>sum_abs</code>, <code>abs_sum</code>, <code>weighted_mean</code>, <code>distinct_leaf</code>,
+<code>pct_sum_parent</code>, <code>pct_sum_total</code>, <code>min_by</code>, <code>max_by</code>. Three do not, and are
+only accepted spelled with spaces: <code>high minus low</code>, <code>last minus first</code> and
+<code>last by index</code>.</p>
+<p>A few names the engine parses are <em>not implemented</em> — <code>identity</code>,
+<code>mean by count</code>, and <code>div</code>/<code>add</code>, which have no way to receive their operands
+from a <code>ViewConfig</code>. Naming one is rejected exactly as a misspelled aggregate
+is: the <code>View</code> fails to construct with an error naming the aggregate and the
+column it was given for, and the <code>Table</code> is left untouched.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="selection-and-ordering"><a class="header" href="#selection-and-ordering">Selection and Ordering</a></h1>
 <h2 id="columns"><a class="header" href="#columns">Columns</a></h2>
@@ -1164,7 +1456,13 @@ operand in the type of the column:</p>
 
 <p>The available filter operators depend on the column type:</p>
 <p><strong>String columns</strong>: <code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>begins with</code>,
-<code>contains</code>, <code>ends with</code>, <code>in</code>, <code>not in</code>, <code>is not null</code>, <code>is null</code>.</p>
+<code>not begins with</code>, <code>contains</code>, <code>not contains</code>, <code>ends with</code>, <code>not ends with</code>,
+<code>matches</code>, <code>not matches</code>, <code>in</code>, <code>not in</code>, <code>is not null</code>, <code>is null</code>.</p>
+<p>The string matching operators (<code>begins with</code>, <code>contains</code>, <code>ends with</code> and
+their negations) are case-insensitive, and <code>matches</code> / <code>not matches</code> are
+case-sensitive partial-match <a href="https://github.com/google/re2">RE2</a> regular
+expressions. Null cells match none of these operators, including the negated
+forms - filter on <code>is null</code> to select them.</p>
 <p><strong>Numeric columns</strong> (<code>integer</code>, <code>float</code>): <code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>,
 <code>is not null</code>, <code>is null</code>.</p>
 <p><strong>Boolean columns</strong>: <code>==</code>, <code>is not null</code>, <code>is null</code>.</p>
@@ -1326,6 +1624,175 @@ to the nearest multiple of 10.</p>
 </tbody>
 </table>
 </div>
+<h2 id="see-also"><a class="header" href="#see-also">See also</a></h2>
+<p>Expressions are row-local — each output cell is computed from that row’s
+values alone. For calculations which span rows, such as moving averages,
+cumulative sums or period-over-period differences, see
+<a href="#window-columns">Window Columns</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="window-columns"><a class="header" href="#window-columns">Window Columns</a></h1>
+<p>The <code>windows</code> property declares <em>ordered, partitioned rolling computations</em>
+over the rows of a <code>Table</code> — moving averages, cumulative sums,
+period-over-period differences — analogous to SQL window functions.</p>
+<p>Window Columns are declared per-<code>View</code>, keyed by output alias, exactly as
+<a href="#expressions"><code>expressions</code></a> are:</p>
+<div class="javascript">
+<pre><code class="language-javascript">const view = await table.view({
+    columns: ["10-tick avg Sales"],
+    windows: {
+        "10-tick avg Sales": {
+            column: "Sales",
+            aggregate: "avg",
+            rows: 10,
+        },
+    },
+});
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">view = table.view(
+    columns=["10-tick avg Sales"],
+    windows={
+        "10-tick avg Sales": {
+            "column": "Sales",
+            "aggregate": "avg",
+            "rows": 10,
+        }
+    },
+)
+</code></pre>
+</div>
+
+<p>Each window produces a new column which may be used anywhere a <code>Table</code> column
+can — in <code>columns</code>, <code>filter</code>, <code>sort</code>, <code>group_by</code>, and so on. An alias must not
+collide with a <code>Table</code> column, an expression alias, or another window’s key.</p>
+<p>Window Columns update incrementally as the <code>Table</code> updates, including rows
+<em>outside</em> an update batch whose window frames were affected by it.</p>
+<h2 id="spec-fields"><a class="header" href="#spec-fields">Spec fields</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>column</code></td><td><code>string</code></td><td>The input column — a <code>Table</code> column or an expression alias from the same config</td></tr>
+<tr><td><code>aggregate</code></td><td><code>string</code></td><td>The window function to apply (see below)</td></tr>
+<tr><td><code>partition_by</code></td><td><code>string[]</code></td><td>Columns whose distinct value tuples partition the rows; omitted partitions the whole <code>Table</code> as one group</td></tr>
+<tr><td><code>order_by</code></td><td><code>[string, "asc" | "desc"]</code></td><td>The column which orders each partition, and its direction</td></tr>
+<tr><td><code>rows</code></td><td><code>integer</code></td><td>Frame of the N rows preceding each row, plus the row itself</td></tr>
+<tr><td><code>range</code></td><td><code>number</code></td><td>Frame of rows whose <code>order_by</code> value lies within <code>range</code> of each row’s</td></tr>
+<tr><td><code>cumulative</code></td><td><code>true</code></td><td>Frame of all rows from the partition start through each row</td></tr>
+<tr><td><code>offset</code></td><td><code>integer</code></td><td>Row offset for <code>lag</code>/<code>lead</code> (default <code>1</code>)</td></tr>
+<tr><td><code>alpha</code></td><td><code>number</code></td><td>Smoothing factor in <code>(0, 1]</code> for <code>ema</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>rows</code>, <code>range</code> and <code>cumulative</code> are <strong>mutually exclusive</strong> — supplying more
+than one is an error. <code>range</code> requires a numeric or temporal <code>order_by</code>.</p>
+<div class="warning"><code>order_by</code> orders rows <em>within the window
+frame</em> only. It does not reorder the <code>View</code> — that is what the
+view-level <a href="#sort"><code>sort</code></a>
+property does.</div>
+
+<h2 id="aggregates-1"><a class="header" href="#aggregates-1">Aggregates</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
+</thead>
+<tbody>
+<tr><td><code>sum</code>, <code>avg</code></td><td>Rolling sum and mean over the frame</td><td><code>float</code></td></tr>
+<tr><td><code>stddev</code>, <code>var</code></td><td>Rolling standard deviation and variance</td><td><code>float</code></td></tr>
+<tr><td><code>count</code></td><td>Number of non-null values in the frame</td><td><code>integer</code></td></tr>
+<tr><td><code>min</code>, <code>max</code></td><td>Smallest and largest value in the frame</td><td>input type</td></tr>
+<tr><td><code>lag</code>, <code>lead</code></td><td>Value <code>offset</code> rows behind or ahead</td><td>input type</td></tr>
+<tr><td><code>diff</code></td><td>This row’s value minus the value <code>offset</code> rows behind</td><td><code>float</code></td></tr>
+<tr><td><code>rate</code></td><td>Rate of change across the frame</td><td><code>float</code></td></tr>
+<tr><td><code>ema</code></td><td>Exponential moving average, smoothed by <code>alpha</code></td><td><code>float</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>sum</code>, <code>avg</code>, <code>stddev</code>, <code>var</code>, <code>diff</code>, <code>rate</code> and <code>ema</code> require a numeric
+input column.</p>
+<h3 id="frame-compatibility"><a class="header" href="#frame-compatibility">Frame compatibility</a></h3>
+<ul>
+<li><code>sum</code>, <code>avg</code>, <code>count</code>, <code>min</code>, <code>max</code>, <code>stddev</code> and <code>var</code> accept any frame.</li>
+<li><code>lag</code>, <code>lead</code>, <code>diff</code> and <code>ema</code> are frame-independent — they are computed
+from row offsets rather than a frame.</li>
+<li><strong><code>rate</code> requires a <code>range</code> frame</strong>, and is invalid with <code>rows</code> or
+<code>cumulative</code>.</li>
+</ul>
+<div class="warning">The <code>first</code> and <code>last</code> window
+aggregates are declared in the type definitions but are <em>not yet
+implemented</em> by the engine; a <code>View</code> which uses them will be
+rejected.</div>
+
+<h2 id="examples-2"><a class="header" href="#examples-2">Examples</a></h2>
+<h3 id="moving-average-over-a-fixed-row-count"><a class="header" href="#moving-average-over-a-fixed-row-count">Moving average over a fixed row count</a></h3>
+<p>A 10-tick moving average, over the whole table in its natural order:</p>
+<pre><code class="language-json">{
+    "columns": ["10-tick avg Sales"],
+    "windows": {
+        "10-tick avg Sales": {
+            "column": "Sales",
+            "aggregate": "avg",
+            "rows": 10
+        }
+    }
+}
+</code></pre>
+<h3 id="moving-average-over-a-time-range"><a class="header" href="#moving-average-over-a-time-range">Moving average over a time range</a></h3>
+<p>A 5-second moving average, framing rows by their <code>Order Date</code> rather than by
+count:</p>
+<pre><code class="language-json">{
+    "columns": ["5s avg Sales"],
+    "windows": {
+        "5s avg Sales": {
+            "column": "Sales",
+            "aggregate": "avg",
+            "order_by": ["Order Date", "asc"],
+            "range": 5000
+        }
+    }
+}
+</code></pre>
+<h3 id="cumulative-sum"><a class="header" href="#cumulative-sum">Cumulative sum</a></h3>
+<p>A running total from the start of each partition:</p>
+<pre><code class="language-json">{
+    "columns": ["Cumulative Sales"],
+    "windows": {
+        "Cumulative Sales": {
+            "column": "Sales",
+            "aggregate": "sum",
+            "order_by": ["Order Date", "asc"],
+            "cumulative": true
+        }
+    }
+}
+</code></pre>
+<h3 id="period-over-period-change-per-group"><a class="header" href="#period-over-period-change-per-group">Period-over-period change, per group</a></h3>
+<p><code>partition_by</code> restarts the window at each new <code>Region</code>, so each region’s
+first row has no predecessor to difference against:</p>
+<pre><code class="language-json">{
+    "columns": ["Region", "Sales", "Sales Δ"],
+    "windows": {
+        "Sales Δ": {
+            "column": "Sales",
+            "aggregate": "diff",
+            "partition_by": ["Region"],
+            "order_by": ["Order Date", "asc"]
+        }
+    }
+}
+</code></pre>
+<h2 id="support"><a class="header" href="#support">Support</a></h2>
+<p>Window Columns are implemented by Perspective’s built-in engine, by the
+DuckDB, ClickHouse and Polars
+<a href="#virtual-servers">Virtual Servers</a>, and by the
+<code>&lt;perspective-viewer&gt;</code> UI. Virtual Servers advertise support through their
+<em>features</em> declaration, so the UI control is hidden for backends which do not
+implement it.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="advanced-view-operations"><a class="header" href="#advanced-view-operations">Advanced View Operations</a></h1>
 <p>Beyond the standard query configuration, <code>View</code> provides additional methods for
@@ -1465,14 +1932,15 @@ view.remove_update(on_update)
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
 tables across clients.</p>
 <h2 id="flattening-a-view-into-a-table"><a class="header" href="#flattening-a-view-into-a-table">Flattening a View into a Table</a></h2>
-<p>In Javascript, a [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance,
-which will return a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and
-all future updates that affect the [<code>Table::view</code>] will be forwarded to the new
-[<code>Table</code>]. This is particularly useful for implementing a
-<a href="explanation/view/server.html#clientserver-replicated">Client/Server Replicated</a> design, by
-serializing the <code>View</code> to an arrow and setting up an <code>on_update</code> callback.</p>
+<p>A [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance, which will return
+a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and all future updates
+that affect the [<code>Table::view</code>] will be forwarded to the new [<code>Table</code>]. This is
+particularly useful for implementing a
+<a href="#clientserver-replicated">Client/Server Replicated</a> design, as it
+handles the <code>View</code> serialization and <code>on_update</code> forwarding for you. This
+pattern is available in JavaScript, Python and Rust.</p>
 <div class="javascript">
-<pre><code class="language-javascript">const worker1 = perspective.worker();
+<pre><code class="language-javascript">const worker = await perspective.worker();
 const table = await worker.table(data);
 const view = await table.view({ filter: [["State", "==", "Texas"]] });
 const table2 = await worker.table(view);
@@ -1481,14 +1949,9 @@ table.update([{ State: "Texas", City: "Austin" }]);
 </div>
 
 <div class="python">
-<pre><code class="language-python">table = perspective.Table(data);
+<pre><code class="language-python">table = client.table(data)
 view = table.view(filter=[["State", "==", "Texas"]])
-table2 = perspective.Table(view.to_arrow());
-
-def updater(port, delta):
-    table2.update(delta)
-
-view.on_update(updater, mode="Row")
+table2 = client.table(view)
 table.update([{"State": "Texas", "City": "Austin"}])
 </code></pre>
 </div>
@@ -2028,11 +2491,30 @@ Component will be available in any standard HTML on your site. A simple example:
     import perspective from "@perspective-dev/client";
     import "@perspective-dev/viewer";
 
+    const viewer = document.getElementById("view1");
     const worker = await perspective.worker();
-    const table = await worker.table(data);
-    document.getElementById("view1").load(table);
+    await worker.table(data, { name: "my_table" });
+
+    await viewer.load(worker);
+    await viewer.restore({ table: "my_table" });
 &lt;/script&gt;
 </code></pre>
+<p><code>load()</code> binds the viewer to a <code>Client</code>, and <code>restore()</code> selects which of that
+client’s <code>Table</code>s to show via the <code>table</code> field. Because <code>load()</code> alone
+selects no table, it does not render — the pair guarantees exactly one atomic
+render.</p>
+<p>Passing a <code>Table</code> directly is still supported as a legacy shorthand,</p>
+<pre><code class="language-javascript">await viewer.load(table);
+</code></pre>
+<p>… which is internally equivalent to:</p>
+<pre><code class="language-javascript">await viewer.load(await table.get_client());
+await viewer.restore({ table: await table.get_name() });
+</code></pre>
+<div class="warning">Always give your <code>Table</code> a <code>name</code>.
+When <code>name</code> is omitted a random one is assigned, so the
+<code>table</code> field in a token from <code>save()</code> will not match
+the table after a page reload, and <code>restore()</code> will fail.</div>
+
 <h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
 <p><code>&lt;perspective-viewer&gt;</code> can be configured via HTML attributes or JavaScript
 properties. When set as attributes, the viewer will apply the configuration on
@@ -2050,30 +2532,110 @@ initialization:</p>
 <code>sort</code>, and <code>filter</code> fields.</li>
 <li><strong>New Column</strong> button - opens an expression editor for creating computed
 columns via the <a href="#expressions">expression language</a>.</li>
-<li><strong>Plugin selector</strong> - switch between visualization plugins such as Datagrid,
-X/Y Line, X/Y Scatter, Treemap, Sunburst, and Heatmap.</li>
+<li><strong>Plugin selector</strong> - switch between the visualization plugins registered on
+the page. <code>@perspective-dev/viewer-datagrid</code> provides <code>Datagrid</code>;
+<code>@perspective-dev/viewer-charts</code> provides <code>X Bar</code>, <code>Y Bar</code>, <code>Y Line</code>,
+<code>Y Scatter</code>, <code>Y Area</code>, <code>X/Y Scatter</code>, <code>X/Y Line</code>, <code>Density</code>, <code>Treemap</code>,
+<code>Sunburst</code>, <code>Heatmap</code>, <code>Candlestick</code>, <code>OHLC</code>, <code>Map Scatter</code>, <code>Map Line</code> and
+<code>Map Density</code>.</li>
 <li><strong>Theme</strong> selector - toggle between available themes.</li>
 <li><strong>Export</strong> - download the current view as CSV or Arrow.</li>
 <li><strong>Copy</strong> - copy the current view to the clipboard.</li>
 <li><strong>Reset</strong> - restore the viewer to its default configuration.</li>
 </ul>
 <h2 id="methods"><a class="header" href="#methods">Methods</a></h2>
-<p>Key methods on the <code>&lt;perspective-viewer&gt;</code> element:</p>
+<p>A <code>&lt;perspective-viewer&gt;</code> hosts one or more <em>panels</em>. Methods which address a
+single panel take an options-dict with an optional <code>panel</code> id, defaulting to
+the <em>active</em> panel — e.g. <code>await viewer.save({ panel: "PANEL_ID_0" })</code>.</p>
+<h3 id="binding"><a class="header" href="#binding">Binding</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr><th>Method</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><code>load(table)</code></td><td>Bind a <code>Table</code> to the viewer</td></tr>
-<tr><td><code>restore(config)</code></td><td>Apply a saved configuration object</td></tr>
-<tr><td><code>save()</code></td><td>Serialize the current configuration</td></tr>
-<tr><td><code>reset(all)</code></td><td>Reset configuration (pass <code>true</code> to also reset expressions)</td></tr>
-<tr><td><code>getTable()</code></td><td>Get the bound <code>Table</code></td></tr>
-<tr><td><code>flush()</code></td><td>Wait for any pending UI updates to complete</td></tr>
+<tr><td><code>load(client)</code></td><td>Bind a <code>Client</code> (or, legacy, a <code>Table</code>) to the viewer</td></tr>
+<tr><td><code>eject(options?)</code></td><td>Remove a <code>Client</code> and dispose every panel bound to it</td></tr>
+<tr><td><code>delete()</code></td><td>Release the element’s resources</td></tr>
+<tr><td><code>getClient(options?)</code></td><td>Get a bound <code>Client</code></td></tr>
+<tr><td><code>getTable(options?)</code></td><td>Get a panel’s <code>Table</code></td></tr>
+<tr><td><code>getView(options?)</code></td><td>Get a panel’s <code>View</code></td></tr>
+<tr><td><code>getViewConfig(options?)</code></td><td>Get a panel’s <code>ViewConfig</code></td></tr>
 </tbody>
 </table>
 </div>
+<h3 id="configuration"><a class="header" href="#configuration">Configuration</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>save(options?)</code></td><td>Serialize one panel’s configuration</td></tr>
+<tr><td><code>restore(config, options?)</code></td><td>Apply a configuration to one panel</td></tr>
+<tr><td><code>saveWorkspace()</code></td><td>Serialize the whole element — every panel, plus layout and global filters</td></tr>
+<tr><td><code>restoreWorkspace(config)</code></td><td>Restore a whole-element configuration</td></tr>
+<tr><td><code>reset(all?, options?)</code></td><td>Reset configuration (pass <code>true</code> to also reset expressions)</td></tr>
+<tr><td><code>resetError()</code></td><td>Clear the error overlay</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="panels"><a class="header" href="#panels">Panels</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>addPanel(config)</code></td><td>Add a panel, returning its generated id</td></tr>
+<tr><td><code>removePanel(id)</code></td><td>Remove a panel</td></tr>
+<tr><td><code>getPanelNames()</code></td><td>List panel ids</td></tr>
+<tr><td><code>getActivePanel()</code> / <code>setActivePanel(id)</code></td><td>Get or set the active panel</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="output"><a class="header" href="#output">Output</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>export(options?)</code></td><td>Export a panel — see the export methods below</td></tr>
+<tr><td><code>download(options?)</code></td><td>Export and download as a file</td></tr>
+<tr><td><code>copy(options?)</code></td><td>Copy a panel to the clipboard</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>export()</code>, <code>download()</code> and <code>copy()</code> all take a <code>method</code>, one of <code>"csv"</code>,
+<code>"json"</code>, <code>"ndjson"</code> or <code>"arrow"</code> — each with <code>-all</code> and <code>-selected</code> variants
+(e.g. <code>"csv-selected"</code>) — plus <code>"html"</code>, <code>"json-config"</code>, and <code>"plugin"</code>.
+The <code>"plugin"</code> method asks the plugin to render itself, which produces a PNG
+for charts and text for the datagrid.
+| <code>getSelection(options?)</code> / <code>setSelection(...)</code> | Get or set the selected region |
+| <code>getEditPort(options?)</code> | Get a panel’s edit port |
+| <code>getRenderStats(options?)</code> | Get render timing statistics |</p>
+<h3 id="rendering-and-chrome"><a class="header" href="#rendering-and-chrome">Rendering and chrome</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>flush()</code></td><td>Wait for any pending UI updates to complete</td></tr>
+<tr><td><code>resize(options?)</code></td><td>Redraw, optionally at a <code>{dimensions: {width, height}}</code> size hint</td></tr>
+<tr><td><code>setAutoSize(bool)</code> / <code>setAutoPause(bool)</code> / <code>setThrottle(ms)</code></td><td>Render policy</td></tr>
+<tr><td><code>toggleConfig(force?)</code></td><td>Toggle the settings sidebar</td></tr>
+<tr><td><code>toggleColumnSettings(...)</code></td><td>Toggle the column settings sidebar</td></tr>
+<tr><td><code>resetThemes(themes?)</code></td><td>Re-detect or explicitly set available themes</td></tr>
+<tr><td><code>restyleElement()</code></td><td>Re-read CSS and repaint</td></tr>
+<tr><td><code>getPlugin(name?)</code> / <code>getAllPlugins()</code></td><td>Look up registered plugins</td></tr>
+</tbody>
+</table>
+</div>
+<p>See <a href="#saving-and-restoring-ui-state">Saving and restoring UI state</a> for the <code>save</code>/<code>restore</code>
+formats and the panel selector, and
+<a href="#plugin-render-limits">Plugin render limits</a> for <code>getPlugin</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="loading-data-from-a-table"><a class="header" href="#loading-data-from-a-table">Loading data from a Table</a></h1>
 <p>Data can be loaded into <code>&lt;perspective-viewer&gt;</code> in the form of a <code>Table()</code> or a
@@ -2148,9 +2710,11 @@ import "@perspective-dev/viewer/dist/css/pro-dark.css";
 
 // Other themes
 import "@perspective-dev/viewer/dist/css/solarized.css";
-import "@perspective-dev/viewer/dist/css/solarized-dark.css";
 import "@perspective-dev/viewer/dist/css/monokai.css";
 import "@perspective-dev/viewer/dist/css/vaporwave.css";
+
+// ...
+
 </code></pre>
 <p>Alternatively, you may use <code>themes.css</code>, which bundles all default themes</p>
 <pre><code class="language-javascript">import "@perspective-dev/viewer/dist/css/themes.css";
@@ -2189,8 +2753,9 @@ await viewer.restore({ theme: "Pro Dark" });
 <h2 id="custom-themes"><a class="header" href="#custom-themes">Custom Themes</a></h2>
 <p>The best way to write a new theme is to
 <a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes">fork and modify an existing theme</a>,
-which are <em>just</em> collections of regular CSS variables (no preprocessor is
-required, though Perspective’s own themes use one). <code>&lt;perspective-viewer&gt;</code> is
+which are <em>just</em> collections of regular CSS variables — Perspective’s own
+themes are plain <code>.css</code> files, with no preprocessor involved.
+<code>&lt;perspective-viewer&gt;</code> is
 not “themed” by default and will lack icons and label text in addition to colors
 and fonts, so starting from an empty theme forces you to define <em>every</em>
 theme-able variable to get a functional UI.</p>
@@ -2248,11 +2813,12 @@ await elem.restore(JSON.stringify(json_token));
 <p>Using the JSON format, every facet of a <code>&lt;perspective-viewer&gt;</code>’s configuration
 can be manipulated from JavaScript using the <code>restore()</code> method. The valid
 structure of properties is described via the
-<a href="https://github.com/perspective-dev/perspective/blob/ebced4caa/rust/perspective-viewer/src/ts/viewer.ts#L16"><code>ViewerConfig</code></a>
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/ts/ts-rs/ViewerConfigUpdate.ts"><code>ViewerConfigUpdate</code></a>
 and embedded
-<a href="https://github.com/perspective-dev/perspective/blob/ebced4caa19435a2a57d4687be7e428a4efc759b/packages/perspective/index.d.ts#L140"><code>ViewConfig</code></a>
-type declarations, and <a href="how_to/javascript/view.html"><code>View</code></a> chapter of the documentation which has
-several interactive examples for each <code>ViewConfig</code> property.</p>
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-js/src/ts/ts-rs/ViewConfigUpdate.ts"><code>ViewConfigUpdate</code></a>
+type declarations (both generated from the Rust definitions), and the
+<a href="#view"><code>View</code></a> chapter of the documentation which has
+several examples for each <code>ViewConfig</code> property.</p>
 <pre><code class="language-javascript">// Set the plugin (will also update `columns` to plugin-defaults)
 await elem.restore({ plugin: "X Bar" });
 
@@ -2323,18 +2889,90 @@ through user interaction will fire a <code>perspective-config-update</code> even
 </code></pre>
 <h2 id="click-events"><a class="header" href="#click-events">Click events</a></h2>
 <p>Whenever a <code>&lt;perspective-viewer&gt;</code>’s grid or chart is clicked, a
-<code>perspective-click</code> DOM event is fired containing a detail object with <code>config</code>,
-<code>column_names</code>, and <code>row</code>.</p>
+<code>perspective-click</code> DOM event is fired containing a detail object with
+<code>config</code>, <code>column_names</code>, <code>row</code> and <code>panel</code>.</p>
 <p>The <code>config</code> object contains an array of <code>filters</code> that can be applied to a
 <code>&lt;perspective-viewer&gt;</code> through the use of <code>restore()</code> updating it to show the
 filtered subset of data.</p>
-<p>The <code>column_names</code> property contains an array of matching columns, and the <code>row</code>
-property returns the associated row data.</p>
+<p>The <code>column_names</code> property contains an array of matching columns, the <code>row</code>
+property returns the associated row data, and <code>panel</code> identifies the panel
+which fired the event in a multi-panel viewer.</p>
 <pre><code class="language-javascript">elem.addEventListener("perspective-click", function (event) {
-    var config = event.detail.config;
-    elem.restore(config);
+    const { config, panel } = event.detail;
+    elem.restore(config, { panel });
 });
 </code></pre>
+<h2 id="selection-events"><a class="header" href="#selection-events">Selection events</a></h2>
+<p><code>perspective-select</code> fires when a plugin’s selection changes. Its detail is a
+<code>PerspectiveSelectDetail</code>, exported from <code>@perspective-dev/viewer</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>selected</code></td><td><code>boolean</code></td><td>Whether anything is currently selected</td></tr>
+<tr><td><code>row</code></td><td><code>object</code></td><td>The associated row data</td></tr>
+<tr><td><code>column_names</code></td><td><code>string[]</code></td><td>Matching column names</td></tr>
+<tr><td><code>removeConfigs</code></td><td><code>ViewConfigUpdate[]</code></td><td>Configs whose filters should be <em>removed</em></td></tr>
+<tr><td><code>insertConfigs</code></td><td><code>ViewConfigUpdate[]</code></td><td>Configs whose filters should be <em>applied</em></td></tr>
+<tr><td><code>panel</code></td><td><code>string?</code></td><td>The originating panel, in a multi-panel viewer</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>removeConfigs</code> is applied first, then <code>insertConfigs</code>. The
+<code>removeFilters</code> and <code>insertFilters</code> getters flatten each to a plain <code>Filter[]</code>.</p>
+<pre><code class="language-javascript">import { PerspectiveSelectDetail } from "@perspective-dev/viewer";
+
+elem.addEventListener("perspective-select", function (event) {
+    const { insertFilters, removeFilters } = event.detail;
+    console.log("apply", insertFilters, "clear", removeFilters);
+});
+</code></pre>
+<div class="warning">The <code>detail.config</code> field on
+<code>perspective-select</code> was replaced by <code>insertConfigs</code> and
+<code>removeConfigs</code>. Without an explicit <code>removeConfigs</code>,
+a filter on a column outside the source's <code>group_by</code>,
+<code>split_by</code> or <code>filter</code> cannot be cleared.</div>
+
+<h2 id="global-filter-events"><a class="header" href="#global-filter-events">Global filter events</a></h2>
+<p>In a multi-panel viewer, panels toggled to <em>Master</em> contribute filter clauses
+to an element-level global filter set, which is applied as a transient overlay
+to every <em>detail</em> panel (and never written into their saved configs).</p>
+<ul>
+<li><code>perspective-global-filter</code> fires on a master panel’s selection.</li>
+<li><code>perspective-global-filter-update</code> fires whenever the global filter set
+changes, with a <code>Filter[]</code> detail.</li>
+</ul>
+<pre><code class="language-javascript">elem.addEventListener("perspective-global-filter-update", function (event) {
+    console.log("Global filters are now", event.detail);
+});
+</code></pre>
+<h2 id="layout-events"><a class="header" href="#layout-events">Layout events</a></h2>
+<p>A multi-panel <code>&lt;perspective-viewer&gt;</code> reports changes to its panel <em>collection</em>
+on two separate channels. They are distinct facts — which panels exist, and
+which one is selected — so neither event implies the other.</p>
+<ul>
+<li><code>perspective-layout-update</code> fires when a panel is added to or removed from
+the layout. Its <code>detail.panels</code> is the placed panel ids in insertion order,
+identical to what <a href="#"><code>getPanelNames()</code></a> returns.</li>
+<li><code>perspective-active-panel-update</code> fires when the active panel changes, with
+a <code>detail.panel</code> of the new panel’s id — or <code>null</code> at zero panels.</li>
+</ul>
+<pre><code class="language-javascript">elem.addEventListener("perspective-layout-update", function (event) {
+    console.log("Panels are now", event.detail.panels);
+});
+</code></pre>
+<p>Geometry changes — dragging a split divider, reordering tabs — do <strong>not</strong> fire
+these events, because they change the layout tree without changing the panel
+set. Use <code>saveWorkspace()</code> to read the current geometry.</p>
+<div class="warning">The <code>workspace-layout-update</code> and
+<code>workspace-new-view</code> events from the removed
+<code>@perspective-dev/workspace</code> package no longer exist.
+<code>perspective-layout-update</code> is the closest replacement for the
+former; for per-panel config changes use
+<code>perspective-config-update</code>.</div>
+
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="plugin-render-limits"><a class="header" href="#plugin-render-limits">Plugin render limits</a></h1>
 <p><code>&lt;perspective-viewer&gt;</code> plugins (especially charts) may in some cases generate
@@ -2360,6 +2998,120 @@ browser’s DOM inspector):</p>
 plugin.max_cells = 1_000_000;
 plugin.max_columns = 1000;
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="configuring-the-llm-agent"><a class="header" href="#configuring-the-llm-agent">Configuring the LLM agent</a></h1>
+<p><code>&lt;perspective-viewer&gt;</code> ships with an embedded LLM agent which drives the viewer
+through its public API — reading the schema, writing the <code>ViewerConfig</code>,
+choosing a plugin, authoring ExprTK expressions and managing panels. It is
+<strong>opt-in</strong>: the <strong>Chat</strong> tab in the settings sidebar stays hidden, and no
+network request is ever made, until you call
+<code>HTMLPerspectiveViewerElement::agentConfig</code>.</p>
+<pre><code class="language-javascript">import { providers } from "@perspective-dev/viewer";
+
+const viewer = document.querySelector("perspective-viewer");
+viewer.agentConfig({
+    ...providers.anthropic,
+    apiKey: "sk-ant-...",
+});
+</code></pre>
+<h2 id="connecting-to-a-model"><a class="header" href="#connecting-to-a-model">Connecting to a model</a></h2>
+<p>The agent core connects via OpenAI chat-completions conventional API, over
+primitive connection fields. Exactly one of <code>url</code> or <code>engine</code> is required:</p>
+<ul>
+<li><code>url</code> — a full chat-completions endpoint. Any OpenAI-compatible service works:
+the Anthropic and Gemini compatibility endpoints, OpenRouter, LM Studio,
+Ollama, llama.cpp, vLLM, or your own proxy.</li>
+<li><code>engine</code> — an in-page engine object exposing
+<code>chat.completions.create(request)</code>, e.g.
+<a href="https://github.com/mlc-ai/web-llm">WebLLM</a>’s <code>MLCEngine</code>. Mutually exclusive
+with <code>url</code>.</li>
+</ul>
+<p>The remaining connection fields are <code>headers</code>, <code>apiKey</code> (sugar for an
+<code>Authorization: Bearer</code> header), <code>model</code>, and <code>name</code>. The <code>providers</code> export
+supplies presets for the common ones — <code>anthropic</code>, <code>gemini</code>, <code>openai</code>,
+<code>openrouter</code>, <code>lmstudio</code> and <code>ollama</code> — and spread order is override order:</p>
+<pre><code class="language-javascript">viewer.agentConfig({
+    ...providers.anthropic,
+    apiKey: "sk-ant-...",
+    model: "claude-haiku-4-5", // overrides the preset's default
+});
+</code></pre>
+<p>Local servers usually need their CORS opt-in enabled first:
+<a href="https://lmstudio.ai/">LM Studio</a> has a setting in its developer server panel,
+and Ollama reads <code>OLLAMA_ORIGINS</code>.</p>
+<blockquote>
+<p><strong>A key in <code>agentConfig</code> is a key in the browser tab.</strong> It is sent directly to
+the provider from the page, which is fine for local development and internal
+tools, but for anything shared you should point <code>url</code> at a proxy you control
+and keep the credential on the server.</p>
+</blockquote>
+<p>Tool-calling quality varies more than general chat quality does. Frontier models
+handle the viewer’s tool surface reliably; among local models, recent Qwen and
+Llama instruct builds are the ones to try first.</p>
+<h3 id="in-page-engines"><a class="header" href="#in-page-engines">In-page engines</a></h3>
+<p>An <code>engine</code> runs the model in the tab, so no prompt and no data leave the
+machine and no key is involved. <a href="https://github.com/mlc-ai/web-llm">WebLLM </a> for
+example:</p>
+<pre><code class="language-javascript">import * as webllm from "@mlc-ai/web-llm";
+
+const engine = await webllm.CreateMLCEngine(
+    "Hermes-3-Llama-3.1-8B-q4f16_1-MLC",
+    { initProgressCallback: (x) =&gt; console.log(x.text) },
+    { context_window_size: 16384 },
+);
+
+viewer.agentConfig({
+    name: "webllm",
+    engine,
+    systemRole: "user",
+});
+</code></pre>
+<h2 id="the-documentation-bundle"><a class="header" href="#the-documentation-bundle">The documentation bundle</a></h2>
+<p><code>&lt;perspective-viewer&gt;</code> publishes a metadata bundle at
+<code>dist/docs/perspective-docs.json</code> containing a searchable corpus of the
+Perspective documentation plus generated JSON schemas for the viewer’s config
+types. Passing it as <code>docs</code> is optional, but without it the agent will not be
+very capable — it is what lets the agent look things up rather than guess:</p>
+<pre><code class="language-javascript">import docs from "@perspective-dev/viewer/dist/docs/perspective-docs.json" with { type: "json" };
+
+viewer.agentConfig({ ...providers.anthropic, apiKey: "sk-ant-...", docs });
+
+// ... or ...
+
+viewer.agentConfig({
+    ...providers.anthropic,
+    apiKey: "sk-ant-...",
+    docs: fetch(
+        "node_modules/@perspective-dev/viewer/dist/docs/perspective-docs.json",
+    ),
+});
+</code></pre>
+<p>Without it the agent still works: <code>search_docs</code> searches an empty corpus and the
+tool parameter schemas degrade to permissive objects. The practical difference
+is how often a weaker model invents a field name that doesn’t exist, or writes
+an ExprTK expression against syntax Perspective doesn’t have.</p>
+<h3 id="telling-the-agent-about-your-data"><a class="header" href="#telling-the-agent-about-your-data">Telling the agent about your data</a></h3>
+<p>The agent learns column names and types from <code>get_schema</code>, but not what they
+<em>mean</em> — that <code>Discount</code> is a ratio rather than a percent, or that a negative
+<code>Profit</code> is a return rather than an error. Add those notes as extra corpus
+entries:</p>
+<pre><code class="language-javascript">import bundle from "@perspective-dev/viewer/dist/docs/perspective-docs.json" with { type: "json" };
+
+const DATASET_DOCS = [
+    {
+        title: "Superstore columns",
+        text: "`Discount` is a ratio in [0, 1], not a percent. `Profit` is net of `Discount` and is negative for returns.",
+    },
+];
+
+viewer.agentConfig({
+    ...providers.anthropic,
+    apiKey: "sk-ant-...",
+    docs: { ...bundle, chunks: [...bundle.chunks, ...DATASET_DOCS] },
+});
+</code></pre>
+<p>An inline <code>[{title?, text}]</code> array may also be passed as <code>docs</code> on its own, when
+you have host notes but no packaged bundle.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="virtual-servers-1"><a class="header" href="#virtual-servers-1">Virtual Servers</a></h1>
 <p>Perspective’s Virtual Server feature lets you connect <code>&lt;perspective-viewer&gt;</code> to
@@ -2389,32 +3141,56 @@ DuckDB-WASM databases directly in the browser.</p>
 </code></pre>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p>Initialize DuckDB-WASM, load data, and connect it to a Perspective viewer:</p>
-<pre><code class="language-javascript">import perspective from "@perspective-dev/client";
+<p><code>DuckDBHandler</code> is an optional submodule and is <em>not</em> exported from the package
+root, so it must be imported by path. It takes an <code>AsyncDuckDBConnection</code> — the
+result of <code>db.connect()</code> — not the <code>AsyncDuckDB</code> itself.</p>
+<pre><code class="language-javascript">import perspective, { createMessageHandler } from "@perspective-dev/client";
 import "@perspective-dev/viewer";
 import * as duckdb from "@duckdb/duckdb-wasm";
+import { DuckDBHandler } from "@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
 
 // Initialize DuckDB-WASM
 const DUCKDB_BUNDLES = duckdb.getJsDelivrBundles();
 const bundle = await duckdb.selectBundle(DUCKDB_BUNDLES);
-const worker = await duckdb.createWorker(bundle.mainWorker);
+const worker_url = URL.createObjectURL(
+    new Blob([`importScripts("${bundle.mainWorker}");`], {
+        type: "text/javascript",
+    }),
+);
+
+const worker = new Worker(worker_url);
 const logger = new duckdb.ConsoleLogger();
 const db = new duckdb.AsyncDuckDB(logger, worker);
-await db.instantiate(bundle.mainModule);
+await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+URL.revokeObjectURL(worker_url);
 
-// Load data into DuckDB
+// Load data into DuckDB. This pragma is required to match Perspective's
+// sort-null semantics.
 const conn = await db.connect();
+await conn.query(`SET default_null_order=NULLS_FIRST_ON_ASC_LAST_ON_DESC;`);
 await conn.query(`CREATE TABLE my_table AS SELECT * FROM 'data.parquet'`);
 
 // Create a Perspective virtual server backed by DuckDB
-const handler = perspective.DuckDBHandler(db);
-const messageHandler = perspective.createMessageHandler(handler);
+const messageHandler = await createMessageHandler(new DuckDBHandler(conn));
 
-// Connect a viewer
+// Connect a viewer. Table ids are database-qualified, so a table created as
+// `my_table` is hosted as `memory.my_table`.
 const client = await perspective.worker(messageHandler);
-const table = await client.open_table("my_table");
-document.getElementById("viewer").load(table);
+const viewer = document.getElementById("viewer");
+viewer.load(client);
+viewer.restore({ table: "memory.my_table" });
 </code></pre>
-<h2 id="examples-2"><a class="header" href="#examples-2">Examples</a></h2>
+<div class="warning">In the browser, <code>DuckDBHandler</code> resolves
+Perspective's WASM module from the registered
+<code>&lt;perspective-viewer&gt;</code> custom element, so it cannot be
+constructed until that element has been defined. Off-browser, pass the module
+explicitly as the second constructor argument.</div>
+
+<p>Perspective never intercepts your SQL — it only discovers what <code>SHOW ALL TABLES</code> reports — so DuckDB’s own remote-data features are available directly:</p>
+<pre><code class="language-javascript">await conn.query(`CREATE SECRET (TYPE s3, KEY_ID '...', SECRET '...', REGION 'us-east-1')`);
+await conn.query(`CREATE TABLE trades AS SELECT * FROM read_parquet('s3://bucket/trades/*.parquet')`);
+</code></pre>
+<h2 id="examples-3"><a class="header" href="#examples-3">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/esbuild-duckdb-virtual">Browser DuckDB example</a></li>
 </ul>
@@ -2449,7 +3225,7 @@ const client = await perspective.worker(messageHandler);
 const table = await client.open_table("my_table");
 document.getElementById("viewer").load(table);
 </code></pre>
-<h2 id="examples-3"><a class="header" href="#examples-3">Examples</a></h2>
+<h2 id="examples-4"><a class="header" href="#examples-4">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/esbuild-clickhouse-virtual">Browser ClickHouse example</a></li>
 </ul>
@@ -2618,19 +3394,21 @@ the data necessary to render the current screen (or whatever else was requested
 via the API), this runtime mode allows large datasets without the need to copy
 them entirely to the Browser, at the expense of network latency on UI
 interaction/API calls.</p>
-<h3 id="jupyterlab"><a class="header" href="#jupyterlab">Jupyterlab</a></h3>
-<p><code>PerspectiveWidget</code> is a JupyterLab widget that implements the same API as
-<code>&lt;perspective-viewer&gt;</code>, allows running such a viewer in
-<a href="https://jupyterlab.readthedocs.io/en/stable/">JupyterLab</a> in either server or
-client (via WebAssembly) mode. <code>PerspectiveWidget</code> is compatible with Jupyterlab
-3 and Jupyter Notebook 6 via a
-<a href="https://jupyterlab.readthedocs.io/en/stable/extension/extension_dev.html#prebuilt-extensions">prebuilt extension</a>.
-To use it, simply install <code>perspective-python</code> and the extensions should be
-available.</p>
-<p><code>perspective-python</code>’s JupyterLab extension also provides convenient builtin
-viewers for <code>csv</code>, <code>json</code>, or <code>arrow</code> files. Simply right-click on a file with
-this extension and choose the appropriate <code>Perpective</code> option from the context
-menu.</p>
+<h3 id="notebooks"><a class="header" href="#notebooks">Notebooks</a></h3>
+<p><code>PerspectiveWidget</code> is an <a href="https://anywidget.dev">AnyWidget</a> that implements
+the same API as <code>&lt;perspective-viewer&gt;</code>, and runs such a viewer in either
+server or client (via WebAssembly) mode.</p>
+<p>The widget is bundled entirely inside the <code>perspective-python</code> wheel, so
+there is no per-host extension to install. It runs identically in
+<a href="https://jupyterlab.readthedocs.io/en/stable/">JupyterLab</a>, classic Jupyter
+Notebook, VSCode notebooks, Google Colab and Marimo. Install the <code>jupyter</code>
+extra to pull in <code>anywidget</code>:</p>
+<pre><code class="language-bash">pip install "perspective-python[jupyter]"
+</code></pre>
+<p>Separately, the <em>optional</em> <code>@perspective-dev/jupyterlab</code> package provides
+convenient builtin viewers for <code>csv</code>, <code>json</code>, or <code>arrow</code> files in JupyterLab.
+With it installed, right-click a file of one of these types and choose the
+appropriate <code>Perspective</code> option from the context menu.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="installation-2"><a class="header" href="#installation-2">Installation</a></h1>
 <p><code>perspective-python</code> contains full bindings to the Perspective API, a JupyterLab
@@ -2751,6 +3529,46 @@ over the wire, or produced by another tool), pass the raw <code>bytes</code> dir
 both stream and file formats are auto-detected:</p>
 <pre><code class="language-python">with open("data.arrow", "rb") as f:
     table = perspective.table(f.read())
+</code></pre>
+<h3 id="nested-columns"><a class="header" href="#nested-columns">Nested columns</a></h3>
+<p>Perspective’s data model is flat, so Arrow <code>struct</code> and <code>list</code> columns are
+normalized on ingest.</p>
+<p>A <code>struct</code> column is hoisted into one dotted column per leaf, recursively. A
+null parent nulls every descendant leaf:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "id": pa.array([1, 2], type=pa.int64()),
+    "s": pa.array([{"a": 10}, {"a": 20}], type=pa.struct([("a", pa.int64())])),
+})
+
+# Schema is `{"id": "integer", "s.a": "integer"}`
+table = perspective.table(arrow_table)
+</code></pre>
+<p>Because the flattened names are ordinary columns, a <code>Table</code> created from an
+explicit schema accepts nested updates with no further configuration:</p>
+<pre><code class="language-python">table = perspective.table({"id": "integer", "s.a": "integer"})
+table.update(arrow_table)
+</code></pre>
+<p>A <code>list</code> column is controlled by the <code>list_flatten</code> argument:</p>
+<ul>
+<li><code>"zip"</code> (default) expands a row into one row per list element, repeating
+its non-list siblings. An empty or null list yields a single row with a
+null in that column, rather than dropping the row. When a row has more than
+one list column, their non-empty lengths must match.</li>
+<li><code>"cartesian"</code> expands a row into the product of its list columns’ lengths,
+with an empty or null list counting as a single null element.</li>
+<li><code>"stringify"</code> encodes each list as a JSON array in a single string column,
+leaving the row count unchanged.</li>
+</ul>
+<pre><code class="language-python">arrow_table = pa.table({
+    "x": pa.array([1, 2], type=pa.int64()),
+    "y": pa.array([[10, 20], [30]], type=pa.list_(pa.int64())),
+})
+
+# `{"x": [1, 1, 2], "y": [10, 20, 30]}`
+perspective.table(arrow_table)
+
+# `{"x": [1, 2], "y": ["[10,20]", "[30]"]}`
+perspective.table(arrow_table, list_flatten="stringify")
 </code></pre>
 <h2 id="polars"><a class="header" href="#polars">Polars</a></h2>
 <pre><code class="language-python">import polars as pl
@@ -2893,7 +3711,7 @@ will be assigned randomly and the <code>Client</code> must look this up with
 <code>Client.get_hosted_table_names()</code></p>
 <h2 id="clientserver-replicated-mode"><a class="header" href="#clientserver-replicated-mode">Client/Server Replicated Mode</a></h2>
 <p>Using Tornado and
-<a href="how_to/python/python.html#perspectivetornadohandler"><code>PerspectiveTornadoHandler</code></a>, as well as
+<a href="#whats-included"><code>PerspectiveTornadoHandler</code></a>, as well as
 <code>Perspective</code>’s JavaScript library, we can set up “distributed” Perspective
 instances that allows multiple browser <code>perspective-viewer</code> clients to read from
 a common <code>perspective-python</code> server, as in the
@@ -3027,13 +3845,28 @@ json = view.to_json()
 <pre><code class="language-python">joined = await client.join(orders, products, "product_id", join_type="left")
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="perspectivewidget-for-jupyterlab"><a class="header" href="#perspectivewidget-for-jupyterlab"><code>PerspectiveWidget</code> for JupyterLab</a></h1>
+<h1 id="perspectivewidget-for-notebooks"><a class="header" href="#perspectivewidget-for-notebooks"><code>PerspectiveWidget</code> for notebooks</a></h1>
 <p>Building on top of the API provided by <code>perspective.Table</code>, the
-<code>PerspectiveWidget</code> is a JupyterLab plugin that offers the entire functionality
-of Perspective within the Jupyter environment. It supports the same API
-semantics of <code>&lt;perspective-viewer&gt;</code>, along with the additional data types
-supported by <code>perspective.Table</code>. <code>PerspectiveWidget</code> takes keyword arguments
-for the managed <code>View</code>:</p>
+<code>PerspectiveWidget</code> offers the entire functionality of Perspective within a
+notebook environment. It supports the same API semantics of
+<code>&lt;perspective-viewer&gt;</code>, along with the additional data types supported by
+<code>perspective.Table</code>.</p>
+<h2 id="installation-3"><a class="header" href="#installation-3">Installation</a></h2>
+<p><code>PerspectiveWidget</code> is an <a href="https://anywidget.dev">AnyWidget</a>, shipped as a
+prebuilt bundle inside the <code>perspective-python</code> wheel. There is no separate
+labextension to install or version-match — install the <code>jupyter</code> extra, which
+adds the <code>anywidget</code> dependency:</p>
+<pre><code class="language-bash">pip install "perspective-python[jupyter]"
+</code></pre>
+<p>The same wheel works in JupyterLab, classic Jupyter Notebook, VSCode
+notebooks, Google Colab and Marimo.</p>
+<div class="warning">The <code>@perspective-dev/jupyterlab</code> package is
+now <em>optional</em> and no longer ships the widget. It provides only the
+"Open With → Perspective" file renderers for <code>csv</code>,
+<code>json</code> and <code>arrow</code> files in JupyterLab.</div>
+
+<h2 id="usage-2"><a class="header" href="#usage-2">Usage</a></h2>
+<p><code>PerspectiveWidget</code> takes keyword arguments for the managed <code>View</code>:</p>
 <pre><code class="language-python">from perspective.widget import PerspectiveWidget
 w = perspective.PerspectiveWidget(
     data,
@@ -3064,14 +3897,15 @@ PerspectiveWidget(table)
 <p><code>PerspectiveWidget</code> shares a similar API to the <code>&lt;perspective-viewer&gt;</code> Custom
 Element, and has similar <code>save()</code> and <code>restore()</code> methods that
 serialize/deserialize UI state for the widget.</p>
-<!--
-## `PerspectiveRenderer`
-
-Perspective also exposes a JS-only `mimerender-extension`. This lets you view
-`csv`, `json`, and `arrow` files directly from the file browser. You can see
-this by right clicking one of these files and `Open With->CSVPerspective` (or
-`JSONPerspective` or `ArrowPerspective`). Perspective will also install itself
-as the default handler for opening `.arrow` files. -->
+<h2 id="perspectiverenderer"><a class="header" href="#perspectiverenderer"><code>PerspectiveRenderer</code></a></h2>
+<p>The optional <code>@perspective-dev/jupyterlab</code> package exposes a JS-only
+<code>mimerender-extension</code>. This lets you view <code>csv</code>, <code>json</code>, and <code>arrow</code> files
+directly from the JupyterLab file browser — right-click one of these files and
+choose <code>Open With → Perspective</code>.</p>
+<pre><code class="language-bash">jupyter labextension install @perspective-dev/jupyterlab
+</code></pre>
+<p>This package is independent of <code>PerspectiveWidget</code>; install it only if you
+want the file renderers.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="virtual-servers-2"><a class="header" href="#virtual-servers-2">Virtual Servers</a></h1>
 <p>Perspective’s Virtual Server feature lets you connect <code>&lt;perspective-viewer&gt;</code> to
@@ -3097,15 +3931,15 @@ to connect Perspective to any data source by subclassing <code>VirtualServerHand
 a server-side DuckDB database over WebSocket.</p>
 <p>For browser-only usage via DuckDB-WASM, see the
 <a href="#duckdb-virtual-server">JavaScript DuckDB guide</a>.</p>
-<h2 id="installation-3"><a class="header" href="#installation-3">Installation</a></h2>
+<h2 id="installation-4"><a class="header" href="#installation-4">Installation</a></h2>
 <pre><code class="language-bash">pip install perspective-python duckdb
 </code></pre>
-<h2 id="usage-2"><a class="header" href="#usage-2">Usage</a></h2>
+<h2 id="usage-3"><a class="header" href="#usage-3">Usage</a></h2>
 <p>Create a server that exposes a DuckDB database to browser clients:</p>
 <pre><code class="language-python">import duckdb
 import tornado.web
 import tornado.ioloop
-from perspective import DuckDBVirtualServer
+from perspective.virtual_servers.duckdb import DuckDBVirtualServer
 from perspective.handlers.tornado import PerspectiveTornadoHandler
 
 # Create DuckDB connection and load data
@@ -3128,7 +3962,24 @@ tornado.ioloop.IOLoop.current().start()
 const table = await websocket.open_table("my_table");
 document.getElementById("viewer").load(table);
 </code></pre>
-<h2 id="examples-4"><a class="header" href="#examples-4">Examples</a></h2>
+<h2 id="window-functions"><a class="header" href="#window-functions">Window functions</a></h2>
+<p>Window columns are DuckDB’s own functions, under their DuckDB names — the
+advertised name is emitted into the <code>OVER</code> clause verbatim.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td>Aggregating</td><td><code>sum</code> <code>avg</code> <code>count</code> <code>min</code> <code>max</code> <code>product</code> <code>median</code></td></tr>
+<tr><td>Deviation / variance</td><td><code>stddev_samp</code> <code>stddev_pop</code> <code>var_samp</code> <code>var_pop</code></td></tr>
+<tr><td>Navigation</td><td><code>first_value</code> <code>last_value</code> <code>nth_value</code> <code>lag</code> <code>lead</code></td></tr>
+<tr><td>Ranking</td><td><code>row_number</code> <code>rank</code> <code>dense_rank</code> <code>percent_rank</code> <code>cume_dist</code> <code>ntile</code></td></tr>
+<tr><td>Perspective’s own</td><td><code>diff</code> <code>rate</code></td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="examples-5"><a class="header" href="#examples-5">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/python-duckdb-virtual">Python DuckDB example</a></li>
 </ul>
@@ -3139,15 +3990,15 @@ document.getElementById("viewer").load(table);
 to query a ClickHouse server over WebSocket.</p>
 <p>For browser-only usage, see the
 <a href="#clickhouse-virtual-server">JavaScript ClickHouse guide</a>.</p>
-<h2 id="installation-4"><a class="header" href="#installation-4">Installation</a></h2>
+<h2 id="installation-5"><a class="header" href="#installation-5">Installation</a></h2>
 <pre><code class="language-bash">pip install perspective-python clickhouse-connect
 </code></pre>
-<h2 id="usage-3"><a class="header" href="#usage-3">Usage</a></h2>
+<h2 id="usage-4"><a class="header" href="#usage-4">Usage</a></h2>
 <p>Create a server that exposes ClickHouse tables to browser clients:</p>
 <pre><code class="language-python">import clickhouse_connect
 import tornado.web
 import tornado.ioloop
-from perspective import ClickhouseVirtualServer
+from perspective.virtual_servers.clickhouse import ClickhouseVirtualServer
 from perspective.handlers.tornado import PerspectiveTornadoHandler
 
 # Connect to ClickHouse
@@ -3169,7 +4020,7 @@ tornado.ioloop.IOLoop.current().start()
 const table = await websocket.open_table("my_table");
 document.getElementById("viewer").load(table);
 </code></pre>
-<h2 id="examples-5"><a class="header" href="#examples-5">Examples</a></h2>
+<h2 id="examples-6"><a class="header" href="#examples-6">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/python-clickhouse-virtual">Python ClickHouse example</a></li>
 </ul>
@@ -3178,10 +4029,10 @@ document.getElementById("viewer").load(table);
 <p>Perspective provides a built-in virtual server for
 <a href="https://pola.rs/">Polars</a>, allowing <code>&lt;perspective-viewer&gt;</code> clients to query
 in-memory Polars DataFrames over WebSocket.</p>
-<h2 id="installation-5"><a class="header" href="#installation-5">Installation</a></h2>
+<h2 id="installation-6"><a class="header" href="#installation-6">Installation</a></h2>
 <pre><code class="language-bash">pip install perspective-python polars
 </code></pre>
-<h2 id="usage-4"><a class="header" href="#usage-4">Usage</a></h2>
+<h2 id="usage-5"><a class="header" href="#usage-5">Usage</a></h2>
 <p>Create a server that exposes Polars DataFrames to browser clients:</p>
 <pre><code class="language-python">import polars as pl
 import tornado.web
@@ -3208,20 +4059,28 @@ tornado.ioloop.IOLoop.current().start()
 const table = await websocket.open_table("my_table");
 document.getElementById("viewer").load(table);
 </code></pre>
-<h2 id="examples-6"><a class="header" href="#examples-6">Examples</a></h2>
+<h2 id="examples-7"><a class="header" href="#examples-7">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/python-polars-virtual">Python Polars example</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="implementing-a-custom-virtual-server-1"><a class="header" href="#implementing-a-custom-virtual-server-1">Implementing a custom Virtual Server</a></h1>
 <p>You can connect Perspective to any data source by subclassing
-<code>VirtualServerHandler</code> and wrapping it with <code>VirtualServer</code>.</p>
+<code>VirtualServerHandler</code>, wrapping it in a <code>VirtualServer</code>, and exposing that
+via a small <em>session factory</em> object which the WebSocket handlers use to give
+each connected client its own session.</p>
 <p>For background on virtual servers, see the
 <a href="#virtual-servers">Virtual Servers overview</a>.</p>
-<h2 id="example-2"><a class="header" href="#example-2">Example</a></h2>
-<pre><code class="language-python">from perspective import VirtualServerHandler, VirtualServer
+<h2 id="the-handler"><a class="header" href="#the-handler">The handler</a></h2>
+<p><code>VirtualServerHandler</code> is imported from <code>perspective.virtual_servers</code>. Only
+<code>get_hosted_tables</code>, <code>table_schema</code>, <code>table_size</code>, <code>table_make_view</code>,
+<code>view_delete</code> and <code>view_get_data</code> are required; the rest have defaults.</p>
+<pre><code class="language-python">from perspective.virtual_servers import VirtualServerHandler
 
-class MyModel(VirtualServerHandler):
+class MyHandler(VirtualServerHandler):
+    def __init__(self, db):
+        self.db = db
+
     def get_features(self):
         return {
             "group_by": True,
@@ -3246,35 +4105,81 @@ class MyModel(VirtualServerHandler):
     def table_size(self, table_name):
         return 1000
 
-    def table_make_view(self, table_name, view_id, config):
-        # Translate `config` (group_by, sort, filter, etc.) into a
-        # query against your data source. Store the query keyed by
-        # `view_id` for later data retrieval.
+    def table_make_view(self, table_name, view_name, config):
+        # Translate `config` (group_by, sort, filter, etc.) into a query
+        # against your data source. Store the query keyed by `view_name`
+        # for later data retrieval.
         pass
 
-    def view_delete(self, view_id):
-        # Clean up resources for this view
+    def view_delete(self, view_name):
+        # Clean up resources for this view. The UI does this automatically,
+        # and can recover if a view dies early.
         pass
 
-    def view_get_data(self, view_id, start_row, end_row, start_col, end_col, ctx):
-        # Execute the stored query with the given row/column window.
-        # Push results via `ctx`.
+    def view_get_data(self, view_name, config, viewport, data):
+        # Serialize the rectangular slice `viewport` of the temporary table
+        # `view_name` into `data`, a push-only `VirtualDataSlice`. Once a
+        # type has been pushed for a column name it must not change.
         pass
 </code></pre>
-<p>The <code>VirtualServer</code> instance can then be passed to a Tornado, Starlette, or
+<h3 id="optional-methods"><a class="header" href="#optional-methods">Optional methods</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Default</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td><code>get_features()</code></td><td><code>columns</code> only</td><td>Which UI controls to enable — see <a href="#features-declaration">Features declaration</a></td></tr>
+<tr><td><code>view_schema(view_name, config)</code></td><td><code>table_schema</code></td><td>Schema of a temporary table, when it differs from its source</td></tr>
+<tr><td><code>view_size(view_name)</code></td><td><code>table_size</code></td><td>Row count of a temporary table, when it differs from its source</td></tr>
+<tr><td><code>table_validate_expression(view_name, expression)</code></td><td>allow all</td><td>Type-check an expression column; enabled by <code>"expressions"</code> in <code>get_features</code></td></tr>
+<tr><td><code>view_get_min_max(view_name, column_name, config)</code></td><td>unsupported</td><td>Column bounds as a <code>(min, max)</code> tuple — required for gradient and sparkbar column styles</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="the-session-factory"><a class="header" href="#the-session-factory">The session factory</a></h2>
+<p>The WebSocket handlers call <code>new_session(callback)</code> once per connection, so
+the object passed as <code>perspective_server</code> must provide it. Wrap your handler
+in a <code>perspective.VirtualServer</code> — which owns the protocol — and return one
+session per client:</p>
+<pre><code class="language-python">import perspective
+
+class MyVirtualSession:
+    def __init__(self, callback, db):
+        self.session = perspective.VirtualServer(MyHandler(db))
+        self.callback = callback
+
+    def handle_request(self, msg):
+        self.callback(self.session.handle_request(msg))
+
+
+class MyVirtualServer:
+    def __init__(self, db):
+        self.db = db
+
+    def new_session(self, callback):
+        return MyVirtualSession(callback, self.db)
+</code></pre>
+<h2 id="serving-it"><a class="header" href="#serving-it">Serving it</a></h2>
+<p>A <code>MyVirtualServer</code> instance can then be passed to a Tornado, Starlette or
 AIOHTTP handler just like a regular <code>Server</code>:</p>
 <pre><code class="language-python">from perspective.handlers.tornado import PerspectiveTornadoHandler
 
 app = tornado.web.Application([
-    (r"/websocket", PerspectiveTornadoHandler, {"perspective_server": VirtualServer(MyModel)}),
+    (r"/websocket", PerspectiveTornadoHandler, {
+        "perspective_server": MyVirtualServer(db),
+    }),
 ])
 </code></pre>
+<p>The built-in <a href="#duckdb-virtual-server-1">DuckDB</a>, <a href="#clickhouse-virtual-server-1">ClickHouse</a> and
+<a href="#polars-virtual-server">Polars</a> implementations all follow exactly this shape and are
+worth reading as complete references.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="rust"><a class="header" href="#rust">Rust</a></h1>
 <p>Install via <code>cargo</code>:</p>
 <pre><code class="language-bash">cargo add perspective
 </code></pre>
-<h1 id="example-3"><a class="header" href="#example-3">Example</a></h1>
+<h1 id="example-2"><a class="header" href="#example-2">Example</a></h1>
 <p>Initialize a server and client</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -3465,7 +4370,7 @@ server-side runtime than <code>node.js</code>.</p>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="faq"><a class="header" href="#faq">FAQ</a></h1>
-<h2 id="installation-6"><a class="header" href="#installation-6">Installation</a></h2>
+<h2 id="installation-7"><a class="header" href="#installation-7">Installation</a></h2>
 <h3 id="python-installation-fails-on-windows"><a class="header" href="#python-installation-fails-on-windows">Python installation fails on Windows</a></h3>
 <p>Python wheels are published for supported Python versions and platforms. On
 Windows, ensure you have a compatible Python version and architecture. Install
@@ -3558,13 +4463,27 @@ which is too small). See
 <!-- _Related: [#3026](https://github.com/perspective-dev/perspective/issues/3026),
 [#1768](https://github.com/perspective-dev/perspective/issues/1768)_ -->
 <h3 id="can-i-do-rolling-sums-or-cumulative-calculations"><a class="header" href="#can-i-do-rolling-sums-or-cumulative-calculations">Can I do rolling sums or cumulative calculations?</a></h3>
-<p>Not in Perspective’s built-in engine, but as an alternative, DuckDB supports
-<a href="https://duckdb.org/docs/stable/sql/functions/window_functions">rolling and cumulative sums via <code>WINDOW</code> functions</a>,
-and DuckDB now has
-<a href="#virtual-servers">native Perspective Virtual Server support</a>
-which allows arbitrary DuckDB queries (as a <code>TABLE</code> or <code>VIEW</code>) to be
-<code>&lt;perspective-viewer&gt;</code> <code>Table</code>s.</p>
-<!-- _Related:
+<p>Yes — use <a href="#window-columns">Window Columns</a>, the
+<code>windows</code> property of a <code>View</code> config. These are ordered, partitioned rolling
+computations analogous to SQL window functions, declared per-<code>View</code> like
+expression columns:</p>
+<pre><code class="language-javascript">const view = await table.view({
+    columns: ["Cumulative Sales"],
+    windows: {
+        "Cumulative Sales": {
+            column: "Sales",
+            aggregate: "sum",
+            order_by: ["Order Date", "asc"],
+            cumulative: true,
+        },
+    },
+});
+</code></pre>
+<p>Window Columns are supported by Perspective’s built-in engine, by the DuckDB,
+ClickHouse and Polars <a href="#virtual-servers">Virtual Servers</a>, and
+by the <code>&lt;perspective-viewer&gt;</code> UI. They update incrementally as the <code>Table</code>
+updates.</p>
+<!-- _Related: [#504](https://github.com/perspective-dev/perspective/issues/504),
 [#2600](https://github.com/perspective-dev/perspective/discussions/2600),
 [#2624](https://github.com/perspective-dev/perspective/issues/2624)_ -->
 <h2 id="filters"><a class="header" href="#filters">Filters</a></h2>
@@ -3598,16 +4517,31 @@ Apply two filters on the same date column for a range.</p>
 <!-- _Related:
 [#3100](https://github.com/perspective-dev/perspective/discussions/3100),
 [#2023](https://github.com/perspective-dev/perspective/issues/2023)_ -->
-<h2 id="jupyterlab-1"><a class="header" href="#jupyterlab-1">JupyterLab</a></h2>
-<h3 id="perspectivewidget-is-not-loading-in-jupyterlab"><a class="header" href="#perspectivewidget-is-not-loading-in-jupyterlab"><code>PerspectiveWidget</code> is not loading in JupyterLab</a></h3>
-<p>See the <a href="#perspectivewidget-for-jupyterlab"><code>PerspectiveWidget</code> guide</a> for full
-setup details. Ensure the JupyterLab extension version matches your
-<code>perspective-python</code> version. Make sure you are using a compatible JupyterLab
-for your Perspective version (JupyterLab 4+ currently).</p>
-<p>Check that the extension is enabled with <code>jupyter labextension list</code>.</p>
+<h2 id="notebooks-1"><a class="header" href="#notebooks-1">Notebooks</a></h2>
+<h3 id="perspectivewidget-is-not-loading"><a class="header" href="#perspectivewidget-is-not-loading"><code>PerspectiveWidget</code> is not loading</a></h3>
+<p><code>PerspectiveWidget</code> is an <a href="https://anywidget.dev">AnyWidget</a>, shipped entirely
+inside the <code>perspective-python</code> wheel. There is no separate JupyterLab
+extension to install or version-match for the widget, so
+<code>jupyter labextension list</code> is not where to look.</p>
+<p>Install the <code>jupyter</code> extra, which pulls in <code>anywidget</code>:</p>
+<pre><code class="language-bash">pip install "perspective-python[jupyter]"
+</code></pre>
+<p>Then restart the kernel — and, for JupyterLab, reload the browser page. See
+the <a href="#perspectivewidget-for-notebooks"><code>PerspectiveWidget</code> guide</a>.</p>
 <!-- _Related: [#1392](https://github.com/perspective-dev/perspective/issues/1392),
 [#2059](https://github.com/perspective-dev/perspective/issues/2059),
 [#2307](https://github.com/perspective-dev/perspective/issues/2307)_ -->
+<h3 id="does-perspectivewidget-work-outside-jupyterlab"><a class="header" href="#does-perspectivewidget-work-outside-jupyterlab">Does <code>PerspectiveWidget</code> work outside JupyterLab?</a></h3>
+<p>Yes. Because the widget is an AnyWidget bundled into the wheel rather than a
+JupyterLab labextension, it runs in any AnyWidget-compatible host —
+JupyterLab, classic Jupyter Notebook, <strong>VSCode notebooks</strong>, Google Colab and
+Marimo — with no per-host install step.</p>
+<p>The separate <code>@perspective-dev/jupyterlab</code> package is now <em>optional</em> and
+provides only the “Open With → Perspective” file renderers for <code>csv</code>, <code>json</code>
+and <code>arrow</code> files in JupyterLab.</p>
+<!-- _Related: [#2783](https://github.com/perspective-dev/perspective/issues/2783),
+[#3042](https://github.com/perspective-dev/perspective/issues/3042),
+[#3056](https://github.com/perspective-dev/perspective/issues/3056)_ -->
 <h2 id="memory-and-performance"><a class="header" href="#memory-and-performance">Memory and Performance</a></h2>
 <h3 id="perspective-has-a-memory-leak"><a class="header" href="#perspective-has-a-memory-leak">Perspective has a memory leak</a></h3>
 <p>Maybe, but please review the
@@ -3779,9 +4713,10 @@ update failures.</p>
 <!-- _Related: [#2524](https://github.com/perspective-dev/perspective/issues/2524)_ -->
 <h2 id="export"><a class="header" href="#export">Export</a></h2>
 <h3 id="can-i-export-the-viewer-to-html-png-or-pdf"><a class="header" href="#can-i-export-the-viewer-to-html-png-or-pdf">Can I export the viewer to HTML, PNG or PDF?</a></h3>
-<p>HTML and PNG exports are available via <code>viewer.export("html")</code> and
-<code>viewer.export("png")</code>, respectively. For PDF, render the viewer and use browser
-or headless browser screenshot capabilities.</p>
+<p>HTML export is available via <code>viewer.export({ method: "html" })</code>. For an
+image, use <code>{ method: "plugin" }</code>, which asks the plugin to render itself —
+this produces a PNG for chart plugins (and text for the datagrid). For PDF,
+render the viewer and use browser or headless browser screenshot capabilities.</p>
 <!-- _Related: [#2836](https://github.com/perspective-dev/perspective/issues/2836),
 [#2770](https://github.com/perspective-dev/perspective/discussions/2770),
 [#2772](https://github.com/perspective-dev/perspective/issues/2772)_ -->
@@ -3793,8 +4728,12 @@ using a library like <code>xlsx</code> (JavaScript) or <code>openpyxl</code> (Py
 <!-- _Related:
 [#2738](https://github.com/perspective-dev/perspective/discussions/2738)_ -->
 <h3 id="how-do-i-copy-data-from-a-cell-or-row"><a class="header" href="#how-do-i-copy-data-from-a-cell-or-row">How do I copy data from a cell or row?</a></h3>
-<p>Use the <code>"text"</code> export mode when data is selected:
-<code>await viewer.export("text")</code>.</p>
+<p>Use one of the <code>-selected</code> export methods, which operate on the current
+selection. To place it on the clipboard:</p>
+<pre><code class="language-javascript">await viewer.copy({ method: "csv-selected" });
+</code></pre>
+<p>… or to get it as a string, <code>await viewer.export({ method: "csv-selected" })</code>.
+<code>json-selected</code> and <code>arrow-selected</code> are also available.</p>
 <!-- _Related: [#2765](https://github.com/perspective-dev/perspective/issues/2765),
 [#2356](https://github.com/perspective-dev/perspective/discussions/2356)_ -->
 <h2 id="table-operations"><a class="header" href="#table-operations">Table Operations</a></h2>
@@ -3850,11 +4789,14 @@ server-side data processing without any UI. Use
 [#2933](https://github.com/perspective-dev/perspective/discussions/2933),
 [#2644](https://github.com/perspective-dev/perspective/discussions/2644)_ -->
 <h3 id="can-i-use-perspective-in-pyodide"><a class="header" href="#can-i-use-perspective-in-pyodide">Can I use Perspective in Pyodide?</a></h3>
-<p>There is an emscripten wheel
-<a href="https://github.com/perspective-dev/perspective/releases">published via Releases</a>,
-but it must be downloaded and hosted manually and is only built for specific
-pyodide versions.</p>
-<!-- _Related:
+<p>Yes. Perspective publishes Emscripten wheels to PyPI under
+<a href="https://peps.python.org/pep-0783/">PEP 783</a>, so <code>perspective-python</code> can be
+installed by Pyodide’s own package resolution — there is no need to download
+and host a wheel yourself.</p>
+<p>Emscripten wheels are ABI-tied to a specific Emscripten version, and thus to
+the Pyodide versions built against it. If resolution fails, check that your
+Pyodide version matches a published wheel tag.</p>
+<!-- _Related: [#3186](https://github.com/perspective-dev/perspective/issues/3186),
 [#2880](https://github.com/perspective-dev/perspective/discussions/2880)_ -->
 <h3 id="how-do-i-handle-row-selection-events"><a class="header" href="#how-do-i-handle-row-selection-events">How do I handle row selection events?</a></h3>
 <p>Listen for

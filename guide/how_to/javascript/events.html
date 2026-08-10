@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -196,18 +196,90 @@ through user interaction will fire a <code>perspective-config-update</code> even
 </code></pre>
 <h2 id="click-events"><a class="header" href="#click-events">Click events</a></h2>
 <p>Whenever a <code>&lt;perspective-viewer&gt;</code>’s grid or chart is clicked, a
-<code>perspective-click</code> DOM event is fired containing a detail object with <code>config</code>,
-<code>column_names</code>, and <code>row</code>.</p>
+<code>perspective-click</code> DOM event is fired containing a detail object with
+<code>config</code>, <code>column_names</code>, <code>row</code> and <code>panel</code>.</p>
 <p>The <code>config</code> object contains an array of <code>filters</code> that can be applied to a
 <code>&lt;perspective-viewer&gt;</code> through the use of <code>restore()</code> updating it to show the
 filtered subset of data.</p>
-<p>The <code>column_names</code> property contains an array of matching columns, and the <code>row</code>
-property returns the associated row data.</p>
+<p>The <code>column_names</code> property contains an array of matching columns, the <code>row</code>
+property returns the associated row data, and <code>panel</code> identifies the panel
+which fired the event in a multi-panel viewer.</p>
 <pre><code class="language-javascript">elem.addEventListener("perspective-click", function (event) {
-    var config = event.detail.config;
-    elem.restore(config);
+    const { config, panel } = event.detail;
+    elem.restore(config, { panel });
 });
 </code></pre>
+<h2 id="selection-events"><a class="header" href="#selection-events">Selection events</a></h2>
+<p><code>perspective-select</code> fires when a plugin’s selection changes. Its detail is a
+<code>PerspectiveSelectDetail</code>, exported from <code>@perspective-dev/viewer</code>:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>selected</code></td><td><code>boolean</code></td><td>Whether anything is currently selected</td></tr>
+<tr><td><code>row</code></td><td><code>object</code></td><td>The associated row data</td></tr>
+<tr><td><code>column_names</code></td><td><code>string[]</code></td><td>Matching column names</td></tr>
+<tr><td><code>removeConfigs</code></td><td><code>ViewConfigUpdate[]</code></td><td>Configs whose filters should be <em>removed</em></td></tr>
+<tr><td><code>insertConfigs</code></td><td><code>ViewConfigUpdate[]</code></td><td>Configs whose filters should be <em>applied</em></td></tr>
+<tr><td><code>panel</code></td><td><code>string?</code></td><td>The originating panel, in a multi-panel viewer</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>removeConfigs</code> is applied first, then <code>insertConfigs</code>. The
+<code>removeFilters</code> and <code>insertFilters</code> getters flatten each to a plain <code>Filter[]</code>.</p>
+<pre><code class="language-javascript">import { PerspectiveSelectDetail } from "@perspective-dev/viewer";
+
+elem.addEventListener("perspective-select", function (event) {
+    const { insertFilters, removeFilters } = event.detail;
+    console.log("apply", insertFilters, "clear", removeFilters);
+});
+</code></pre>
+<div class="warning">The <code>detail.config</code> field on
+<code>perspective-select</code> was replaced by <code>insertConfigs</code> and
+<code>removeConfigs</code>. Without an explicit <code>removeConfigs</code>,
+a filter on a column outside the source's <code>group_by</code>,
+<code>split_by</code> or <code>filter</code> cannot be cleared.</div>
+
+<h2 id="global-filter-events"><a class="header" href="#global-filter-events">Global filter events</a></h2>
+<p>In a multi-panel viewer, panels toggled to <em>Master</em> contribute filter clauses
+to an element-level global filter set, which is applied as a transient overlay
+to every <em>detail</em> panel (and never written into their saved configs).</p>
+<ul>
+<li><code>perspective-global-filter</code> fires on a master panel’s selection.</li>
+<li><code>perspective-global-filter-update</code> fires whenever the global filter set
+changes, with a <code>Filter[]</code> detail.</li>
+</ul>
+<pre><code class="language-javascript">elem.addEventListener("perspective-global-filter-update", function (event) {
+    console.log("Global filters are now", event.detail);
+});
+</code></pre>
+<h2 id="layout-events"><a class="header" href="#layout-events">Layout events</a></h2>
+<p>A multi-panel <code>&lt;perspective-viewer&gt;</code> reports changes to its panel <em>collection</em>
+on two separate channels. They are distinct facts — which panels exist, and
+which one is selected — so neither event implies the other.</p>
+<ul>
+<li><code>perspective-layout-update</code> fires when a panel is added to or removed from
+the layout. Its <code>detail.panels</code> is the placed panel ids in insertion order,
+identical to what <a href="#"><code>getPanelNames()</code></a> returns.</li>
+<li><code>perspective-active-panel-update</code> fires when the active panel changes, with
+a <code>detail.panel</code> of the new panel’s id — or <code>null</code> at zero panels.</li>
+</ul>
+<pre><code class="language-javascript">elem.addEventListener("perspective-layout-update", function (event) {
+    console.log("Panels are now", event.detail.panels);
+});
+</code></pre>
+<p>Geometry changes — dragging a split divider, reordering tabs — do <strong>not</strong> fire
+these events, because they change the layout tree without changing the panel
+set. Use <code>saveWorkspace()</code> to read the current geometry.</p>
+<div class="warning">The <code>workspace-layout-update</code> and
+<code>workspace-new-view</code> events from the removed
+<code>@perspective-dev/workspace</code> package no longer exist.
+<code>perspective-layout-update</code> is the closest replacement for the
+former; for per-panel config changes use
+<code>perspective-config-update</code>.</div>
+
 
                     </main>
 

@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -190,9 +190,11 @@ import "@perspective-dev/viewer/dist/css/pro-dark.css";
 
 // Other themes
 import "@perspective-dev/viewer/dist/css/solarized.css";
-import "@perspective-dev/viewer/dist/css/solarized-dark.css";
 import "@perspective-dev/viewer/dist/css/monokai.css";
 import "@perspective-dev/viewer/dist/css/vaporwave.css";
+
+// ...
+
 </code></pre>
 <p>Alternatively, you may use <code>themes.css</code>, which bundles all default themes</p>
 <pre><code class="language-javascript">import "@perspective-dev/viewer/dist/css/themes.css";
@@ -231,8 +233,9 @@ await viewer.restore({ theme: "Pro Dark" });
 <h2 id="custom-themes"><a class="header" href="#custom-themes">Custom Themes</a></h2>
 <p>The best way to write a new theme is to
 <a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes">fork and modify an existing theme</a>,
-which are <em>just</em> collections of regular CSS variables (no preprocessor is
-required, though Perspective’s own themes use one). <code>&lt;perspective-viewer&gt;</code> is
+which are <em>just</em> collections of regular CSS variables — Perspective’s own
+themes are plain <code>.css</code> files, with no preprocessor involved.
+<code>&lt;perspective-viewer&gt;</code> is
 not “themed” by default and will lack icons and label text in addition to colors
 and fonts, so starting from an empty theme forces you to define <em>every</em>
 theme-able variable to get a functional UI.</p>

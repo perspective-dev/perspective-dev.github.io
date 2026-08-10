@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -179,13 +179,28 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="perspectivewidget-for-jupyterlab"><a class="header" href="#perspectivewidget-for-jupyterlab"><code>PerspectiveWidget</code> for JupyterLab</a></h1>
+                        <h1 id="perspectivewidget-for-notebooks"><a class="header" href="#perspectivewidget-for-notebooks"><code>PerspectiveWidget</code> for notebooks</a></h1>
 <p>Building on top of the API provided by <code>perspective.Table</code>, the
-<code>PerspectiveWidget</code> is a JupyterLab plugin that offers the entire functionality
-of Perspective within the Jupyter environment. It supports the same API
-semantics of <code>&lt;perspective-viewer&gt;</code>, along with the additional data types
-supported by <code>perspective.Table</code>. <code>PerspectiveWidget</code> takes keyword arguments
-for the managed <code>View</code>:</p>
+<code>PerspectiveWidget</code> offers the entire functionality of Perspective within a
+notebook environment. It supports the same API semantics of
+<code>&lt;perspective-viewer&gt;</code>, along with the additional data types supported by
+<code>perspective.Table</code>.</p>
+<h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
+<p><code>PerspectiveWidget</code> is an <a href="https://anywidget.dev">AnyWidget</a>, shipped as a
+prebuilt bundle inside the <code>perspective-python</code> wheel. There is no separate
+labextension to install or version-match — install the <code>jupyter</code> extra, which
+adds the <code>anywidget</code> dependency:</p>
+<pre><code class="language-bash">pip install "perspective-python[jupyter]"
+</code></pre>
+<p>The same wheel works in JupyterLab, classic Jupyter Notebook, VSCode
+notebooks, Google Colab and Marimo.</p>
+<div class="warning">The <code>@perspective-dev/jupyterlab</code> package is
+now <em>optional</em> and no longer ships the widget. It provides only the
+"Open With → Perspective" file renderers for <code>csv</code>,
+<code>json</code> and <code>arrow</code> files in JupyterLab.</div>
+
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<p><code>PerspectiveWidget</code> takes keyword arguments for the managed <code>View</code>:</p>
 <pre><code class="language-python">from perspective.widget import PerspectiveWidget
 w = perspective.PerspectiveWidget(
     data,
@@ -216,14 +231,15 @@ PerspectiveWidget(table)
 <p><code>PerspectiveWidget</code> shares a similar API to the <code>&lt;perspective-viewer&gt;</code> Custom
 Element, and has similar <code>save()</code> and <code>restore()</code> methods that
 serialize/deserialize UI state for the widget.</p>
-<!--
-## `PerspectiveRenderer`
-
-Perspective also exposes a JS-only `mimerender-extension`. This lets you view
-`csv`, `json`, and `arrow` files directly from the file browser. You can see
-this by right clicking one of these files and `Open With->CSVPerspective` (or
-`JSONPerspective` or `ArrowPerspective`). Perspective will also install itself
-as the default handler for opening `.arrow` files. -->
+<h2 id="perspectiverenderer"><a class="header" href="#perspectiverenderer"><code>PerspectiveRenderer</code></a></h2>
+<p>The optional <code>@perspective-dev/jupyterlab</code> package exposes a JS-only
+<code>mimerender-extension</code>. This lets you view <code>csv</code>, <code>json</code>, and <code>arrow</code> files
+directly from the JupyterLab file browser — right-click one of these files and
+choose <code>Open With → Perspective</code>.</p>
+<pre><code class="language-bash">jupyter labextension install @perspective-dev/jupyterlab
+</code></pre>
+<p>This package is independent of <code>PerspectiveWidget</code>; install it only if you
+want the file renderers.</p>
 
                     </main>
 

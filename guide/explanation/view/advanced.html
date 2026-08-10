@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -317,14 +317,15 @@ view.remove_update(on_update)
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
 tables across clients.</p>
 <h2 id="flattening-a-view-into-a-table"><a class="header" href="#flattening-a-view-into-a-table">Flattening a View into a Table</a></h2>
-<p>In Javascript, a [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance,
-which will return a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and
-all future updates that affect the [<code>Table::view</code>] will be forwarded to the new
-[<code>Table</code>]. This is particularly useful for implementing a
-<a href="server.html#clientserver-replicated">Client/Server Replicated</a> design, by
-serializing the <code>View</code> to an arrow and setting up an <code>on_update</code> callback.</p>
+<p>A [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance, which will return
+a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and all future updates
+that affect the [<code>Table::view</code>] will be forwarded to the new [<code>Table</code>]. This is
+particularly useful for implementing a
+<a href="../architecture/client_server.html">Client/Server Replicated</a> design, as it
+handles the <code>View</code> serialization and <code>on_update</code> forwarding for you. This
+pattern is available in JavaScript, Python and Rust.</p>
 <div class="javascript">
-<pre><code class="language-javascript">const worker1 = perspective.worker();
+<pre><code class="language-javascript">const worker = await perspective.worker();
 const table = await worker.table(data);
 const view = await table.view({ filter: [["State", "==", "Texas"]] });
 const table2 = await worker.table(view);
@@ -333,14 +334,9 @@ table.update([{ State: "Texas", City: "Austin" }]);
 </div>
 
 <div class="python">
-<pre><code class="language-python">table = perspective.Table(data);
+<pre><code class="language-python">table = client.table(data)
 view = table.view(filter=[["State", "==", "Texas"]])
-table2 = perspective.Table(view.to_arrow());
-
-def updater(port, delta):
-    table2.update(delta)
-
-view.on_update(updater, mode="Row")
+table2 = client.table(view)
 table.update([{"State": "Texas", "City": "Austin"}])
 </code></pre>
 </div>
@@ -362,7 +358,7 @@ table.update(data).await?;
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../explanation/view/config/expressions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../explanation/view/config/windows.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -376,7 +372,7 @@ table.update(data).await?;
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../explanation/view/config/expressions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../explanation/view/config/windows.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

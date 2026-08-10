@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-1b076223.js"></script>
+        <script src="../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -233,19 +233,21 @@ the data necessary to render the current screen (or whatever else was requested
 via the API), this runtime mode allows large datasets without the need to copy
 them entirely to the Browser, at the expense of network latency on UI
 interaction/API calls.</p>
-<h3 id="jupyterlab"><a class="header" href="#jupyterlab">Jupyterlab</a></h3>
-<p><code>PerspectiveWidget</code> is a JupyterLab widget that implements the same API as
-<code>&lt;perspective-viewer&gt;</code>, allows running such a viewer in
-<a href="https://jupyterlab.readthedocs.io/en/stable/">JupyterLab</a> in either server or
-client (via WebAssembly) mode. <code>PerspectiveWidget</code> is compatible with Jupyterlab
-3 and Jupyter Notebook 6 via a
-<a href="https://jupyterlab.readthedocs.io/en/stable/extension/extension_dev.html#prebuilt-extensions">prebuilt extension</a>.
-To use it, simply install <code>perspective-python</code> and the extensions should be
-available.</p>
-<p><code>perspective-python</code>’s JupyterLab extension also provides convenient builtin
-viewers for <code>csv</code>, <code>json</code>, or <code>arrow</code> files. Simply right-click on a file with
-this extension and choose the appropriate <code>Perpective</code> option from the context
-menu.</p>
+<h3 id="notebooks"><a class="header" href="#notebooks">Notebooks</a></h3>
+<p><code>PerspectiveWidget</code> is an <a href="https://anywidget.dev">AnyWidget</a> that implements
+the same API as <code>&lt;perspective-viewer&gt;</code>, and runs such a viewer in either
+server or client (via WebAssembly) mode.</p>
+<p>The widget is bundled entirely inside the <code>perspective-python</code> wheel, so
+there is no per-host extension to install. It runs identically in
+<a href="https://jupyterlab.readthedocs.io/en/stable/">JupyterLab</a>, classic Jupyter
+Notebook, VSCode notebooks, Google Colab and Marimo. Install the <code>jupyter</code>
+extra to pull in <code>anywidget</code>:</p>
+<pre><code class="language-bash">pip install "perspective-python[jupyter]"
+</code></pre>
+<p>Separately, the <em>optional</em> <code>@perspective-dev/jupyterlab</code> package provides
+convenient builtin viewers for <code>csv</code>, <code>json</code>, or <code>arrow</code> files in JupyterLab.
+With it installed, right-click a file of one of these types and choose the
+appropriate <code>Perspective</code> option from the context menu.</p>
 
                     </main>
 

@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -190,11 +190,30 @@ Component will be available in any standard HTML on your site. A simple example:
     import perspective from "@perspective-dev/client";
     import "@perspective-dev/viewer";
 
+    const viewer = document.getElementById("view1");
     const worker = await perspective.worker();
-    const table = await worker.table(data);
-    document.getElementById("view1").load(table);
+    await worker.table(data, { name: "my_table" });
+
+    await viewer.load(worker);
+    await viewer.restore({ table: "my_table" });
 &lt;/script&gt;
 </code></pre>
+<p><code>load()</code> binds the viewer to a <code>Client</code>, and <code>restore()</code> selects which of that
+client’s <code>Table</code>s to show via the <code>table</code> field. Because <code>load()</code> alone
+selects no table, it does not render — the pair guarantees exactly one atomic
+render.</p>
+<p>Passing a <code>Table</code> directly is still supported as a legacy shorthand,</p>
+<pre><code class="language-javascript">await viewer.load(table);
+</code></pre>
+<p>… which is internally equivalent to:</p>
+<pre><code class="language-javascript">await viewer.load(await table.get_client());
+await viewer.restore({ table: await table.get_name() });
+</code></pre>
+<div class="warning">Always give your <code>Table</code> a <code>name</code>.
+When <code>name</code> is omitted a random one is assigned, so the
+<code>table</code> field in a token from <code>save()</code> will not match
+the table after a page reload, and <code>restore()</code> will fail.</div>
+
 <h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
 <p><code>&lt;perspective-viewer&gt;</code> can be configured via HTML attributes or JavaScript
 properties. When set as attributes, the viewer will apply the configuration on
@@ -212,30 +231,110 @@ initialization:</p>
 <code>sort</code>, and <code>filter</code> fields.</li>
 <li><strong>New Column</strong> button - opens an expression editor for creating computed
 columns via the <a href="../../explanation/view/config/expressions.html">expression language</a>.</li>
-<li><strong>Plugin selector</strong> - switch between visualization plugins such as Datagrid,
-X/Y Line, X/Y Scatter, Treemap, Sunburst, and Heatmap.</li>
+<li><strong>Plugin selector</strong> - switch between the visualization plugins registered on
+the page. <code>@perspective-dev/viewer-datagrid</code> provides <code>Datagrid</code>;
+<code>@perspective-dev/viewer-charts</code> provides <code>X Bar</code>, <code>Y Bar</code>, <code>Y Line</code>,
+<code>Y Scatter</code>, <code>Y Area</code>, <code>X/Y Scatter</code>, <code>X/Y Line</code>, <code>Density</code>, <code>Treemap</code>,
+<code>Sunburst</code>, <code>Heatmap</code>, <code>Candlestick</code>, <code>OHLC</code>, <code>Map Scatter</code>, <code>Map Line</code> and
+<code>Map Density</code>.</li>
 <li><strong>Theme</strong> selector - toggle between available themes.</li>
 <li><strong>Export</strong> - download the current view as CSV or Arrow.</li>
 <li><strong>Copy</strong> - copy the current view to the clipboard.</li>
 <li><strong>Reset</strong> - restore the viewer to its default configuration.</li>
 </ul>
 <h2 id="methods"><a class="header" href="#methods">Methods</a></h2>
-<p>Key methods on the <code>&lt;perspective-viewer&gt;</code> element:</p>
+<p>A <code>&lt;perspective-viewer&gt;</code> hosts one or more <em>panels</em>. Methods which address a
+single panel take an options-dict with an optional <code>panel</code> id, defaulting to
+the <em>active</em> panel — e.g. <code>await viewer.save({ panel: "PANEL_ID_0" })</code>.</p>
+<h3 id="binding"><a class="header" href="#binding">Binding</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr><th>Method</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><code>load(table)</code></td><td>Bind a <code>Table</code> to the viewer</td></tr>
-<tr><td><code>restore(config)</code></td><td>Apply a saved configuration object</td></tr>
-<tr><td><code>save()</code></td><td>Serialize the current configuration</td></tr>
-<tr><td><code>reset(all)</code></td><td>Reset configuration (pass <code>true</code> to also reset expressions)</td></tr>
-<tr><td><code>getTable()</code></td><td>Get the bound <code>Table</code></td></tr>
-<tr><td><code>flush()</code></td><td>Wait for any pending UI updates to complete</td></tr>
+<tr><td><code>load(client)</code></td><td>Bind a <code>Client</code> (or, legacy, a <code>Table</code>) to the viewer</td></tr>
+<tr><td><code>eject(options?)</code></td><td>Remove a <code>Client</code> and dispose every panel bound to it</td></tr>
+<tr><td><code>delete()</code></td><td>Release the element’s resources</td></tr>
+<tr><td><code>getClient(options?)</code></td><td>Get a bound <code>Client</code></td></tr>
+<tr><td><code>getTable(options?)</code></td><td>Get a panel’s <code>Table</code></td></tr>
+<tr><td><code>getView(options?)</code></td><td>Get a panel’s <code>View</code></td></tr>
+<tr><td><code>getViewConfig(options?)</code></td><td>Get a panel’s <code>ViewConfig</code></td></tr>
 </tbody>
 </table>
 </div>
+<h3 id="configuration"><a class="header" href="#configuration">Configuration</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>save(options?)</code></td><td>Serialize one panel’s configuration</td></tr>
+<tr><td><code>restore(config, options?)</code></td><td>Apply a configuration to one panel</td></tr>
+<tr><td><code>saveWorkspace()</code></td><td>Serialize the whole element — every panel, plus layout and global filters</td></tr>
+<tr><td><code>restoreWorkspace(config)</code></td><td>Restore a whole-element configuration</td></tr>
+<tr><td><code>reset(all?, options?)</code></td><td>Reset configuration (pass <code>true</code> to also reset expressions)</td></tr>
+<tr><td><code>resetError()</code></td><td>Clear the error overlay</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="panels"><a class="header" href="#panels">Panels</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>addPanel(config)</code></td><td>Add a panel, returning its generated id</td></tr>
+<tr><td><code>removePanel(id)</code></td><td>Remove a panel</td></tr>
+<tr><td><code>getPanelNames()</code></td><td>List panel ids</td></tr>
+<tr><td><code>getActivePanel()</code> / <code>setActivePanel(id)</code></td><td>Get or set the active panel</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="output"><a class="header" href="#output">Output</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>export(options?)</code></td><td>Export a panel — see the export methods below</td></tr>
+<tr><td><code>download(options?)</code></td><td>Export and download as a file</td></tr>
+<tr><td><code>copy(options?)</code></td><td>Copy a panel to the clipboard</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>export()</code>, <code>download()</code> and <code>copy()</code> all take a <code>method</code>, one of <code>"csv"</code>,
+<code>"json"</code>, <code>"ndjson"</code> or <code>"arrow"</code> — each with <code>-all</code> and <code>-selected</code> variants
+(e.g. <code>"csv-selected"</code>) — plus <code>"html"</code>, <code>"json-config"</code>, and <code>"plugin"</code>.
+The <code>"plugin"</code> method asks the plugin to render itself, which produces a PNG
+for charts and text for the datagrid.
+| <code>getSelection(options?)</code> / <code>setSelection(...)</code> | Get or set the selected region |
+| <code>getEditPort(options?)</code> | Get a panel’s edit port |
+| <code>getRenderStats(options?)</code> | Get render timing statistics |</p>
+<h3 id="rendering-and-chrome"><a class="header" href="#rendering-and-chrome">Rendering and chrome</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>flush()</code></td><td>Wait for any pending UI updates to complete</td></tr>
+<tr><td><code>resize(options?)</code></td><td>Redraw, optionally at a <code>{dimensions: {width, height}}</code> size hint</td></tr>
+<tr><td><code>setAutoSize(bool)</code> / <code>setAutoPause(bool)</code> / <code>setThrottle(ms)</code></td><td>Render policy</td></tr>
+<tr><td><code>toggleConfig(force?)</code></td><td>Toggle the settings sidebar</td></tr>
+<tr><td><code>toggleColumnSettings(...)</code></td><td>Toggle the column settings sidebar</td></tr>
+<tr><td><code>resetThemes(themes?)</code></td><td>Re-detect or explicitly set available themes</td></tr>
+<tr><td><code>restyleElement()</code></td><td>Re-read CSS and repaint</td></tr>
+<tr><td><code>getPlugin(name?)</code> / <code>getAllPlugins()</code></td><td>Look up registered plugins</td></tr>
+</tbody>
+</table>
+</div>
+<p>See <a href="./save_restore.html">Saving and restoring UI state</a> for the <code>save</code>/<code>restore</code>
+formats and the panel selector, and
+<a href="./plugin_settings.html">Plugin render limits</a> for <code>getPlugin</code>.</p>
 
                     </main>
 

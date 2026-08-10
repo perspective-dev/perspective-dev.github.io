@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -217,11 +217,12 @@ await elem.restore(JSON.stringify(json_token));
 <p>Using the JSON format, every facet of a <code>&lt;perspective-viewer&gt;</code>’s configuration
 can be manipulated from JavaScript using the <code>restore()</code> method. The valid
 structure of properties is described via the
-<a href="https://github.com/perspective-dev/perspective/blob/ebced4caa/rust/perspective-viewer/src/ts/viewer.ts#L16"><code>ViewerConfig</code></a>
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/ts/ts-rs/ViewerConfigUpdate.ts"><code>ViewerConfigUpdate</code></a>
 and embedded
-<a href="https://github.com/perspective-dev/perspective/blob/ebced4caa19435a2a57d4687be7e428a4efc759b/packages/perspective/index.d.ts#L140"><code>ViewConfig</code></a>
-type declarations, and <a href="view.html"><code>View</code></a> chapter of the documentation which has
-several interactive examples for each <code>ViewConfig</code> property.</p>
+<a href="https://github.com/perspective-dev/perspective/blob/master/rust/perspective-js/src/ts/ts-rs/ViewConfigUpdate.ts"><code>ViewConfigUpdate</code></a>
+type declarations (both generated from the Rust definitions), and the
+<a href="../../explanation/view.html"><code>View</code></a> chapter of the documentation which has
+several examples for each <code>ViewConfig</code> property.</p>
 <pre><code class="language-javascript">// Set the plugin (will also update `columns` to plugin-defaults)
 await elem.restore({ plugin: "X Bar" });
 

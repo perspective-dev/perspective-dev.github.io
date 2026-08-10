@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-1b076223.js"></script>
+        <script src="../../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -193,7 +193,7 @@ a server-side DuckDB database over WebSocket.</p>
 <pre><code class="language-python">import duckdb
 import tornado.web
 import tornado.ioloop
-from perspective import DuckDBVirtualServer
+from perspective.virtual_servers.duckdb import DuckDBVirtualServer
 from perspective.handlers.tornado import PerspectiveTornadoHandler
 
 # Create DuckDB connection and load data
@@ -216,6 +216,23 @@ tornado.ioloop.IOLoop.current().start()
 const table = await websocket.open_table("my_table");
 document.getElementById("viewer").load(table);
 </code></pre>
+<h2 id="window-functions"><a class="header" href="#window-functions">Window functions</a></h2>
+<p>Window columns are DuckDB’s own functions, under their DuckDB names — the
+advertised name is emitted into the <code>OVER</code> clause verbatim.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td>Aggregating</td><td><code>sum</code> <code>avg</code> <code>count</code> <code>min</code> <code>max</code> <code>product</code> <code>median</code></td></tr>
+<tr><td>Deviation / variance</td><td><code>stddev_samp</code> <code>stddev_pop</code> <code>var_samp</code> <code>var_pop</code></td></tr>
+<tr><td>Navigation</td><td><code>first_value</code> <code>last_value</code> <code>nth_value</code> <code>lag</code> <code>lead</code></td></tr>
+<tr><td>Ranking</td><td><code>row_number</code> <code>rank</code> <code>dense_rank</code> <code>percent_rank</code> <code>cume_dist</code> <code>ntile</code></td></tr>
+<tr><td>Perspective’s own</td><td><code>diff</code> <code>rate</code></td></tr>
+</tbody>
+</table>
+</div>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
 <ul>
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/python-duckdb-virtual">Python DuckDB example</a></li>

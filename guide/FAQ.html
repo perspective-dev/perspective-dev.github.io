@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-db208032.js";
+            window.path_to_searchindex_js = "searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1b076223.js"></script>
+        <script src="toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -273,13 +273,27 @@ which is too small). See
 <!-- _Related: [#3026](https://github.com/perspective-dev/perspective/issues/3026),
 [#1768](https://github.com/perspective-dev/perspective/issues/1768)_ -->
 <h3 id="can-i-do-rolling-sums-or-cumulative-calculations"><a class="header" href="#can-i-do-rolling-sums-or-cumulative-calculations">Can I do rolling sums or cumulative calculations?</a></h3>
-<p>Not in Perspective’s built-in engine, but as an alternative, DuckDB supports
-<a href="https://duckdb.org/docs/stable/sql/functions/window_functions">rolling and cumulative sums via <code>WINDOW</code> functions</a>,
-and DuckDB now has
-<a href="./explanation/virtual_servers.html">native Perspective Virtual Server support</a>
-which allows arbitrary DuckDB queries (as a <code>TABLE</code> or <code>VIEW</code>) to be
-<code>&lt;perspective-viewer&gt;</code> <code>Table</code>s.</p>
-<!-- _Related:
+<p>Yes — use <a href="./explanation/view/config/windows.html">Window Columns</a>, the
+<code>windows</code> property of a <code>View</code> config. These are ordered, partitioned rolling
+computations analogous to SQL window functions, declared per-<code>View</code> like
+expression columns:</p>
+<pre><code class="language-javascript">const view = await table.view({
+    columns: ["Cumulative Sales"],
+    windows: {
+        "Cumulative Sales": {
+            column: "Sales",
+            aggregate: "sum",
+            order_by: ["Order Date", "asc"],
+            cumulative: true,
+        },
+    },
+});
+</code></pre>
+<p>Window Columns are supported by Perspective’s built-in engine, by the DuckDB,
+ClickHouse and Polars <a href="./explanation/virtual_servers.html">Virtual Servers</a>, and
+by the <code>&lt;perspective-viewer&gt;</code> UI. They update incrementally as the <code>Table</code>
+updates.</p>
+<!-- _Related: [#504](https://github.com/perspective-dev/perspective/issues/504),
 [#2600](https://github.com/perspective-dev/perspective/discussions/2600),
 [#2624](https://github.com/perspective-dev/perspective/issues/2624)_ -->
 <h2 id="filters"><a class="header" href="#filters">Filters</a></h2>
@@ -313,16 +327,31 @@ Apply two filters on the same date column for a range.</p>
 <!-- _Related:
 [#3100](https://github.com/perspective-dev/perspective/discussions/3100),
 [#2023](https://github.com/perspective-dev/perspective/issues/2023)_ -->
-<h2 id="jupyterlab"><a class="header" href="#jupyterlab">JupyterLab</a></h2>
-<h3 id="perspectivewidget-is-not-loading-in-jupyterlab"><a class="header" href="#perspectivewidget-is-not-loading-in-jupyterlab"><code>PerspectiveWidget</code> is not loading in JupyterLab</a></h3>
-<p>See the <a href="./how_to/python/jupyterlab.html"><code>PerspectiveWidget</code> guide</a> for full
-setup details. Ensure the JupyterLab extension version matches your
-<code>perspective-python</code> version. Make sure you are using a compatible JupyterLab
-for your Perspective version (JupyterLab 4+ currently).</p>
-<p>Check that the extension is enabled with <code>jupyter labextension list</code>.</p>
+<h2 id="notebooks"><a class="header" href="#notebooks">Notebooks</a></h2>
+<h3 id="perspectivewidget-is-not-loading"><a class="header" href="#perspectivewidget-is-not-loading"><code>PerspectiveWidget</code> is not loading</a></h3>
+<p><code>PerspectiveWidget</code> is an <a href="https://anywidget.dev">AnyWidget</a>, shipped entirely
+inside the <code>perspective-python</code> wheel. There is no separate JupyterLab
+extension to install or version-match for the widget, so
+<code>jupyter labextension list</code> is not where to look.</p>
+<p>Install the <code>jupyter</code> extra, which pulls in <code>anywidget</code>:</p>
+<pre><code class="language-bash">pip install "perspective-python[jupyter]"
+</code></pre>
+<p>Then restart the kernel — and, for JupyterLab, reload the browser page. See
+the <a href="./how_to/python/jupyterlab.html"><code>PerspectiveWidget</code> guide</a>.</p>
 <!-- _Related: [#1392](https://github.com/perspective-dev/perspective/issues/1392),
 [#2059](https://github.com/perspective-dev/perspective/issues/2059),
 [#2307](https://github.com/perspective-dev/perspective/issues/2307)_ -->
+<h3 id="does-perspectivewidget-work-outside-jupyterlab"><a class="header" href="#does-perspectivewidget-work-outside-jupyterlab">Does <code>PerspectiveWidget</code> work outside JupyterLab?</a></h3>
+<p>Yes. Because the widget is an AnyWidget bundled into the wheel rather than a
+JupyterLab labextension, it runs in any AnyWidget-compatible host —
+JupyterLab, classic Jupyter Notebook, <strong>VSCode notebooks</strong>, Google Colab and
+Marimo — with no per-host install step.</p>
+<p>The separate <code>@perspective-dev/jupyterlab</code> package is now <em>optional</em> and
+provides only the “Open With → Perspective” file renderers for <code>csv</code>, <code>json</code>
+and <code>arrow</code> files in JupyterLab.</p>
+<!-- _Related: [#2783](https://github.com/perspective-dev/perspective/issues/2783),
+[#3042](https://github.com/perspective-dev/perspective/issues/3042),
+[#3056](https://github.com/perspective-dev/perspective/issues/3056)_ -->
 <h2 id="memory-and-performance"><a class="header" href="#memory-and-performance">Memory and Performance</a></h2>
 <h3 id="perspective-has-a-memory-leak"><a class="header" href="#perspective-has-a-memory-leak">Perspective has a memory leak</a></h3>
 <p>Maybe, but please review the
@@ -494,9 +523,10 @@ update failures.</p>
 <!-- _Related: [#2524](https://github.com/perspective-dev/perspective/issues/2524)_ -->
 <h2 id="export"><a class="header" href="#export">Export</a></h2>
 <h3 id="can-i-export-the-viewer-to-html-png-or-pdf"><a class="header" href="#can-i-export-the-viewer-to-html-png-or-pdf">Can I export the viewer to HTML, PNG or PDF?</a></h3>
-<p>HTML and PNG exports are available via <code>viewer.export("html")</code> and
-<code>viewer.export("png")</code>, respectively. For PDF, render the viewer and use browser
-or headless browser screenshot capabilities.</p>
+<p>HTML export is available via <code>viewer.export({ method: "html" })</code>. For an
+image, use <code>{ method: "plugin" }</code>, which asks the plugin to render itself —
+this produces a PNG for chart plugins (and text for the datagrid). For PDF,
+render the viewer and use browser or headless browser screenshot capabilities.</p>
 <!-- _Related: [#2836](https://github.com/perspective-dev/perspective/issues/2836),
 [#2770](https://github.com/perspective-dev/perspective/discussions/2770),
 [#2772](https://github.com/perspective-dev/perspective/issues/2772)_ -->
@@ -508,8 +538,12 @@ using a library like <code>xlsx</code> (JavaScript) or <code>openpyxl</code> (Py
 <!-- _Related:
 [#2738](https://github.com/perspective-dev/perspective/discussions/2738)_ -->
 <h3 id="how-do-i-copy-data-from-a-cell-or-row"><a class="header" href="#how-do-i-copy-data-from-a-cell-or-row">How do I copy data from a cell or row?</a></h3>
-<p>Use the <code>"text"</code> export mode when data is selected:
-<code>await viewer.export("text")</code>.</p>
+<p>Use one of the <code>-selected</code> export methods, which operate on the current
+selection. To place it on the clipboard:</p>
+<pre><code class="language-javascript">await viewer.copy({ method: "csv-selected" });
+</code></pre>
+<p>… or to get it as a string, <code>await viewer.export({ method: "csv-selected" })</code>.
+<code>json-selected</code> and <code>arrow-selected</code> are also available.</p>
 <!-- _Related: [#2765](https://github.com/perspective-dev/perspective/issues/2765),
 [#2356](https://github.com/perspective-dev/perspective/discussions/2356)_ -->
 <h2 id="table-operations"><a class="header" href="#table-operations">Table Operations</a></h2>
@@ -565,11 +599,14 @@ server-side data processing without any UI. Use
 [#2933](https://github.com/perspective-dev/perspective/discussions/2933),
 [#2644](https://github.com/perspective-dev/perspective/discussions/2644)_ -->
 <h3 id="can-i-use-perspective-in-pyodide"><a class="header" href="#can-i-use-perspective-in-pyodide">Can I use Perspective in Pyodide?</a></h3>
-<p>There is an emscripten wheel
-<a href="https://github.com/perspective-dev/perspective/releases">published via Releases</a>,
-but it must be downloaded and hosted manually and is only built for specific
-pyodide versions.</p>
-<!-- _Related:
+<p>Yes. Perspective publishes Emscripten wheels to PyPI under
+<a href="https://peps.python.org/pep-0783/">PEP 783</a>, so <code>perspective-python</code> can be
+installed by Pyodide’s own package resolution — there is no need to download
+and host a wheel yourself.</p>
+<p>Emscripten wheels are ABI-tied to a specific Emscripten version, and thus to
+the Pyodide versions built against it. If resolution fails, check that your
+Pyodide version matches a published wheel tag.</p>
+<!-- _Related: [#3186](https://github.com/perspective-dev/perspective/issues/3186),
 [#2880](https://github.com/perspective-dev/perspective/discussions/2880)_ -->
 <h3 id="how-do-i-handle-row-selection-events"><a class="header" href="#how-do-i-handle-row-selection-events">How do I handle row selection events?</a></h3>
 <p>Listen for

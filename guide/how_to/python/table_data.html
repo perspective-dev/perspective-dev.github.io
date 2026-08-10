@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-b6d45248.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-db208032.js";
+            window.path_to_searchindex_js = "../../searchindex-9ccf4b7c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-1b076223.js"></script>
+        <script src="../../toc-13e65a5a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -205,6 +205,46 @@ over the wire, or produced by another tool), pass the raw <code>bytes</code> dir
 both stream and file formats are auto-detected:</p>
 <pre><code class="language-python">with open("data.arrow", "rb") as f:
     table = perspective.table(f.read())
+</code></pre>
+<h3 id="nested-columns"><a class="header" href="#nested-columns">Nested columns</a></h3>
+<p>Perspective’s data model is flat, so Arrow <code>struct</code> and <code>list</code> columns are
+normalized on ingest.</p>
+<p>A <code>struct</code> column is hoisted into one dotted column per leaf, recursively. A
+null parent nulls every descendant leaf:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "id": pa.array([1, 2], type=pa.int64()),
+    "s": pa.array([{"a": 10}, {"a": 20}], type=pa.struct([("a", pa.int64())])),
+})
+
+# Schema is `{"id": "integer", "s.a": "integer"}`
+table = perspective.table(arrow_table)
+</code></pre>
+<p>Because the flattened names are ordinary columns, a <code>Table</code> created from an
+explicit schema accepts nested updates with no further configuration:</p>
+<pre><code class="language-python">table = perspective.table({"id": "integer", "s.a": "integer"})
+table.update(arrow_table)
+</code></pre>
+<p>A <code>list</code> column is controlled by the <code>list_flatten</code> argument:</p>
+<ul>
+<li><code>"zip"</code> (default) expands a row into one row per list element, repeating
+its non-list siblings. An empty or null list yields a single row with a
+null in that column, rather than dropping the row. When a row has more than
+one list column, their non-empty lengths must match.</li>
+<li><code>"cartesian"</code> expands a row into the product of its list columns’ lengths,
+with an empty or null list counting as a single null element.</li>
+<li><code>"stringify"</code> encodes each list as a JSON array in a single string column,
+leaving the row count unchanged.</li>
+</ul>
+<pre><code class="language-python">arrow_table = pa.table({
+    "x": pa.array([1, 2], type=pa.int64()),
+    "y": pa.array([[10, 20], [30]], type=pa.list_(pa.int64())),
+})
+
+# `{"x": [1, 1, 2], "y": [10, 20, 30]}`
+perspective.table(arrow_table)
+
+# `{"x": [1, 2], "y": ["[10,20]", "[30]"]}`
+perspective.table(arrow_table, list_flatten="stringify")
 </code></pre>
 <h2 id="polars"><a class="header" href="#polars">Polars</a></h2>
 <pre><code class="language-python">import polars as pl
