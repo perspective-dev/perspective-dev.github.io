@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-69db78be.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-e940550d.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-9ccf4b7c.js";
+            window.path_to_searchindex_js = "searchindex-94043933.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-13e65a5a.js"></script>
@@ -193,37 +193,52 @@
 <a href="https://www.npmjs.com/package/@perspective-dev/client"><img src="https://img.shields.io/npm/v/@perspective-dev/client.svg?style=for-the-badge" alt="npm"></a>
 <a href="https://pypi.python.org/pypi/perspective-python"><img src="https://img.shields.io/pypi/v/perspective-python.svg?style=for-the-badge" alt="PyPI"></a>
 <a href="https://crates.io/crates/perspective"><img src="https://img.shields.io/crates/v/perspective?style=for-the-badge" alt="crates.io"></a></p>
-<br />
 <p>Perspective is an interactive analytics and data visualization component for
-large and streaming datasets. Build user-configurable reports, dashboards,
-notebooks, and applications with a high-performance query engine compiled to
-WebAssembly, Python, and Rust.</p>
+large, real-time and streaming datasets. Build user-configurable reports,
+dashboards, notebooks and applications, backed by a high-performance streaming
+query engine that runs in-browser via WebAssembly or server-side in Python,
+Node.js and Rust — or delegates to a database you already have.</p>
+<br />
+<a href="https://perspective-dev.github.io"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/collage.png" />
+    <img src="https://perspective-dev.github.io/projects/light/collage.png" />
+</picture></a>
 <h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
 <li>
-<p>A framework-agnostic user interface packaged as a
+<p>A data-reactive UI packaged as a
 <a href="https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements">Custom Element</a>,
-which connects to a Data Model in-browser (via WebAssembly) or remotely (via
-WebSocket, with integration in Python, Node.js and Rust). Includes a data
-grid, 10+ chart types line, bar, area, scatter, heatmap, treemap, sunburst,
-candlestick, and more.</p>
+with drag-and-drop query and layout configuration. Includes a virtual-scrolling,
+editable data grid, WebGL charting engine with 15+ chart types, tile-based
+geographic maps, full theme support, and <a href="https://react.dev/">React</a> bindings.</p>
 </li>
 <li>
-<p>A Data Model API for pluggable engines, enabling Perspective’s UI to query
-external data sources like <a href="https://duckdb.org/">DuckDB</a> while translating
-view configurations into native queries.</p>
+<p>A fast, memory-efficient streaming query engine written in C++ and compiled
+for <a href="https://webassembly.org/">WebAssembly</a> (including a 64-bit <code>memory64</code>
+build for in-browser datasets larger than 4GB),
+<a href="https://www.python.org/">Python</a> and <a href="https://www.rust-lang.org/">Rust</a>.
+Tables update incrementally and views tick in real time, with reactive
+joins across tables, a columnar expression language based on
+<a href="https://github.com/ArashPartow/exprtk">ExprTK</a>, and read/write/streaming
+support for <a href="https://arrow.apache.org/">Apache Arrow</a>, CSV and JSON.</p>
 </li>
 <li>
-<p>A fast, memory-efficient streaming Data Model built-in, written in C++ and
-compiled for <a href="https://webassembly.org/">WebAssembly</a>,
-<a href="https://www.python.org/">Python</a>, and <a href="https://www.rust-lang.org/">Rust</a>.
-Supports read/write/streaming for <a href="https://arrow.apache.org/">Apache Arrow</a>,
-with a columnar expression language based on
-<a href="https://github.com/ArashPartow/exprtk">ExprTK</a>.</p>
+<p>A symmetric client/server architecture — the same Client API connects to an
+engine in-process, in a Web Worker, or remotely over WebSocket, with server
+bindings for Python (aiohttp, Starlette, Tornado), Node.js and Rust.
+Datasets can be mirrored to the browser for fluid interaction or virtualized
+server-side, streaming only what’s visible.</p>
 </li>
 <li>
-<p>A <a href="https://jupyter.org/">JupyterLab</a> widget and Python client library for
-interactive data analysis in notebooks.</p>
+<p>Virtual servers that run Perspective’s UI directly on external engines like
+<a href="https://duckdb.org/">DuckDB</a>, <a href="https://clickhouse.com/">ClickHouse</a> and
+<a href="https://pola.rs/">Polars</a>, translating view configurations into native
+queries — no ETL or data copy required.</p>
+</li>
+<li>
+<p>A <a href="https://jupyter.org/">Jupyter</a> widget built on
+<a href="https://anywidget.dev/">anywidget</a> and a Python client library for
+interactive data analysis in JupyterLab and other notebook environments.</p>
 </li>
 </ul>
 <h2 id="documentation"><a class="header" href="#documentation">Documentation</a></h2>
@@ -232,11 +247,12 @@ interactive data analysis in notebooks.</p>
 <li><a href="https://perspective-dev.github.io/guide/">User Guide</a></li>
 <li>JavaScript API
 <ul>
-<li><a href="https://perspective-dev.github.io/browser/modules/src_ts_perspective.browser.ts.html"><code>@perspective-dev/client</code> Browser</a></li>
-<li><a href="https://perspective-dev.github.io/node/modules/src_ts_perspective.node.ts.html"><code>@perspective-dev/client</code> Node.js</a></li>
+<li><a href="https://perspective-dev.github.io/react/index.html"><code>@perspective-dev/react</code> React Component</a></li>
+<li><a href="https://perspective-dev.github.io/viewer/modules/perspective-viewer.html"><code>@perspective-dev/viewer</code> Web Component</a></li>
+<li><a href="https://perspective-dev.github.io/browser/modules/src_ts_perspective.browser.ts.html"><code>@perspective-dev/client</code> Client (Browser)</a></li>
+<li><a href="https://perspective-dev.github.io/node/modules/src_ts_perspective.node.ts.html"><code>@perspective-dev/client</code> Client (Node.js)</a></li>
 <li><a href="https://perspective-dev.github.io/browser/modules/dist_esm_virtual_servers_clickhouse.js.html"><code>@perspective-dev/client</code> Clickhouse Virtual Server</a></li>
 <li><a href="https://perspective-dev.github.io/browser/modules/dist_esm_virtual_servers_duckdb.js.html"><code>@perspective-dev/client</code> DuckDB Virtual Server</a></li>
-<li><a href="https://perspective-dev.github.io/viewer/modules/perspective-viewer.html"><code>@perspective-dev/viewer</code> Web Component</a></li>
 </ul>
 </li>
 <li>Python API
@@ -244,7 +260,7 @@ interactive data analysis in notebooks.</p>
 <li><a href="https://perspective-dev.github.io/python/index.html"><code>perspective</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/widget.html"><code>perspective.widget</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/handlers/aiohttp.html"><code>perspective.handlers.aiohttp</code></a></li>
-<li><a href="https://perspective-dev.github.io/python/perspective/handlers/starlett.html"><code>perspective.handlers.starlette</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/starlette.html"><code>perspective.handlers.starlette</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/handlers/tornado.html"><code>perspective.handlers.tornado</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/virtual_servers/clickhouse.html"><code>perspective.virtual_servers.clickhouse</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/virtual_servers/duckdb.html"><code>perspective.virtual_servers.duckdb</code></a></li>
@@ -253,32 +269,46 @@ interactive data analysis in notebooks.</p>
 <li>Rust API
 <ul>
 <li><a href="https://docs.rs/perspective/latest/perspective/"><code>perspective</code></a></li>
-<li><a href="https://docs.rs/perspective-client/latest/perspective_client/"><code>perspective-client</code></a></li>
-<li><a href="https://docs.rs/perspective-server/latest/perspective_server/"><code>perspective-server</code></a></li>
-<li><a href="https://docs.rs/perspective-python/latest/perspective_python/"><code>perspective-python</code></a></li>
-<li><a href="https://docs.rs/perspective-js/latest/perspective_js/"><code>perspective-js</code></a></li>
-<li><a href="https://docs.rs/perspective-viewer/latest/perspective_viewer/"><code>perspective-viewer</code></a></li>
 </ul>
 </li>
 </ul>
 <h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
-<!-- Examples -->
 <table>
 <tbody>
-<tr><td>editable</td><td>file</td><td>duckdb</td></tr>
-<tr><td><a href="https://perspective-dev.github.io/block?example=editable"><img height="125" src="https://perspective-dev.github.io/blocks/editable/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=file"><img height="125" src="https://perspective-dev.github.io/blocks/file/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=duckdb"><img height="125" src="https://perspective-dev.github.io/blocks/duckdb/preview.png?" /></a></td></tr>
-<tr><td>fractal</td><td>market</td><td>raycasting</td></tr>
-<tr><td><a href="https://perspective-dev.github.io/block?example=fractal"><img height="125" src="https://perspective-dev.github.io/blocks/fractal/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=market"><img height="125" src="https://perspective-dev.github.io/blocks/market/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=raycasting"><img height="125" src="https://perspective-dev.github.io/blocks/raycasting/preview.png?" /></a></td></tr>
-<tr><td>evictions</td><td>nypd</td><td>streaming</td></tr>
-<tr><td><a href="https://perspective-dev.github.io/block?example=evictions"><img height="125" src="https://perspective-dev.github.io/blocks/evictions/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=nypd"><img height="125" src="https://perspective-dev.github.io/blocks/nypd/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=streaming"><img height="125" src="https://perspective-dev.github.io/blocks/streaming/preview.png?" /></a></td></tr>
-<tr><td>covid</td><td>webcam</td><td>movies</td></tr>
-<tr><td><a href="https://perspective-dev.github.io/block?example=covid"><img height="125" src="https://perspective-dev.github.io/blocks/covid/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=webcam"><img height="125" src="https://perspective-dev.github.io/blocks/webcam/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=movies"><img height="125" src="https://perspective-dev.github.io/blocks/movies/preview.png?" /></a></td></tr>
-<tr><td>superstore</td><td>olympics</td><td>dataset</td></tr>
-<tr><td><a href="https://perspective-dev.github.io/block?example=superstore"><img height="125" src="https://perspective-dev.github.io/blocks/superstore/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=olympics"><img height="125" src="https://perspective-dev.github.io/blocks/olympics/preview.png?" /></a></td><td><a href="https://perspective-dev.github.io/block?example=dataset"><img height="125" src="https://perspective-dev.github.io/blocks/dataset/preview.png?" /></a></td></tr>
+<tr>
+<td>Superstore</td><td>Workspace</td><td>Webcam</td>
+</tr>
+
+<tr>
+<td><a href="https://perspective-dev.github.io/?project=superstore"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/superstore.png" /><img src="https://perspective-dev.github.io/projects/light/superstore.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=superstore-overview"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/superstore-overview.png" /><img src="https://perspective-dev.github.io/projects/light/superstore-overview.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=webcam-video-wall"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/webcam-video-wall.png" /><img src="https://perspective-dev.github.io/projects/light/webcam-video-wall.png" /></picture></a></td>
+</tr>
+
+<tr>
+<td>Raycasting</td><td>Market</td><td>NYPD</td>
+</tr>
+
+<tr>
+<td><a href="https://perspective-dev.github.io/?project=raycasting"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/raycasting.png" /><img src="https://perspective-dev.github.io/projects/light/raycasting.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=market-trading-desk"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/market-trading-desk.png" /><img src="https://perspective-dev.github.io/projects/light/market-trading-desk.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=nypd-4"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/nypd-4.png" /><img src="https://perspective-dev.github.io/projects/light/nypd-4.png" /></picture></a></td>
+</tr>
+
+<tr>
+<td>Movies</td><td>Evictions</td><td>Fractal</td>
+</tr>
+
+<tr>
+<td><a href="https://perspective-dev.github.io/?project=movies"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/movies.png" /><img src="https://perspective-dev.github.io/projects/light/movies.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=evictions-2"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/evictions-2.png" /><img src="https://perspective-dev.github.io/projects/light/evictions-2.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=fractal"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/fractal.png" /><img src="https://perspective-dev.github.io/projects/light/fractal.png" /></picture></a></td>
+</tr>
+
 </tbody>
+
 </table>
 
-<!-- Examples -->
 <h2 id="media"><a class="header" href="#media">Media</a></h2>
 <table>
 <tbody>
@@ -2869,8 +2899,94 @@ existing panel, a new panel is created with that id.</p>
 <pre><code class="language-javascript">const workspace_token = await elem.saveWorkspace();
 await elem.restoreWorkspace(workspace_token);
 </code></pre>
-<p>A <code>saveWorkspace()</code> token is a <code>WorkspaceConfig</code> (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the single-panel <code>restore()</code> will
-<em>not</em> restore the layout (its <code>panels</code>/<code>layout</code> keys are ignored).</p>
+<p>A <code>saveWorkspace()</code> token is a <code>WorkspaceConfig</code>
+(<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the
+single-panel <code>restore()</code> will <em>not</em> restore the layout (its <code>panels</code>/<code>layout</code>
+keys are ignored).</p>
+<h2 id="colors-palettes-and-gradients"><a class="header" href="#colors-palettes-and-gradients">Colors, palettes and gradients</a></h2>
+<p>Per-column color styling lives in a panel’s <code>columns_config</code>, keyed by column
+name, and every color-scale value is a string usable verbatim in CSS:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Kind</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td>color</td><td><code>"#rrggbb"</code> (<code>#rgb</code>, <code>rgb()</code> and <code>rgba()</code> are accepted on input)</td></tr>
+<tr><td>palette</td><td><code>"linear-gradient(to right, #rrggbb, #rrggbb, …)"</code> — N colors, <strong>no</strong> positions</td></tr>
+<tr><td>gradient</td><td><code>"linear-gradient(to right, #rrggbb 0%, #rrggbb 37.5%, …)"</code> — every stop positioned</td></tr>
+</tbody>
+</table>
+</div>
+<p>Which reader applies is decided by the style control’s kind (the datagrid’s
+<code>fg_colors</code>/<code>bg_colors</code> and the charts’ <code>gradient</code> are gradients; <code>palette</code> is a
+palette), never by inspecting the string — a position anywhere in a palette is
+rejected, while a gradient may omit positions on input (the CSS
+implicit-position rules fill them) and may carry any direction token, which is
+normalized to <code>to right</code>. Values equal to the plugin’s default are not
+serialized.</p>
+<pre><code class="language-javascript">await viewer.restore({
+    plugin: "Datagrid",
+    columns_config: {
+        Profit: {
+            number_bg_mode: "gradient",
+            bg_colors: "linear-gradient(to right, #ff0000, #ffffff, #0000ff)",
+        },
+    },
+});
+</code></pre>
+<p>Any of these may instead be a reference to a CSS custom property of the same
+kind — <code>"var(--psp-user--color-&lt;name&gt;)"</code>, <code>"var(--psp-user--palette-&lt;name&gt;)"</code> or
+<code>"var(--psp-user--gradient-&lt;name&gt;)"</code>. References are resolved when the config is
+written, against the element’s computed style: the <code>palette</code> of the last
+<code>restoreWorkspace()</code> (below) takes precedence, then any <code>--psp-user--*</code> property
+a theme or the page defines on the element. An unresolvable reference is dropped
+(the plugin’s default renders). Panels hold literals from then on — <code>save()</code>
+always emits literals, and the column style tab always edits a literal.</p>
+<p><code>saveWorkspace()</code> emits a <strong>palette</strong>: every color value in use across the
+panels is written in <code>panels</code> as a <code>var()</code> reference, and the top-level
+<code>palette</code> map (custom property name → value) carries each referenced definition
+once. Names are stable — a value keeps the name the last <code>restoreWorkspace()</code>
+gave it when the values match, reuses a theme entry’s name when it matches one
+(<code>--psp-user--&lt;kind&gt;-1</code>, <code>-2</code>, … are discovered by contiguous numbering), and
+otherwise takes a fresh <code>--psp-user--&lt;kind&gt;-N</code>. <code>restoreWorkspace()</code> applies
+<code>palette</code> to the element as inline custom properties (replacing any previously
+restored palette) before the panels’ references resolve — which also makes it
+the way to inject a brand or theme variation for a workspace to draw on.</p>
+<p>By default only the values the panels reference are serialized; a restored
+palette’s unused entries, and values pinned during a session, are in-session
+state. Pass <code>{ full_palette: true }</code> to emit the element’s whole set — in-use
+values unioned with the last restored palette and anything pinned since — for a
+symmetric round trip:</p>
+<pre><code class="language-javascript">const used_only = await elem.saveWorkspace();
+const everything = await elem.saveWorkspace({ full_palette: true });
+</code></pre>
+<p>In the column style tab, each color field’s <strong>Load</strong> control lists the element’s
+set (plus theme entries) for every panel and applies a chosen entry’s value to
+the field; <strong>Pin</strong> — offered while the field holds a value the restored set
+lacks — adds that value to the set for the rest of the session.</p>
+<pre><code class="language-javascript">await elem.restoreWorkspace({
+    palette: {
+        "--psp-user--gradient-heat":
+            "linear-gradient(to right, #0366d6, #ff7f0e)",
+        "--psp-user--palette-brand":
+            "linear-gradient(to right, #2771a8, #8b86ff, #ff471e)",
+    },
+    panels: {
+        sales: {
+            table: "superstore",
+            plugin: "Heatmap",
+            columns: ["Sales"],
+            columns_config: {
+                Sales: { gradient: "var(--psp-user--gradient-heat)" },
+            },
+        },
+    },
+});
+</code></pre>
+<p>A malformed <code>palette</code> entry (a key outside
+<code>--psp-user--{gradient,palette,color}-</code>, or a value its kind rejects) fails the
+whole <code>restoreWorkspace()</code> before any panel changes.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="listening-for-events"><a class="header" href="#listening-for-events">Listening for events</a></h1>
 <p>The <code>&lt;perspective-viewer&gt;</code> Custom Element fires all the same HTML <code>Event</code>s that
@@ -4344,9 +4460,9 @@ server-side runtime than <code>node.js</code>.</p>
 <ul>
 <li><a href="https://perspective-dev.github.io/python/index.html"><code>perspective</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/widget.html"><code>perspective.widget</code></a></li>
-<li><a href="https://perspective-dev.github.io/python/perspective/handlers/aiohttp.htm"><code>perspective.handlers.aiohttp</code></a></li>
-<li><a href="https://perspective-dev.github.io/python/perspective/handlers/starlett.htm"><code>perspective.handlers.starlette</code></a></li>
-<li><a href="https://perspective-dev.github.io/python/perspective/handlers/tornado.htm"><code>perspective.handlers.tornado</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/aiohttp.html"><code>perspective.handlers.aiohttp</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/starlette.html"><code>perspective.handlers.starlette</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/handlers/tornado.html"><code>perspective.handlers.tornado</code></a></li>
 </ul>
 </li>
 <li>JavaScript API
