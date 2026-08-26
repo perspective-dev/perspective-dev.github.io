@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-e940550d.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-5b321ba8.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-94043933.js";
+            window.path_to_searchindex_js = "searchindex-da5c6b27.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-13e65a5a.js"></script>
+        <script src="toc-e1e174b9.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -290,7 +290,8 @@ expression columns:</p>
 });
 </code></pre>
 <p>Window Columns are supported by Perspective’s built-in engine, by the DuckDB,
-ClickHouse and Polars <a href="./explanation/virtual_servers.html">Virtual Servers</a>, and
+ClickHouse, PostgreSQL and Polars
+<a href="./explanation/virtual_servers.html">Virtual Servers</a>, and
 by the <code>&lt;perspective-viewer&gt;</code> UI. They update incrementally as the <code>Table</code>
 updates.</p>
 <!-- _Related: [#504](https://github.com/perspective-dev/perspective/issues/504),
@@ -442,9 +443,9 @@ of each mode.</p>
 is treated as the author of the queries it submits, and is permitted to create
 and delete <code>Table</code>/<code>View</code> resources, author arbitrary
 <a href="./explanation/view/config/expressions.html">expression columns</a>, and — for
-<a href="./explanation/virtual_servers.html">Virtual Server</a> backends like DuckDB or
-ClickHouse — author SQL fragments executed under the configured database
-role. The bundled WebSocket adapters
+<a href="./explanation/virtual_servers.html">Virtual Server</a> backends like DuckDB,
+ClickHouse or PostgreSQL — author SQL fragments executed under the configured
+database role. The bundled WebSocket adapters
 (<code>tornado.py</code>/<code>aiohttp.py</code>/<code>starlette.py</code>/<code>WebSocketServer</code>) are reference
 integrations and do not authenticate, authorize, or enforce origin policy.</p>
 <p>WebSocket Deployments that need per-user isolation must put an authenticating

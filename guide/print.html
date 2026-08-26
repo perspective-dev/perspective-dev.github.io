@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-e940550d.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-5b321ba8.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-94043933.js";
+            window.path_to_searchindex_js = "searchindex-da5c6b27.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-13e65a5a.js"></script>
+        <script src="toc-e1e174b9.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -231,7 +231,8 @@ server-side, streaming only what’s visible.</p>
 </li>
 <li>
 <p>Virtual servers that run Perspective’s UI directly on external engines like
-<a href="https://duckdb.org/">DuckDB</a>, <a href="https://clickhouse.com/">ClickHouse</a> and
+<a href="https://duckdb.org/">DuckDB</a>, <a href="https://clickhouse.com/">ClickHouse</a>,
+<a href="https://www.postgresql.org/">PostgreSQL</a> and
 <a href="https://pola.rs/">Polars</a>, translating view configurations into native
 queries — no ETL or data copy required.</p>
 </li>
@@ -264,6 +265,7 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 <li><a href="https://perspective-dev.github.io/python/perspective/handlers/tornado.html"><code>perspective.handlers.tornado</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/virtual_servers/clickhouse.html"><code>perspective.virtual_servers.clickhouse</code></a></li>
 <li><a href="https://perspective-dev.github.io/python/perspective/virtual_servers/duckdb.html"><code>perspective.virtual_servers.duckdb</code></a></li>
+<li><a href="https://perspective-dev.github.io/python/perspective/virtual_servers/postgres.html"><code>perspective.virtual_servers.postgres</code></a></li>
 </ul>
 </li>
 <li>Rust API
@@ -538,6 +540,8 @@ accordingly — disabling controls for unsupported operations.</p>
 <li><strong>ClickHouse</strong> — query a ClickHouse server from the browser
 (<a href="#clickhouse-virtual-server">JavaScript</a>) or from
 Python (<a href="#clickhouse-virtual-server-1">Python</a>).</li>
+<li><strong>PostgreSQL</strong> — query a PostgreSQL server (16 or later) from Python
+(<a href="#postgresql-virtual-server">Python</a>).</li>
 </ul>
 <h2 id="custom-implementations"><a class="header" href="#custom-implementations">Custom implementations</a></h2>
 <p>You can implement your own virtual server to connect Perspective to any data
@@ -1818,7 +1822,7 @@ first row has no predecessor to difference against:</p>
 </code></pre>
 <h2 id="support"><a class="header" href="#support">Support</a></h2>
 <p>Window Columns are implemented by Perspective’s built-in engine, by the
-DuckDB, ClickHouse and Polars
+DuckDB, ClickHouse, PostgreSQL and Polars
 <a href="#virtual-servers">Virtual Servers</a>, and by the
 <code>&lt;perspective-viewer&gt;</code> UI. Virtual Servers advertise support through their
 <em>features</em> declaration, so the UI control is hidden for backends which do not
@@ -3115,6 +3119,50 @@ plugin.max_cells = 1_000_000;
 plugin.max_columns = 1000;
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="map-tile-sources"><a class="header" href="#map-tile-sources">Map tile sources</a></h1>
+<p>The map plugins (<code>Map Scatter</code>, <code>Map Line</code>, <code>Map Density</code>) draw their glyphs
+over a raster XYZ basemap. Which basemap is used is controlled by the
+<code>map_tile_provider</code> <code>plugin_config</code> field, an enum of <em>tile sources</em> — each a
+small metadata record describing where to fetch tiles and how to attribute them.
+Two providers ship with <code>@perspective-dev/viewer-charts</code>:</p>
+<ul>
+<li><code>osm</code> OpenStreetMap’s standard raster tiles (the default)</li>
+<li><code>versatiles-satellite</code> Global satellite imagery from
+<a href="https://versatiles.org">VersaTiles</a></li>
+</ul>
+<h2 id="registering-a-custom-tile-source"><a class="header" href="#registering-a-custom-tile-source">Registering a custom tile source</a></h2>
+<p>Any raster XYZ provider can be added at runtime with <code>registerTileSource</code>,
+exported from the <code>@perspective-dev/viewer-charts</code> module. Registered sources
+appear in the settings panel’s “Map provider” control alongside the bundled ones
+and are available to every current and future map chart. For example, the
+<a href="https://carto.com">CARTO</a> basemaps:</p>
+<pre><code class="language-javascript">import { registerTileSource } from "@perspective-dev/viewer-charts";
+
+for (const [id, label, path] of [
+    ["carto-positron", "Light (Positron)", "light_all"],
+    ["carto-dark-matter", "Dark Matter", "dark_all"],
+    ["carto-voyager", "Voyager", "rastertiles/voyager"],
+]) {
+    registerTileSource({
+        id,
+        label,
+        template: `https://{s}.basemaps.cartocdn.com/${path}/{z}/{x}/{y}.png?api_key=CARTO_API_KEY`,
+        subdomains: ["a", "b", "c", "d"],
+        attribution: "© OpenStreetMap contributors © CARTO",
+        tile_size: 256,
+        max_zoom: 19,
+    });
+}
+</code></pre>
+<p>If you consume the plugin as a registered Custom Element rather than an ES
+module, the same function is available as a static on the plugin element class:</p>
+<pre><code class="language-javascript">customElements
+    .get("perspective-viewer-charts-map-scatter")
+    .registerTileSource({ ... });
+</code></pre>
+<p><code>tileSources()</code> (also exported, and available as a static) returns the current
+list of registered specs.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="configuring-the-llm-agent"><a class="header" href="#configuring-the-llm-agent">Configuring the LLM agent</a></h1>
 <p><code>&lt;perspective-viewer&gt;</code> ships with an embedded LLM agent which drives the viewer
 through its public API — reading the schema, writing the <code>ViewerConfig</code>,
@@ -4037,6 +4085,8 @@ Instead, queries are translated and executed natively by the external database.<
 using the <code>clickhouse-connect</code> Python package.</li>
 <li><a href="#polars-virtual-server"><strong>Polars</strong></a> — query in-memory Polars DataFrames
 using the <code>polars</code> Python package.</li>
+<li><a href="#postgresql-virtual-server"><strong>PostgreSQL</strong></a> — query a PostgreSQL server
+(16 or later) using the <code>psycopg</code> Python package.</li>
 </ul>
 <p>You can also <a href="#implementing-a-custom-virtual-server-1"><strong>implement your own</strong></a> virtual server
 to connect Perspective to any data source by subclassing <code>VirtualServerHandler</code>.</p>
@@ -4180,6 +4230,79 @@ document.getElementById("viewer").load(table);
 <li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/python-polars-virtual">Python Polars example</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="postgresql-virtual-server"><a class="header" href="#postgresql-virtual-server">PostgreSQL Virtual Server</a></h1>
+<p>Perspective provides a built-in virtual server for
+<a href="https://www.postgresql.org/">PostgreSQL</a>, allowing <code>&lt;perspective-viewer&gt;</code>
+clients to query a PostgreSQL server over WebSocket.</p>
+<p>Requires PostgreSQL 16 or later.</p>
+<h2 id="installation-7"><a class="header" href="#installation-7">Installation</a></h2>
+<pre><code class="language-bash">pip install perspective-python "psycopg[binary]"
+</code></pre>
+<h2 id="usage-6"><a class="header" href="#usage-6">Usage</a></h2>
+<p>Create a server that exposes PostgreSQL tables to browser clients:</p>
+<pre><code class="language-python">import tornado.web
+import tornado.ioloop
+from perspective.virtual_servers.postgres import PostgresVirtualServer
+from perspective.handlers.tornado import PerspectiveTornadoHandler
+
+# Create virtual server backed by PostgreSQL. Each browser session opens its
+# own connection with this DSN.
+server = PostgresVirtualServer("postgresql://user@localhost:5432/mydb")
+
+# Serve over WebSocket
+app = tornado.web.Application([
+    (r"/websocket", PerspectiveTornadoHandler, {"perspective_server": server}),
+])
+
+app.listen(8080)
+tornado.ioloop.IOLoop.current().start()
+</code></pre>
+<p>Connect from the browser (table names are schema-qualified):</p>
+<pre><code class="language-javascript">const websocket = await perspective.websocket("ws://localhost:8080/websocket");
+const table = await websocket.open_table("public.my_table");
+document.getElementById("viewer").load(table);
+</code></pre>
+<p>The server is read-only with respect to your data: each viewer session
+materializes its queries as connection-scoped <code>TEMPORARY VIEW</code>s, which
+PostgreSQL drops automatically when the session disconnects.</p>
+<h2 id="aggregates-2"><a class="header" href="#aggregates-2">Aggregates</a></h2>
+<p>Aggregates are PostgreSQL’s own functions, under their PostgreSQL names, and
+each column type advertises only the aggregates PostgreSQL defines for it —
+for example <code>bit_and</code>/<code>bit_or</code>/<code>bit_xor</code> on integers only, and
+<code>bool_and</code>/<code>bool_or</code>/<code>every</code> (rather than <code>min</code>/<code>max</code>) on booleans.
+<code>any_value</code> is the default for columns with no explicit aggregate, which is
+why PostgreSQL 16 is required.</p>
+<h2 id="window-functions-1"><a class="header" href="#window-functions-1">Window functions</a></h2>
+<p>Window columns are PostgreSQL’s own functions, under their PostgreSQL names —
+the advertised name is emitted into the <code>OVER</code> clause verbatim.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td>Aggregating</td><td><code>sum</code> <code>avg</code> <code>count</code> <code>min</code> <code>max</code></td></tr>
+<tr><td>Deviation / variance</td><td><code>stddev_samp</code> <code>stddev_pop</code> <code>var_samp</code> <code>var_pop</code></td></tr>
+<tr><td>Navigation</td><td><code>first_value</code> <code>last_value</code> <code>nth_value</code> <code>lag</code> <code>lead</code></td></tr>
+<tr><td>Ranking</td><td><code>row_number</code> <code>rank</code> <code>dense_rank</code> <code>percent_rank</code> <code>cume_dist</code> <code>ntile</code></td></tr>
+<tr><td>Perspective’s own</td><td><code>diff</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>range</code> frames require a numeric order key in PostgreSQL, so they are
+advertised for numeric column types only.</p>
+<h2 id="limitations"><a class="header" href="#limitations">Limitations</a></h2>
+<ul>
+<li><strong>Split by</strong> is not supported — PostgreSQL has no <code>PIVOT</code> statement.</li>
+<li>Natural-order (unsorted) window functions are not supported, since
+PostgreSQL has no stable row identity; window columns require an explicit
+order key.</li>
+</ul>
+<h2 id="examples-8"><a class="header" href="#examples-8">Examples</a></h2>
+<ul>
+<li><a href="https://github.com/perspective-dev/perspective/tree/master/examples/python-postgres-virtual">Python PostgreSQL example</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="implementing-a-custom-virtual-server-1"><a class="header" href="#implementing-a-custom-virtual-server-1">Implementing a custom Virtual Server</a></h1>
 <p>You can connect Perspective to any data source by subclassing
 <code>VirtualServerHandler</code>, wrapping it in a <code>VirtualServer</code>, and exposing that
@@ -4287,9 +4410,9 @@ app = tornado.web.Application([
     }),
 ])
 </code></pre>
-<p>The built-in <a href="#duckdb-virtual-server-1">DuckDB</a>, <a href="#clickhouse-virtual-server-1">ClickHouse</a> and
-<a href="#polars-virtual-server">Polars</a> implementations all follow exactly this shape and are
-worth reading as complete references.</p>
+<p>The built-in <a href="#duckdb-virtual-server-1">DuckDB</a>, <a href="#clickhouse-virtual-server-1">ClickHouse</a>,
+<a href="#postgresql-virtual-server">PostgreSQL</a> and <a href="#polars-virtual-server">Polars</a> implementations all
+follow exactly this shape and are worth reading as complete references.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="rust"><a class="header" href="#rust">Rust</a></h1>
 <p>Install via <code>cargo</code>:</p>
@@ -4486,7 +4609,7 @@ server-side runtime than <code>node.js</code>.</p>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="faq"><a class="header" href="#faq">FAQ</a></h1>
-<h2 id="installation-7"><a class="header" href="#installation-7">Installation</a></h2>
+<h2 id="installation-8"><a class="header" href="#installation-8">Installation</a></h2>
 <h3 id="python-installation-fails-on-windows"><a class="header" href="#python-installation-fails-on-windows">Python installation fails on Windows</a></h3>
 <p>Python wheels are published for supported Python versions and platforms. On
 Windows, ensure you have a compatible Python version and architecture. Install
@@ -4596,7 +4719,8 @@ expression columns:</p>
 });
 </code></pre>
 <p>Window Columns are supported by Perspective’s built-in engine, by the DuckDB,
-ClickHouse and Polars <a href="#virtual-servers">Virtual Servers</a>, and
+ClickHouse, PostgreSQL and Polars
+<a href="#virtual-servers">Virtual Servers</a>, and
 by the <code>&lt;perspective-viewer&gt;</code> UI. They update incrementally as the <code>Table</code>
 updates.</p>
 <!-- _Related: [#504](https://github.com/perspective-dev/perspective/issues/504),
@@ -4748,9 +4872,9 @@ of each mode.</p>
 is treated as the author of the queries it submits, and is permitted to create
 and delete <code>Table</code>/<code>View</code> resources, author arbitrary
 <a href="#expressions">expression columns</a>, and — for
-<a href="#virtual-servers">Virtual Server</a> backends like DuckDB or
-ClickHouse — author SQL fragments executed under the configured database
-role. The bundled WebSocket adapters
+<a href="#virtual-servers">Virtual Server</a> backends like DuckDB,
+ClickHouse or PostgreSQL — author SQL fragments executed under the configured
+database role. The bundled WebSocket adapters
 (<code>tornado.py</code>/<code>aiohttp.py</code>/<code>starlette.py</code>/<code>WebSocketServer</code>) are reference
 integrations and do not authenticate, authorize, or enforce origin policy.</p>
 <p>WebSocket Deployments that need per-user isolation must put an authenticating
