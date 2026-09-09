@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-5b321ba8.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-c2e51571.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-da5c6b27.js";
+            window.path_to_searchindex_js = "../../../searchindex-9e9c03d5.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-e1e174b9.js"></script>
@@ -214,9 +214,10 @@ wrapping them in double quotes, e.g. <code>"Sales"</code>:</p>
 </div>
 
 <h2 id="type-conversion-and-coercion"><a class="header" href="#type-conversion-and-coercion">Type Conversion and Coercion</a></h2>
-<p>Perspective expressions are strongly typed — each column and literal has a fixed
-type, and most operators require matching types on both sides. To work across
-types, use the conversion functions:</p>
+<p>Perspective expressions are typed: every column, literal and function result has
+a fixed type, and the validator reports an error before the expression is ever
+computed if the types do not fit the operator. To move between types explicitly,
+use the conversion functions:</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -235,10 +236,27 @@ types, use the conversion functions:</p>
 </table>
 </div>
 <h3 id="how-coercion-works"><a class="header" href="#how-coercion-works">How coercion works</a></h3>
-<p>Perspective does not implicitly coerce types. For example, you cannot directly
-add an <code>integer</code> to a <code>float</code> — you must cast one side explicitly. Similarly,
-<code>datetime</code> and <code>date</code> values are not numeric: to perform arithmetic on them, you
-must first convert to a numeric representation, do the math, then convert back.</p>
+<p>Numeric types promote to each other. Arithmetic on any mix of <code>integer</code> and
+<code>float</code> operands is computed in floating point and produces a <code>float</code>. The
+comparison operators compare values across every numeric type: integers are
+compared exactly (including signed against unsigned), and as soon as one side is
+a <code>float</code> both sides are compared as doubles. Numeric literals are <code>float</code>, so
+<code>"Quantity" &gt; 3</code> works on an <code>integer</code> column without a cast.</p>
+<p>No other implicit coercion exists. <code>boolean</code>, <code>string</code>, <code>date</code> and <code>datetime</code>
+values can only be compared with values of the same type; comparing a <code>string</code>
+column to a number, a <code>boolean</code> to <code>1</code>, or a <code>date</code> to a <code>datetime</code> is a
+validation error that names the operator and both types, for example
+<code>Type Error - cannot compare string and float with '=='</code>. Similarly, <code>datetime</code>
+and <code>date</code> values are not numeric: to perform arithmetic on them, you must first
+convert to a numeric representation, do the math, then convert back.</p>
+<p>Boolean contexts cast instead. The condition of <code>if</code> and <code>? :</code>, and the operands
+of <code>and</code>, <code>or</code>, <code>not</code>, <code>xor</code>, <code>nand</code>, <code>nor</code> and <code>xnor</code>, accept any type: <code>null</code>
+is <code>false</code>, a <code>boolean</code> is its own value, a number is <code>true</code> when non-zero, and
+a <code>string</code> is <code>true</code> when non-null. <code>x == null</code> and <code>x != null</code> test <code>x</code> for
+null and return <code>boolean</code>, the same as <code>is_null(x)</code> and <code>is_not_null(x)</code>; the
+<code>null</code> literal is otherwise a value like any null cell: <code>"x" &gt; 2 ? null : "x"</code>
+yields null in the first case, and <code>"x" + null</code> or <code>"x" &lt; null</code> are null, exactly
+as they would be for a column with a null value.</p>
 <p>Internally, <code>datetime</code> values are stored as milliseconds since the Unix epoch
 (1970-01-01T00:00:00Z). Converting a <code>datetime</code> to a <code>float</code> yields this
 millisecond timestamp, and <code>datetime()</code> accepts a millisecond timestamp to

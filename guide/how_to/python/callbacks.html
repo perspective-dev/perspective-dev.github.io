@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-5b321ba8.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c2e51571.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-da5c6b27.js";
+            window.path_to_searchindex_js = "../../searchindex-9e9c03d5.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-e1e174b9.js"></script>
@@ -206,6 +206,15 @@ view.remove_delete(on_delete_id)
 </code></pre>
 <p>Callbacks defined with a lambda function cannot be removed, as lambda functions
 have no identifier.</p>
+<p><code>on_remove</code> fires when rows are removed from a <code>View</code>’s <code>Table</code> with an <code>index</code>,
+and receives the port ID and the removed index values as an Apache Arrow
+(<code>bytes</code>) of one column named after the index:</p>
+<pre><code class="language-python">def remove_callback(port_id, indices):
+    print("Removed", client.table(indices).view().to_records())
+
+on_remove_id = view.on_remove(remove_callback)
+view.remove_remove(on_remove_id)
+</code></pre>
 
                     </main>
 

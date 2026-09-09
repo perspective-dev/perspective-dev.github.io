@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-5b321ba8.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-c2e51571.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-da5c6b27.js";
+            window.path_to_searchindex_js = "searchindex-9e9c03d5.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-e1e174b9.js"></script>
@@ -450,7 +450,9 @@ loop.start()
 </code></pre>
 <h2 id="javascript-client-1"><a class="header" href="#javascript-client-1">Javascript client</a></h2>
 <p>Perspective’s websocket client interfaces with the Python server, then
-<em>replicates</em> the server-side Table.</p>
+<em>replicates</em> the server-side Table. When the server-side <code>Table</code> has an <code>index</code>,
+the replica inherits it, and both <code>update()</code> and <code>remove()</code> on the server are
+mirrored in the browser.</p>
 <pre><code class="language-javascript">const websocket = await perspective.websocket("ws://localhost:8080");
 const server_table = await websocket.open_table("my_table");
 const server_view = await server_table.view();
@@ -1538,9 +1540,10 @@ wrapping them in double quotes, e.g. <code>"Sales"</code>:</p>
 </div>
 
 <h2 id="type-conversion-and-coercion"><a class="header" href="#type-conversion-and-coercion">Type Conversion and Coercion</a></h2>
-<p>Perspective expressions are strongly typed — each column and literal has a fixed
-type, and most operators require matching types on both sides. To work across
-types, use the conversion functions:</p>
+<p>Perspective expressions are typed: every column, literal and function result has
+a fixed type, and the validator reports an error before the expression is ever
+computed if the types do not fit the operator. To move between types explicitly,
+use the conversion functions:</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -1559,10 +1562,27 @@ types, use the conversion functions:</p>
 </table>
 </div>
 <h3 id="how-coercion-works"><a class="header" href="#how-coercion-works">How coercion works</a></h3>
-<p>Perspective does not implicitly coerce types. For example, you cannot directly
-add an <code>integer</code> to a <code>float</code> — you must cast one side explicitly. Similarly,
-<code>datetime</code> and <code>date</code> values are not numeric: to perform arithmetic on them, you
-must first convert to a numeric representation, do the math, then convert back.</p>
+<p>Numeric types promote to each other. Arithmetic on any mix of <code>integer</code> and
+<code>float</code> operands is computed in floating point and produces a <code>float</code>. The
+comparison operators compare values across every numeric type: integers are
+compared exactly (including signed against unsigned), and as soon as one side is
+a <code>float</code> both sides are compared as doubles. Numeric literals are <code>float</code>, so
+<code>"Quantity" &gt; 3</code> works on an <code>integer</code> column without a cast.</p>
+<p>No other implicit coercion exists. <code>boolean</code>, <code>string</code>, <code>date</code> and <code>datetime</code>
+values can only be compared with values of the same type; comparing a <code>string</code>
+column to a number, a <code>boolean</code> to <code>1</code>, or a <code>date</code> to a <code>datetime</code> is a
+validation error that names the operator and both types, for example
+<code>Type Error - cannot compare string and float with '=='</code>. Similarly, <code>datetime</code>
+and <code>date</code> values are not numeric: to perform arithmetic on them, you must first
+convert to a numeric representation, do the math, then convert back.</p>
+<p>Boolean contexts cast instead. The condition of <code>if</code> and <code>? :</code>, and the operands
+of <code>and</code>, <code>or</code>, <code>not</code>, <code>xor</code>, <code>nand</code>, <code>nor</code> and <code>xnor</code>, accept any type: <code>null</code>
+is <code>false</code>, a <code>boolean</code> is its own value, a number is <code>true</code> when non-zero, and
+a <code>string</code> is <code>true</code> when non-null. <code>x == null</code> and <code>x != null</code> test <code>x</code> for
+null and return <code>boolean</code>, the same as <code>is_null(x)</code> and <code>is_not_null(x)</code>; the
+<code>null</code> literal is otherwise a value like any null cell: <code>"x" &gt; 2 ? null : "x"</code>
+yields null in the first case, and <code>"x" + null</code> or <code>"x" &lt; null</code> are null, exactly
+as they would be for a column with a null value.</p>
 <p>Internally, <code>datetime</code> values are stored as milliseconds since the Unix epoch
 (1970-01-01T00:00:00Z). Converting a <code>datetime</code> to a <code>float</code> yields this
 millisecond timestamp, and <code>datetime()</code> accepts a millisecond timestamp to
@@ -1965,6 +1985,32 @@ view.remove_update(on_update)
 <p>When <code>mode</code> is set to <code>"row"</code>, the callback receives a delta of only the rows
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
 tables across clients.</p>
+<h2 id="remove-callbacks"><a class="header" href="#remove-callbacks">Remove Callbacks</a></h2>
+<p>Register a callback to be notified whenever rows are removed from the underlying
+<code>Table</code> by <code>remove()</code>, which requires an <code>index</code>. The callback receives the
+<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow of a single
+column named after the index. It fires once per update step, only for rows which
+existed before that step; <code>replace()</code> reports the keys it does not re-supply,
+and <code>clear()</code> reports every key:</p>
+<div class="javascript">
+<pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id }) =&gt; {
+    replica.remove(indices);
+});
+
+// Later, remove the callback
+await view.remove_remove(callback);
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">def on_remove(port_id, indices):
+    replica.remove(indices)
+
+callback = view.on_remove(on_remove)
+view.remove_remove(callback)
+</code></pre>
+</div>
+
 <h2 id="flattening-a-view-into-a-table"><a class="header" href="#flattening-a-view-into-a-table">Flattening a View into a Table</a></h2>
 <p>A [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance, which will return
 a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and all future updates
@@ -1973,6 +2019,12 @@ particularly useful for implementing a
 <a href="#clientserver-replicated">Client/Server Replicated</a> design, as it
 handles the <code>View</code> serialization and <code>on_update</code> forwarding for you. This
 pattern is available in JavaScript, Python and Rust.</p>
+<p>When the source <code>Table</code> has an <code>index</code>, and the <code>View</code> is unpivoted and includes
+the index column, the new <code>Table</code> inherits that <code>index</code> and subscribes to the
+source’s <code>on_remove()</code>, so in-place updates and <code>remove()</code> calls on the source
+are mirrored rather than appended. A pivoted <code>View</code>, or one which omits the
+index column, produces an unindexed, append-only <code>Table</code>. A <code>limit</code> is inherited
+the same way. <code>replace()</code> and <code>clear()</code> on the source are mirrored too.</p>
 <div class="javascript">
 <pre><code class="language-javascript">const worker = await perspective.worker();
 const table = await worker.table(data);
@@ -3797,6 +3849,15 @@ view.remove_delete(on_delete_id)
 </code></pre>
 <p>Callbacks defined with a lambda function cannot be removed, as lambda functions
 have no identifier.</p>
+<p><code>on_remove</code> fires when rows are removed from a <code>View</code>’s <code>Table</code> with an <code>index</code>,
+and receives the port ID and the removed index values as an Apache Arrow
+(<code>bytes</code>) of one column named after the index:</p>
+<pre><code class="language-python">def remove_callback(port_id, indices):
+    print("Removed", client.table(indices).view().to_records())
+
+on_remove_id = view.on_remove(remove_callback)
+view.remove_remove(on_remove_id)
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="multi-threading"><a class="header" href="#multi-threading">Multi-threading</a></h1>
 <p>Perspective’s API is thread-safe, so methods may be called from different

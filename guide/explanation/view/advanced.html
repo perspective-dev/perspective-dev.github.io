@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-5b321ba8.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c2e51571.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-da5c6b27.js";
+            window.path_to_searchindex_js = "../../searchindex-9e9c03d5.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-e1e174b9.js"></script>
@@ -316,6 +316,32 @@ view.remove_update(on_update)
 <p>When <code>mode</code> is set to <code>"row"</code>, the callback receives a delta of only the rows
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
 tables across clients.</p>
+<h2 id="remove-callbacks"><a class="header" href="#remove-callbacks">Remove Callbacks</a></h2>
+<p>Register a callback to be notified whenever rows are removed from the underlying
+<code>Table</code> by <code>remove()</code>, which requires an <code>index</code>. The callback receives the
+<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow of a single
+column named after the index. It fires once per update step, only for rows which
+existed before that step; <code>replace()</code> reports the keys it does not re-supply,
+and <code>clear()</code> reports every key:</p>
+<div class="javascript">
+<pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id }) =&gt; {
+    replica.remove(indices);
+});
+
+// Later, remove the callback
+await view.remove_remove(callback);
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">def on_remove(port_id, indices):
+    replica.remove(indices)
+
+callback = view.on_remove(on_remove)
+view.remove_remove(callback)
+</code></pre>
+</div>
+
 <h2 id="flattening-a-view-into-a-table"><a class="header" href="#flattening-a-view-into-a-table">Flattening a View into a Table</a></h2>
 <p>A [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance, which will return
 a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and all future updates
@@ -324,6 +350,12 @@ particularly useful for implementing a
 <a href="../architecture/client_server.html">Client/Server Replicated</a> design, as it
 handles the <code>View</code> serialization and <code>on_update</code> forwarding for you. This
 pattern is available in JavaScript, Python and Rust.</p>
+<p>When the source <code>Table</code> has an <code>index</code>, and the <code>View</code> is unpivoted and includes
+the index column, the new <code>Table</code> inherits that <code>index</code> and subscribes to the
+source’s <code>on_remove()</code>, so in-place updates and <code>remove()</code> calls on the source
+are mirrored rather than appended. A pivoted <code>View</code>, or one which omits the
+index column, produces an unindexed, append-only <code>Table</code>. A <code>limit</code> is inherited
+the same way. <code>replace()</code> and <code>clear()</code> on the source are mirrored too.</p>
 <div class="javascript">
 <pre><code class="language-javascript">const worker = await perspective.worker();
 const table = await worker.table(data);
