@@ -29,7 +29,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c2e51571.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-9dcf90f0.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,7 +37,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-9e9c03d5.js";
+            window.path_to_searchindex_js = "../../searchindex-28e6cd8d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-e1e174b9.js"></script>
@@ -277,6 +277,16 @@ await elem.restoreWorkspace(workspace_token);
 (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the
 single-panel <code>restore()</code> will <em>not</em> restore the layout (its <code>panels</code>/<code>layout</code>
 keys are ignored).</p>
+<p>Like <code>restore()</code>, <code>restoreWorkspace()</code> applies an <em>update</em>: a field that is
+absent leaves that part of the element unchanged, <code>null</code> resets it to its
+default, and a value replaces it. <code>panels</code> is the whole panel set — when
+present every existing panel is replaced (<code>{}</code> empties the element); when
+absent the panels are kept, and <code>layout</code>, <code>active</code> and <code>masters</code> name them by
+their existing ids. So a cross-filter can be applied to the current panels
+without re-creating them:</p>
+<pre><code class="language-javascript">await elem.restoreWorkspace({ global_filters: [["Region", "==", "West"]] });
+await elem.restoreWorkspace({ global_filters: null }); // clear
+</code></pre>
 <h2 id="colors-palettes-and-gradients"><a class="header" href="#colors-palettes-and-gradients">Colors, palettes and gradients</a></h2>
 <p>Per-column color styling lives in a panel’s <code>columns_config</code>, keyed by column
 name, and every color-scale value is a string usable verbatim in CSS:</p>
@@ -292,19 +302,23 @@ name, and every color-scale value is a string usable verbatim in CSS:</p>
 </tbody>
 </table>
 </div>
-<p>Which reader applies is decided by the style control’s kind (the datagrid’s
-<code>fg_colors</code>/<code>bg_colors</code> and the charts’ <code>gradient</code> are gradients; <code>palette</code> is a
-palette), never by inspecting the string — a position anywhere in a palette is
-rejected, while a gradient may omit positions on input (the CSS
-implicit-position rules fill them) and may carry any direction token, which is
-normalized to <code>to right</code>. Values equal to the plugin’s default are not
-serialized.</p>
+<p>Which reader applies is decided by the style control’s kind, never by inspecting
+the string. The datagrid’s <code>fg_color</code>/<code>bg_color</code> are read according to the
+column’s type and its <code>fg_mode</code>/<code>bg_mode</code>: a gradient for numeric columns, a
+color for string and datetime columns in <code>"color"</code> mode, and a palette for
+string columns in <code>"series"</code> mode; the charts’ <code>gradient</code> is a gradient and
+<code>palette</code> a palette. A position anywhere in a palette is rejected, while a
+gradient may omit positions on input (the CSS implicit-position rules fill them)
+and may carry any direction token, which is normalized to <code>to right</code>. A mode the
+column’s type does not accept (say <code>fg_mode: "series"</code> on a float column)
+rejects the <code>restore()</code> call, as does a value that does not parse under the
+mode’s reader. Values equal to the plugin’s default are not serialized.</p>
 <pre><code class="language-javascript">await viewer.restore({
     plugin: "Datagrid",
     columns_config: {
         Profit: {
-            number_bg_mode: "gradient",
-            bg_colors: "linear-gradient(to right, #ff0000, #ffffff, #0000ff)",
+            bg_mode: "gradient",
+            bg_color: "linear-gradient(to right, #ff0000, #ffffff, #0000ff)",
         },
     },
 });

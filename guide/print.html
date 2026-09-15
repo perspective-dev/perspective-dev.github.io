@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-c2e51571.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-9dcf90f0.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-9e9c03d5.js";
+            window.path_to_searchindex_js = "searchindex-28e6cd8d.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-e1e174b9.js"></script>
@@ -2405,6 +2405,12 @@ console.log(await view.to_ndjson());
 // ArrayBuffer
 console.log(await view.to_arrow());
 </code></pre>
+<p><code>to_arrow()</code> writes an uncompressed Arrow IPC stream by default; pass
+<code>compression</code> to apply LZ4 or ZSTD body compression, which <code>Client::table</code> reads
+back transparently:</p>
+<pre><code class="language-javascript">const compressed = await view.to_arrow({ compression: "zstd" });
+const table2 = await client.table(compressed);
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="deleting-a-table-or-view"><a class="header" href="#deleting-a-table-or-view">Deleting a <code>table()</code> or <code>view()</code></a></h1>
 <p>Unlike standard JavaScript objects, Perspective objects such as <code>table()</code> and
@@ -2645,11 +2651,33 @@ the <em>active</em> panel — e.g. <code>await viewer.save({ panel: "PANEL_ID_0"
 <tr><td><code>delete()</code></td><td>Release the element’s resources</td></tr>
 <tr><td><code>getClient(options?)</code></td><td>Get a bound <code>Client</code></td></tr>
 <tr><td><code>getTable(options?)</code></td><td>Get a panel’s <code>Table</code></td></tr>
-<tr><td><code>getView(options?)</code></td><td>Get a panel’s <code>View</code></td></tr>
+<tr><td><code>getView(options?)</code></td><td>Get a panel’s <code>View</code> — <code>mode</code> selects <code>"live"</code> (default), <code>"clone"</code> or <code>"auto"</code></td></tr>
 <tr><td><code>getViewConfig(options?)</code></td><td>Get a panel’s <code>ViewConfig</code></td></tr>
 </tbody>
 </table>
 </div>
+<h4 id="view-lifecycle"><a class="header" href="#view-lifecycle"><code>View</code> lifecycle</a></h4>
+<p>By default <code>getView()</code> returns the panel’s own <em>live</em> <code>View</code>. The viewer owns
+it: every config change replaces it, and auto-pause (the element scrolled out
+of view, <code>display: none</code>, or a backgrounded tab) or <code>delete()</code> deletes it. Any
+call on a live <code>View</code> can therefore fail with “View already deleted”, even one
+already in flight, and it must never be <code>delete()</code>d by the caller. While a
+panel is auto-paused or has not rendered yet it has no live <code>View</code>, and
+<code>getView()</code> rejects with <code>No View for panel "&lt;name&gt;"</code>; <code>setAutoPause(false)</code>
+forces one to exist for every panel, at the cost of a live subscription each.</p>
+<p>A reference that has to outlive the render lifecycle should not borrow the
+viewer’s <code>View</code> at all. <code>mode: "clone"</code> builds a new <code>View</code> from the panel’s
+effective config (the element’s global filter included) which is independent
+of rendering and pause, and which the caller owns and must <code>delete()</code>:</p>
+<pre><code class="language-javascript">for (const panel of viewer.getPanelNames()) {
+    const view = await viewer.getView({ panel, mode: "clone" });
+    const arrow = await view.to_arrow();
+    await view.delete();
+}
+</code></pre>
+<p><code>mode: "auto"</code> returns the live <code>View</code> when one exists and a clone otherwise.
+Ownership follows whichever was returned, so use it only where the caller
+never deletes the result.</p>
 <h3 id="configuration"><a class="header" href="#configuration">Configuration</a></h3>
 <div class="table-wrapper">
 <table>
@@ -2660,7 +2688,7 @@ the <em>active</em> panel — e.g. <code>await viewer.save({ panel: "PANEL_ID_0"
 <tr><td><code>save(options?)</code></td><td>Serialize one panel’s configuration</td></tr>
 <tr><td><code>restore(config, options?)</code></td><td>Apply a configuration to one panel</td></tr>
 <tr><td><code>saveWorkspace()</code></td><td>Serialize the whole element — every panel, plus layout and global filters</td></tr>
-<tr><td><code>restoreWorkspace(config)</code></td><td>Restore a whole-element configuration</td></tr>
+<tr><td><code>restoreWorkspace(config)</code></td><td>Apply a workspace config update; absent fields are left unchanged</td></tr>
 <tr><td><code>reset(all?, options?)</code></td><td>Reset configuration (pass <code>true</code> to also reset expressions)</td></tr>
 <tr><td><code>resetError()</code></td><td>Clear the error overlay</td></tr>
 </tbody>
@@ -2694,8 +2722,11 @@ the <em>active</em> panel — e.g. <code>await viewer.save({ panel: "PANEL_ID_0"
 </table>
 </div>
 <p><code>export()</code>, <code>download()</code> and <code>copy()</code> all take a <code>method</code>, one of <code>"csv"</code>,
-<code>"json"</code>, <code>"ndjson"</code> or <code>"arrow"</code> — each with <code>-all</code> and <code>-selected</code> variants
-(e.g. <code>"csv-selected"</code>) — plus <code>"html"</code>, <code>"json-config"</code>, and <code>"plugin"</code>.
+<code>"json"</code>, <code>"ndjson"</code>, <code>"arrow"</code>, <code>"arrow-lz4"</code> or <code>"arrow-zstd"</code> — each with
+<code>-all</code> and <code>-selected</code> variants (e.g. <code>"csv-selected"</code>, <code>"arrow-zstd-all"</code>) —
+plus <code>"html"</code>, <code>"json-config"</code>, and <code>"plugin"</code>. The <code>"arrow-lz4"</code> and
+<code>"arrow-zstd"</code> methods write the Arrow IPC stream with LZ4 or ZSTD body
+compression.
 The <code>"plugin"</code> method asks the plugin to render itself, which produces a PNG
 for charts and text for the datagrid.
 | <code>getSelection(options?)</code> / <code>setSelection(...)</code> | Get or set the selected region |
@@ -2959,6 +2990,16 @@ await elem.restoreWorkspace(workspace_token);
 (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the
 single-panel <code>restore()</code> will <em>not</em> restore the layout (its <code>panels</code>/<code>layout</code>
 keys are ignored).</p>
+<p>Like <code>restore()</code>, <code>restoreWorkspace()</code> applies an <em>update</em>: a field that is
+absent leaves that part of the element unchanged, <code>null</code> resets it to its
+default, and a value replaces it. <code>panels</code> is the whole panel set — when
+present every existing panel is replaced (<code>{}</code> empties the element); when
+absent the panels are kept, and <code>layout</code>, <code>active</code> and <code>masters</code> name them by
+their existing ids. So a cross-filter can be applied to the current panels
+without re-creating them:</p>
+<pre><code class="language-javascript">await elem.restoreWorkspace({ global_filters: [["Region", "==", "West"]] });
+await elem.restoreWorkspace({ global_filters: null }); // clear
+</code></pre>
 <h2 id="colors-palettes-and-gradients"><a class="header" href="#colors-palettes-and-gradients">Colors, palettes and gradients</a></h2>
 <p>Per-column color styling lives in a panel’s <code>columns_config</code>, keyed by column
 name, and every color-scale value is a string usable verbatim in CSS:</p>
@@ -2974,19 +3015,23 @@ name, and every color-scale value is a string usable verbatim in CSS:</p>
 </tbody>
 </table>
 </div>
-<p>Which reader applies is decided by the style control’s kind (the datagrid’s
-<code>fg_colors</code>/<code>bg_colors</code> and the charts’ <code>gradient</code> are gradients; <code>palette</code> is a
-palette), never by inspecting the string — a position anywhere in a palette is
-rejected, while a gradient may omit positions on input (the CSS
-implicit-position rules fill them) and may carry any direction token, which is
-normalized to <code>to right</code>. Values equal to the plugin’s default are not
-serialized.</p>
+<p>Which reader applies is decided by the style control’s kind, never by inspecting
+the string. The datagrid’s <code>fg_color</code>/<code>bg_color</code> are read according to the
+column’s type and its <code>fg_mode</code>/<code>bg_mode</code>: a gradient for numeric columns, a
+color for string and datetime columns in <code>"color"</code> mode, and a palette for
+string columns in <code>"series"</code> mode; the charts’ <code>gradient</code> is a gradient and
+<code>palette</code> a palette. A position anywhere in a palette is rejected, while a
+gradient may omit positions on input (the CSS implicit-position rules fill them)
+and may carry any direction token, which is normalized to <code>to right</code>. A mode the
+column’s type does not accept (say <code>fg_mode: "series"</code> on a float column)
+rejects the <code>restore()</code> call, as does a value that does not parse under the
+mode’s reader. Values equal to the plugin’s default are not serialized.</p>
 <pre><code class="language-javascript">await viewer.restore({
     plugin: "Datagrid",
     columns_config: {
         Profit: {
-            number_bg_mode: "gradient",
-            bg_colors: "linear-gradient(to right, #ff0000, #ffffff, #0000ff)",
+            bg_mode: "gradient",
+            bg_color: "linear-gradient(to right, #ff0000, #ffffff, #0000ff)",
         },
     },
 });
