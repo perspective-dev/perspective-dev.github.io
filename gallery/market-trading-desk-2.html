@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+        <title>Market — Themed — Perspective example</title>
+        <meta name="description" content="3-panel dashboard of Datagrid, X Bar and Candlestick: Data grid of id, side, security and price, sorted by timestamp; X Bar chart of if(&quot;side&quot;=='buy'){-1}else{1}, grouped by bucket(&quot;price&quot;, 0.5), split by side, filtered to status == open, sorted by bucket(&quot;price&quot;, 0.5), with 2 computed expression…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/gallery/market-trading-desk-2.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Market — Themed — Perspective example" />
+        <meta property="og:description" content="3-panel dashboard of Datagrid, X Bar and Candlestick: Data grid of id, side, security and price, sorted by timestamp; X Bar chart of if(&quot;side&quot;=='buy'){-1}else{1}, grouped by bucket(&quot;price&quot;, 0.5), split by side, filtered to status == open, sorted by bucket(&quot;price&quot;, 0.5), with 2 computed expression…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/gallery/market-trading-desk-2.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/market-trading-desk-2.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Market — Themed — Perspective example" />
+        <meta name="twitter:description" content="3-panel dashboard of Datagrid, X Bar and Candlestick: Data grid of id, side, security and price, sorted by timestamp; X Bar chart of if(&quot;side&quot;=='buy'){-1}else{1}, grouped by bucket(&quot;price&quot;, 0.5), split by side, filtered to status == open, sorted by bucket(&quot;price&quot;, 0.5), with 2 computed expression…" />
+        <meta name="twitter:image" content="https://perspective-dev.github.io/projects/light/market-trading-desk-2.png" />
+        <link rel="icon" type="image/svg+xml" href="/svg/perspective_logo.svg" />
+        <link rel="stylesheet" href="/style.css" />
+        <noscript>
+            <style>
+                #app {
+                    display: none;
+                }
+
+                #about {
+                    display: block;
+                    position: static;
+                    margin: 0 auto;
+                    border: none;
+                    max-width: 860px;
+                    max-height: none;
+                }
+
+                #about .about__close {
+                    display: none;
+                }
+            </style>
+        </noscript>
+    </head>
+    <body>
+        <div class="app-shell" id="app" data-sidebar="expanded">
+            <perspective-viewer id="viewer"></perspective-viewer>
+        </div>
+        <dialog id="about" class="about">
+            <article class="about__body">
+    <button type="button" class="about__close" data-role="close" aria-label="Close">×</button>
+    <p class="about__crumbs"><a href="/">Perspective</a> › <a href="/gallery/index.html">Examples</a></p>
+    <h1>Market — Themed</h1>
+    <p>3-panel dashboard of Datagrid, X Bar and Candlestick: Data grid of id, side, security and price, sorted by timestamp; X Bar chart of if(&quot;side&quot;=='buy'){-1}else{1}, grouped by bucket(&quot;price&quot;, 0.5), split by side, filtered to status == open, sorted by bucket(&quot;price&quot;, 0.5), with 2 computed expression columns; Candlestick chart of price, price 2 and price 3, grouped by bucket(&quot;timestamp&quot;, 'm'), filtered to status == closed, with 3 computed expression columns.</p>
+    <p>Candlestick, live order book and blotter over one simulated feed.</p>
+    <p><img
+        class="about__thumb"
+        loading="lazy"
+        decoding="async"
+        alt="Market — Themed: 3-panel dashboard of Datagrid, X Bar and Candlestick: Data grid of id, side, security and price, sorted by timestamp; X Bar chart of if(&quot;side&quot;=='buy'){-1}else{1}, grouped by bucket(&quot;price&quot;, 0.5), split by side, filtered to status == open, sorted by bucket(&quot;price&quot;, 0.5), with 2 computed expression columns; Candlestick chart of price, price 2 and price 3, grouped by bucket(&quot;timestamp&quot;, 'm'), filtered to status == closed, with 3 computed expression columns."
+        src="/projects/light/market-trading-desk-2.png"
+    /></p>
+    <h2>Data</h2>
+    <p>A simulated order book streaming into a Perspective table in real time: orders are created, filled, cancelled and expired continuously, and every data grid, pivot and chart updates incrementally as they arrive.</p>
+    <p>Generated continuously in the browser by a JavaScript simulation streaming into a Perspective <code>Table</code>.</p>
+    <h2>Configuration</h2>
+    <p>This example is a saved <code>&lt;perspective-viewer&gt;</code> workspace. Pass this JSON to <code>viewer.restoreWorkspace()</code> to reproduce it over the same table:</p>
+    <pre><code>{
+    &quot;active&quot;: &quot;PERSPECTIVE_GENERATED_ID_2&quot;,
+    &quot;layout&quot;: {
+        &quot;type&quot;: &quot;split-layout&quot;,
+        &quot;children&quot;: [
+            {
+                &quot;type&quot;: &quot;tab-layout&quot;,
+                &quot;tabs&quot;: [
+                    &quot;PERSPECTIVE_GENERATED_ID_2&quot;
+                ],
+                &quot;selected&quot;: 0
+            },
+            {
+                &quot;type&quot;: &quot;split-layout&quot;,
+                &quot;children&quot;: [
+                    {
+                        &quot;type&quot;: &quot;tab-layout&quot;,
+                        &quot;tabs&quot;: [
+                            &quot;PERSPECTIVE_GENERATED_ID_1&quot;
+                        ],
+                        &quot;selected&quot;: 0
+                    },
+                    {
+                        &quot;type&quot;: &quot;tab-layout&quot;,
+                        &quot;tabs&quot;: [
+                            &quot;PERSPECTIVE_GENERATED_ID_0&quot;
+                        ],
+                        &quot;selected&quot;: 0
+                    }
+                ],
+                &quot;sizes&quot;: [
+                    0.5,
+                    0.5
+                ],
+                &quot;orientation&quot;: &quot;vertical&quot;
+            }
+        ],
+        &quot;sizes&quot;: [
+            0.5,
+            0.5
+        ],
+        &quot;orientation&quot;: &quot;horizontal&quot;
+    },
+    &quot;panels&quot;: {
+        &quot;PERSPECTIVE_GENERATED_ID_0&quot;: {
+            &quot;columns_config&quot;: {
+                &quot;price&quot;: {
+                    &quot;fg_mode&quot;: &quot;label-bar&quot;,
+                    &quot;fg_gradient&quot;: 20
+                }
+            },
+            &quot;plugin&quot;: &quot;Datagrid&quot;,
+            &quot;theme&quot;: &quot;Solarized Dark&quot;,
+            &quot;table&quot;: &quot;market&quot;,
+            &quot;title&quot;: &quot;Blotter&quot;,
+            &quot;sort&quot;: [
+                [
+                    &quot;timestamp&quot;,
+                    &quot;desc&quot;
+                ]
+            ],
+            &quot;columns&quot;: [
+                &quot;id&quot;,
+                &quot;side&quot;,
+                &quot;security&quot;,
+                &quot;price&quot;,
+                &quot;timestamp&quot;,
+                &quot;status&quot;
+            ]
+        },
+        &quot;PERSPECTIVE_GENERATED_ID_1&quot;: {
+            &quot;plugin&quot;: &quot;X Bar&quot;,
+            &quot;theme&quot;: &quot;Phosphor&quot;,
+            &quot;table&quot;: &quot;market&quot;,
+            &quot;title&quot;: &quot;Order Book (Chart)&quot;,
+            &quot;group_by&quot;: [
+                &quot;bucket(\&quot;price\&quot;, 0.5)&quot;
+            ],
+            &quot;split_by&quot;: [
+                &quot;side&quot;
+            ],
+            &quot;sort&quot;: [
+                [
+                    &quot;bucket(\&quot;price\&quot;, 0.5)&quot;,
+                    &quot;desc&quot;
+                ]
+            ],
+            &quot;filter&quot;: [
+                [
+                    &quot;status&quot;,
+                    &quot;==&quot;,
+                    &quot;open&quot;
+                ]
+            ],
+            &quot;expressions&quot;: {
+                &quot;if(\&quot;side\&quot;=='buy'){-1}else{1}&quot;: &quot;if(\&quot;side\&quot;=='buy'){-1}else{1}&quot;,
+                &quot;bucket(\&quot;price\&quot;, 0.5)&quot;: &quot;bucket(\&quot;price\&quot;, 0.5)&quot;
+            },
+            &quot;columns&quot;: [
+                &quot;if(\&quot;side\&quot;=='buy'){-1}else{1}&quot;
+            ]
+        },
+        &quot;PERSPECTIVE_GENERATED_ID_2&quot;: {
+            &quot;plugin&quot;: &quot;Candlestick&quot;,
+            &quot;theme&quot;: &quot;Dracula&quot;,
+            &quot;table&quot;: &quot;market&quot;,
+            &quot;title&quot;: &quot;Candlestick&quot;,
+            &quot;group_by&quot;: [
+                &quot;bucket(\&quot;timestamp\&quot;, 'm')&quot;
+            ],
+            &quot;filter&quot;: [
+                [
+                    &quot;status&quot;,
+                    &quot;==&quot;,
+                    &quot;closed&quot;
+                ]
+            ],
+            &quot;expressions&quot;: {
+                &quot;price 3&quot;: &quot;\&quot;price\&quot;&quot;,
+                &quot;bucket(\&quot;timestamp\&quot;, 'm')&quot;: &quot;bucket(\&quot;timestamp\&quot;, 'm')&quot;,
+                &quot;price 2&quot;: &quot;\&quot;price\&quot;&quot;
+            },
+            &quot;columns&quot;: [
+                &quot;price&quot;,
+                null,
+                &quot;price 2&quot;,
+                &quot;price 3&quot;
+            ],
+            &quot;aggregates&quot;: {
+                &quot;price&quot;: &quot;avg&quot;,
+                &quot;price 3&quot;: &quot;low&quot;,
+                &quot;price 2&quot;: &quot;high&quot;
+            }
+        }
+    }
+}</code></pre>
+    <h2>About Perspective</h2>
+    <p>Perspective is an open-source, WebAssembly-powered data grid, pivot table and charting component for large, real-time and streaming datasets — in the browser, Python, Jupyter, Node.js and Rust.</p>
+    <h2>Documentation</h2>
+<nav class="about__links"><section><h3>Guide</h3><ul><li><a href="/guide/index.html">What is Perspective</a></li><li><a href="/guide/explanation/architecture.html">Data architecture: client-only, replicated, server-only</a></li><li><a href="/guide/explanation/table.html">Table: streaming columnar storage</a></li><li><a href="/guide/explanation/view.html">View: pivots, aggregates, filters and expressions</a></li><li><a href="/guide/explanation/join.html">Joins</a></li><li><a href="/guide/explanation/virtual_servers.html">Virtual servers for DuckDB, ClickHouse, PostgreSQL and Polars</a></li><li><a href="/guide/benchmarks.html">Benchmarks</a></li><li><a href="/guide/glossary.html">Glossary</a></li><li><a href="/guide/FAQ.html">FAQ</a></li></ul></section><section><h3>Use cases</h3><ul><li><a href="/guide/use_cases/real_time_dashboard.html">Real-time dashboards over WebSocket</a></li><li><a href="/guide/use_cases/streaming_pivot_table.html">Streaming pivot tables</a></li><li><a href="/guide/use_cases/large_datasets.html">Millions of rows in the browser</a></li><li><a href="/guide/use_cases/market_data.html">Trading blotters, order books and market data</a></li><li><a href="/guide/use_cases/jupyter.html">Interactive pivot tables and charts in Jupyter</a></li><li><a href="/guide/use_cases/database_ui.html">A UI for DuckDB, ClickHouse and PostgreSQL</a></li><li><a href="/guide/use_cases/ducklake.html">Case study: a multi-billion row tick history in a browser tab with DuckLake and DuckDB-WASM</a></li><li><a href="/guide/use_cases/embedded_analytics.html">Embedded analytics in a web application</a></li><li><a href="/guide/use_cases/agent.html">LLM and agent-driven analytics</a></li></ul></section><section><h3>Get started</h3><ul><li><a href="/guide/how_to/javascript/installation.html">JavaScript installation</a></li><li><a href="/guide/how_to/javascript/react.html">React</a></li><li><a href="/guide/how_to/python/installation.html">Python installation</a></li><li><a href="/guide/how_to/python/jupyterlab.html">PerspectiveWidget for Jupyter</a></li><li><a href="/gallery/index.html">Example gallery</a></li></ul></section><section><h3>API reference</h3><ul><li><a href="/viewer/modules/perspective-viewer.html">perspective-viewer Web Component</a></li><li><a href="/browser/modules/src_ts_perspective.browser.ts.html">JavaScript client</a></li><li><a href="/react/index.html">React</a></li><li><a href="/python/index.html">Python</a></li><li><a href="https://docs.rs/perspective/latest/perspective/">Rust</a></li></ul></section></nav>
+    <footer class="about__footer"><p>
+        <a href="https://github.com/perspective-dev/perspective">GitHub</a> ·
+        <a href="https://www.npmjs.com/package/@perspective-dev/client">npm</a> ·
+        <a href="https://pypi.org/project/perspective-python/">PyPI</a> ·
+        <a href="https://crates.io/crates/perspective">crates.io</a> ·
+        Apache-2.0 · A member project of the
+        <a href="https://openjsf.org/">OpenJS Foundation</a>.
+    </p></footer>
+</article>
+        </dialog>
+        <script type="module" src="/index.js"></script>
+    </body>
+</html>

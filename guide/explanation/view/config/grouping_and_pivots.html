@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Grouping and Pivots - Perspective</title>
+        <title>Grouping and Pivots — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-e1e174b9.js"></script>
+        <script src="../../../toc-6ad2c387.js"></script>
+        <meta name="description" content="A group by groups the dataset by the unique values of each column used as a group by - a close analogue in SQL to the GROUP BY statement. The underlying dataset is aggregated to show the values belonging to each group, and a total row is calculated for each group, showing the currently selected…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/config/grouping_and_pivots.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Grouping and Pivots — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="A group by groups the dataset by the unique values of each column used as a group by - a close analogue in SQL to the GROUP BY statement. The underlying dataset is aggregated to show the values belonging to each group, and a total row is calculated for each group, showing the currently selected…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/explanation/view/config/grouping_and_pivots.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/explanation/view/config/grouping_and_pivots.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Concepts"},{"@type":"ListItem","position":4,"name":"Grouping and Pivots","item":"https://perspective-dev.github.io/guide/explanation/view/config/grouping_and_pivots.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -377,10 +387,10 @@ a given column accepts depends on its type — see
 <tr><th>Aggregate</th><th>Description</th><th>Result type</th></tr>
 </thead>
 <tbody>
-<tr><td><code>sum</code></td><td>Total of the group’s values</td><td><code>integer</code> or <code>float</code></td></tr>
-<tr><td><code>sum not null</code></td><td>As <code>sum</code>, but non-finite (<code>NaN</code>) values are skipped rather than poisoning the total</td><td><code>integer</code> or <code>float</code></td></tr>
-<tr><td><code>sum abs</code></td><td>Sum of the absolute values — <code>Σ abs(v)</code></td><td><code>integer</code> or <code>float</code></td></tr>
-<tr><td><code>abs sum</code></td><td>Absolute value of the sum — <code>abs(Σ v)</code></td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum</code></td><td>Total of the group’s values, or <code>null</code> when the group has no non-null values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum or zero</code></td><td>As <code>sum</code>, but reports <code>0</code> rather than <code>null</code> for a group with no non-null values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>sum abs</code></td><td>Sum of the absolute values — <code>Σ abs(v)</code>; <code>null</code> when the group has no non-null values</td><td><code>integer</code> or <code>float</code></td></tr>
+<tr><td><code>abs sum</code></td><td>Absolute value of the sum — <code>abs(Σ v)</code>; <code>null</code> when the group has no non-null values</td><td><code>integer</code> or <code>float</code></td></tr>
 <tr><td><code>mul</code></td><td>Product of the group’s values</td><td><code>integer</code> or <code>float</code></td></tr>
 <tr><td><code>gmv</code></td><td>Gross market value — leaf rows are a plain <code>sum</code>, parent rows sum the <em>absolute</em> subtotal of each immediate child group</td><td><code>integer</code> or <code>float</code></td></tr>
 <tr><td><code>pct sum parent</code></td><td>The group’s <code>sum</code> as a percentage of its parent row’s, <code>0</code>–<code>100</code>; <code>100</code> at the root, and <code>null</code> when the parent’s sum is <code>0</code></td><td><code>float</code></td></tr>
@@ -388,6 +398,7 @@ a given column accepts depends on its type — see
 </tbody>
 </table>
 </div>
+<p><code>sum not null</code> is accepted as a legacy alias for <code>sum</code>.</p>
 <p>A numeric aggregate widens to the input’s numeric class — <code>integer</code> columns
 accumulate as <code>integer</code>, <code>float</code> columns as <code>float</code>.</p>
 <h3 id="averages-and-dispersion"><a class="header" href="#averages-and-dispersion">Averages and dispersion</a></h3>
@@ -476,7 +487,7 @@ to <code>null</code>.</li>
 <h3 id="availability-by-column-type"><a class="header" href="#availability-by-column-type">Availability by column type</a></h3>
 <p>The aggregates a column accepts depend on its type:</p>
 <p><strong>Numeric columns</strong> (<code>integer</code>, <code>float</code>): <code>sum</code>, <code>abs sum</code>, <code>sum abs</code>,
-<code>sum not null</code>, <code>mul</code>, <code>gmv</code>, <code>any</code>, <code>avg</code>, <code>mean</code>, <code>count</code>, <code>distinct count</code>,
+<code>sum or zero</code>, <code>mul</code>, <code>gmv</code>, <code>any</code>, <code>avg</code>, <code>mean</code>, <code>count</code>, <code>distinct count</code>,
 <code>distinct leaf</code>, <code>dominant</code>, <code>first</code>, <code>last</code>, <code>last by index</code>, <code>high</code>, <code>low</code>,
 <code>max</code>, <code>min</code>, <code>min by</code>, <code>max by</code>, <code>high minus low</code>, <code>last minus first</code>,
 <code>median</code>, <code>q1</code>, <code>q3</code>, <code>pct sum parent</code>, <code>pct sum total</code>, <code>stddev</code>, <code>var</code>,
@@ -547,11 +558,12 @@ anywhere an aggregate is, and each group refers to one function:</p>
 <tr><td><code>pct sum total</code></td><td><code>pct sum grand total</code>, <code>pct_sum_grand_total</code></td></tr>
 <tr><td><code>var</code></td><td><code>variance</code></td></tr>
 <tr><td><code>stddev</code></td><td><code>standard deviation</code></td></tr>
+<tr><td><code>sum</code></td><td><code>sum not null</code>, <code>sum_not_null</code> (legacy name)</td></tr>
 </tbody>
 </table>
 </div>
 <p>Most multi-word aggregates also answer to a snake_case spelling —
-<code>sum_not_null</code>, <code>sum_abs</code>, <code>abs_sum</code>, <code>weighted_mean</code>, <code>distinct_leaf</code>,
+<code>sum_or_zero</code>, <code>sum_abs</code>, <code>abs_sum</code>, <code>weighted_mean</code>, <code>distinct_leaf</code>,
 <code>pct_sum_parent</code>, <code>pct_sum_total</code>, <code>min_by</code>, <code>max_by</code>. Three do not, and are
 only accepted spelled with spaces: <code>high minus low</code>, <code>last minus first</code> and
 <code>last by index</code>.</p>

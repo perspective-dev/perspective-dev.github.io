@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>FAQ - Perspective</title>
+        <title>FAQ — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,22 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-e1e174b9.js"></script>
+        <script src="toc-6ad2c387.js"></script>
+        <meta name="description" content="Answers to common questions about installing, bundling, configuring and troubleshooting Perspective, the WebAssembly data grid, pivot table and charting component, in JavaScript, Python and Jupyter." />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/FAQ.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="FAQ — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="Answers to common questions about installing, bundling, configuring and troubleshooting Perspective, the WebAssembly data grid, pivot table and charting component, in JavaScript, Python and Jupyter." />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/FAQ.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/FAQ.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Reference"},{"@type":"ListItem","position":4,"name":"FAQ","item":"https://perspective-dev.github.io/guide/FAQ.html"}]}</script>
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Python installation fails on Windows","acceptedAnswer":{"@type":"Answer","text":"Python wheels are published for supported Python versions and platforms. On Windows, ensure you have a compatible Python version and architecture. Install with: pip install perspective-python If you encounter C++ binding errors or link errors, make sure you are using a supported Python version and that your pip is up to date. Pre-built wheels eliminate the need for a C++ compiler in most cases."}},{"@type":"Question","name":"Python import perspective fails with ImportError or undefined symbol","acceptedAnswer":{"@type":"Answer","text":"This typically happens when the C++ shared library (libpsp.so) cannot be found or was built against a different Python version. Ensure your Python version matches the installed wheel. On Linux, verify that required system libraries are present. If you see errors about libpsp.so or undefined symbols, try reinstalling in a clean virtual environment."}},{"@type":"Question","name":"Python installation fails on macOS","acceptedAnswer":{"@type":"Answer","text":"On Apple Silicon (M1/M2/M3), make sure you are using a native ARM Python build, not one running under Rosetta. The published wheels include aarch64 variants for supported platforms."}},{"@type":"Question","name":"How do I install Perspective in a Docker container?","acceptedAnswer":{"@type":"Answer","text":"Perspective’s Python wheels are built against manylinux_2_28 containers (see .github/workflows/build.yaml), so they are compatible with most Linux distributions based on glibc 2.28+ (e.g., Debian 10+, Ubuntu 20.04+, RHEL 8+). Use a compatible base image: FROM python:3.12-slim RUN pip install perspective-python Alpine Linux uses musl instead of glibc and is not compatible with the published wheels."}},{"@type":"Question","name":"How do I use Perspective with Vite, Webpack, or esbuild?","acceptedAnswer":{"@type":"Answer","text":"Perspective no longer exports bundler plugins. Instead, you must manually bootstrap the WASM binaries using your bundler’s asset handling. See Importing with or without a bundler for complete examples for Vite, Webpack, esbuild and CDN usage. Prebuilt inline bundles (with the WebAssembly embedded in the .js) are no longer published."}},{"@type":"Question","name":"How do I use Perspective with React?","acceptedAnswer":{"@type":"Answer","text":"Perspective provides a dedicated React component. You must also still initialize Perspective’s WebAssembly as per your bundler — see Importing with or without a bundler."}},{"@type":"Question","name":"How do I use Perspective with Next.js?","acceptedAnswer":{"@type":"Answer","text":"Perspective relies on Web Workers and WASM, which require client-side rendering. Use dynamic imports with ssr: false in Next.js to load Perspective components only on the client."}},{"@type":"Question","name":"How do I use Perspective with Vue.js/Angular/etc?","acceptedAnswer":{"@type":"Answer","text":"As a standard Web Component, \u003cperspective-viewer> works in most JavaScript web frameworks directly via standard HTML/DOM APIs, but does not have dedicated integration libraries for these frameworks."}},{"@type":"Question","name":"How do I create computed/expression columns?","acceptedAnswer":{"@type":"Answer","text":"Use the expressions config option in your View to define new columns with ExprTK syntax, which must then be used somewhere else in your config (like columns) to actually be visible & calculated. In \u003cperspective-viewer>, expression columns can be created from the UI column sidebar by clicking the “New Column” button."}},{"@type":"Question","name":"Can I reference one expression column from another?","acceptedAnswer":{"@type":"Answer","text":"No, you must duplicate calculations that are shared between expression columns."}},{"@type":"Question","name":"Can I do date arithmetic in expressions?","acceptedAnswer":{"@type":"Answer","text":"Yes, but they must be converted to float values first (integer is an i32 which is too small). See Expressions."}},{"@type":"Question","name":"Can I do rolling sums or cumulative calculations?","acceptedAnswer":{"@type":"Answer","text":"Yes — use Window Columns, the windows property of a View config. These are ordered, partitioned rolling computations analogous to SQL window functions, declared per-View like expression columns: const view = await table.view({ columns: [\"Cumulative Sales\"], windows: { \"Cumulative Sales\": { column: \"Sales\", aggregate: \"sum\", order_by: [\"Order Date\", \"asc\"], cumulative: true, }, }, }); Window Columns are supported by Perspective’s built-in engine, by the DuckDB, ClickHouse, PostgreSQL and Polars Virtual Servers, and by the \u003cperspective-viewer> UI. They update incrementally as the Table updates."}},{"@type":"Question","name":"Can I compose filters with OR logic?","acceptedAnswer":{"@type":"Answer","text":"Yes. Perspective filters are composed with AND logic by default; set filter_op: \"or\" to compose them with OR instead: const view = await table.view({ filter: [ [\"State\", \"==\", \"Texas\"], [\"State\", \"==\", \"California\"], ], filter_op: \"or\", }); For a mix of AND and OR (or any arbitrary multi-column predicate), use an expression column to create a boolean column that encodes the logic, then filter on that column: const view = await table.view({ expressions: { or_filter: \"if (\\\"State\\\" == 'Texas') true; else if (\\\"State\\\" == 'California') true; else false\", }, filter: [[\"or_filter\", \"==\", true]], });"}},{"@type":"Question","name":"How do I update filters programmatically?","acceptedAnswer":{"@type":"Answer","text":"Set the filter property on a View config, or use the \u003cperspective-viewer> .restore() method to update filters at runtime."}},{"@type":"Question","name":"Does date filtering support ranges?","acceptedAnswer":{"@type":"Answer","text":"Date columns can be filtered with comparison operators (>, \u003c, >=, \u003c=) to achieve range-based filtering. Apply two filters on the same date column for a range."}},{"@type":"Question","name":"PerspectiveWidget is not loading","acceptedAnswer":{"@type":"Answer","text":"PerspectiveWidget is an AnyWidget, shipped entirely inside the perspective-python wheel. There is no separate JupyterLab extension to install or version-match for the widget, so jupyter labextension list is not where to look. Install the jupyter extra, which pulls in anywidget: pip install \"perspective-python[jupyter]\" Then restart the kernel — and, for JupyterLab, reload the browser page. See the PerspectiveWidget guide."}},{"@type":"Question","name":"Does PerspectiveWidget work outside JupyterLab?","acceptedAnswer":{"@type":"Answer","text":"Yes. Because the widget is an AnyWidget bundled into the wheel rather than a JupyterLab labextension, it runs in any AnyWidget-compatible host — JupyterLab, classic Jupyter Notebook, VSCode notebooks, Google Colab and Marimo — with no per-host install step. The separate @perspective-dev/jupyterlab package is now optional and provides only the “Open With → Perspective” file renderers for csv, json and arrow files in JupyterLab."}},{"@type":"Question","name":"Perspective has a memory leak","acceptedAnswer":{"@type":"Answer","text":"Maybe, but please review the Cleaning up resources docs carefully before opening an Issue reporting it (and of course review CONTRIBUTING.md before opening any Issue). Ensure you call .delete() on Views, Tables, and \u003cperspective-viewer> instances when they are no longer needed, in reverse dependency order."}},{"@type":"Question","name":"How many rows can Perspective’s built-in engine handle?","acceptedAnswer":{"@type":"Answer","text":"Perspective is designed for large datasets and can handle millions of rows depending on the number of columns and available memory. Performance also significantly depends on column types (\"string\" being slower and larger than other types due to dictionary interning). For tables larger than the engine’s memory, create the Table with page_to_disk, which pages columns out to disk (OPFS in the browser). For datasets which should not be loaded at all, see Virtual Servers."}},{"@type":"Question","name":"How do I control threading in perspective-python?","acceptedAnswer":{"@type":"Answer","text":"The Python library uses a thread pool internally. For advanced threading control, consult the multithreading documentation."}},{"@type":"Question","name":"How do I enable dark theme?","acceptedAnswer":{"@type":"Answer","text":"Import themes.css (see Theming) and set the theme via restore(): await viewer.restore({ theme: \"Pro Dark\" }); Or import just the dark theme directly: import \"@perspective-dev/viewer/dist/css/pro-dark.css\";"}},{"@type":"Question","name":"Can I create a custom cell renderer for the datagrid?","acceptedAnswer":{"@type":"Answer","text":"The datagrid plugin supports per-column styling (colors, bars, gradients, number and date formats, fonts and alignment) via a panel’s columns_config, grid-wide options via plugin_config, and CSS custom properties — see the ColumnConfig and DatagridPluginConfig types in @perspective-dev/viewer-datagrid. Custom cell renderers require building a custom plugin."}},{"@type":"Question","name":"How do I customize chart colors?","acceptedAnswer":{"@type":"Answer","text":"Per column, via a panel’s columns_config: chart columns take a palette (an ordered list of series colors) or a gradient, written as CSS linear-gradient(...) strings. A multi-panel viewer can also share named colors across every panel through the workspace palette. See Colors, palettes and gradients. The default colors come from the theme’s CSS custom properties on the \u003cperspective-viewer> element."}},{"@type":"Question","name":"How do I stream data into a Perspective table?","acceptedAnswer":{"@type":"Answer","text":"Use table.update() to push new data incrementally. For indexed tables, updates with matching index values will replace existing rows."}},{"@type":"Question","name":"table.update() raises “No Running Event Loop”","acceptedAnswer":{"@type":"Answer","text":"Perspective 3+ is now threadsafe by default and no longer requires special loop integration."}},{"@type":"Question","name":"How do I listen for data updates?","acceptedAnswer":{"@type":"Answer","text":"Use view.on_update() to register a callback that fires when the underlying table data changes. See Listening for events and Advanced View Operations."}},{"@type":"Question","name":"What is the difference between Client-only, Client/Server, and Server-only modes?","acceptedAnswer":{"@type":"Answer","text":"Client-only: The Perspective engine runs entirely in the browser via WASM. Best for small to medium datasets. Client/Server (replicated): Data is hosted on a server and replicated to the client. The client has a full copy and performs queries locally. Server-only: All queries are executed on the server. The client only renders results. Best for very large datasets. See Data Architecture for detailed explanations of each mode."}},{"@type":"Question","name":"Is the WebSocket Perspective Server safe to expose to untrusted clients?","acceptedAnswer":{"@type":"Answer","text":"No. The WebSocket Server is not a security boundary. Every connected Client is treated as the author of the queries it submits, and is permitted to create and delete Table/View resources, author arbitrary expression columns, and — for Virtual Server backends like DuckDB, ClickHouse or PostgreSQL — author SQL fragments executed under the configured database role. The bundled WebSocket adapters (tornado.py/aiohttp.py/starlette.py/WebSocketServer) are reference integrations and do not authenticate, authorize, or enforce origin policy. WebSocket Deployments that need per-user isolation must put an authenticating proxy in front of the Server, run a least-privileged database role for any Virtual Server backend, and/or isolate users into separate Server instances. See SECURITY.md for the full threat model and deployment guidance. Obviously, none of this applies to WASM DBs like Perspective and DuckDB."}},{"@type":"Question","name":"Does Perspective sanitize SQL Virtual Servers?","acceptedAnswer":{"@type":"Answer","text":"No, by design. Virtual Server backends interpolate client-supplied view_id, table_id, column_name, expression strings, and filter operators directly into SQL templates without parameterization or whitelist validation. The Client is the author of the queries — there is no privilege boundary inside the engine for sanitization to enforce. If your deployment needs to restrict the SQL surface area exposed to a Client, the supported boundary is the database role the Virtual Server is configured with (read-only etc), or better complete isolation via WASM backend."}},{"@type":"Question","name":"How do I set up WebSocket authentication?","acceptedAnswer":{"@type":"Answer","text":"The WebSocketServer does not include built-in authentication. Implement authentication at the transport layer (e.g., via middleware in your HTTP server) before the WebSocket upgrade. For more complex needs, WebSocketServer is a simple example server based on the node:http module which can serve as a starting point for a custom server."}},{"@type":"Question","name":"Can I bind Perspective to a database?","acceptedAnswer":{"@type":"Answer","text":"Perspective supports Virtual Servers that proxy queries to external data sources, with built-in implementations for e.g. DuckDB."}},{"@type":"Question","name":"Can I apply multiple aggregates to the same column?","acceptedAnswer":{"@type":"Answer","text":"Yes, by creating a duplicate/alias for your column via expressions: await viewer.restore({ columns: [\"Sales\", \"Sales 2\"], expressions: { \"Sales 2\": '\"Sales\"' }, aggregates: { Sales: \"sum\", \"Sales 2\": \"avg\", }, });"}},{"@type":"Question","name":"Can I compute a ratio between aggregated columns?","acceptedAnswer":{"@type":"Answer","text":"Not with an expression on the same View: expression columns are evaluated per row before aggregation, so \"Profit\" / \"Sales\" computes each row’s ratio and then aggregates those ratios. To divide the aggregates themselves, group in a derived Table and add the expression on top of it, where each row is already a group: await viewer.restore({ table: { table: \"superstore\", group_by: [\"Region\"], group_rollup_mode: \"flat\", columns: [\"Sales\", \"Profit\"], }, columns: [\"Region\", \"Margin\"], expressions: { Margin: '\"Profit\" / \"Sales\"' }, });"}},{"@type":"Question","name":"How do I load Apache Arrow data into Perspective?","acceptedAnswer":{"@type":"Answer","text":"Perspective natively accepts Apache Arrow format. Pass an ArrayBuffer containing Arrow IPC data directly to table() or table.update()."}},{"@type":"Question","name":"What data formats does Perspective accept?","acceptedAnswer":{"@type":"Answer","text":"Perspective accepts (see Loading data): JavaScript: JSON (row-oriented or column-oriented objects), NDJSON, CSV strings, Apache Arrow ArrayBuffer Python: dict, list, pandas.DataFrame, polars.DataFrame, pyarrow.Table, NDJSON, CSV strings, Apache Arrow bytes"}},{"@type":"Question","name":"CSV update fails but CSV creation works","acceptedAnswer":{"@type":"Answer","text":"When updating a table created with a schema, ensure the CSV column names and types match the schema exactly. Mismatched column names or types will cause update failures."}},{"@type":"Question","name":"Can I export the viewer to HTML, PNG or PDF?","acceptedAnswer":{"@type":"Answer","text":"HTML export is available via viewer.export({ method: \"html\" }). For an image, use { method: \"plugin\" }, which asks the plugin to render itself — this produces a PNG for chart plugins (and text for the datagrid). For PDF, render the viewer and use browser or headless browser screenshot capabilities."}},{"@type":"Question","name":"Can I export data to Excel?","acceptedAnswer":{"@type":"Answer","text":"Perspective does not have built-in Excel export. Export data via view.to_csv(), view.to_json(), or view.to_arrow() (see Serializing data) and convert to Excel using a library like xlsx (JavaScript) or openpyxl (Python)."}},{"@type":"Question","name":"How do I copy data from a cell or row?","acceptedAnswer":{"@type":"Answer","text":"Use one of the -selected export methods, which operate on the current selection. To place it on the clipboard: await viewer.copy({ method: \"csv-selected\" }); … or to get it as a string, await viewer.export({ method: \"csv-selected\" }). json-selected and arrow-selected are also available."}},{"@type":"Question","name":"table.remove() does not update the viewer","acceptedAnswer":{"@type":"Answer","text":"The remove() method requires an indexed table. Ensure your table was created with an index option, and pass the index values to remove."}},{"@type":"Question","name":"How do I save and restore the viewer state?","acceptedAnswer":{"@type":"Answer","text":"Use viewer.save() and viewer.restore() to serialize and deserialize a panel’s configuration. For a multi-panel viewer, viewer.saveWorkspace() and viewer.restoreWorkspace() serialize every panel together with the layout, derived tables, master/detail links and palette."}},{"@type":"Question","name":"Can I hide the configuration panel?","acceptedAnswer":{"@type":"Answer","text":"The settings panel can be toggled programmatically via await viewer.restore({ settings: false })."}},{"@type":"Question","name":"Can I collapse row groups by default?","acceptedAnswer":{"@type":"Answer","text":"Yes — set group_by_depth in the View config to open the row groups only to that depth (1 shows just the top-level groups): await viewer.restore({ group_by: [\"Region\", \"State\"], group_by_depth: 1 }); Rows can also be expanded and collapsed imperatively via view.set_depth(), expand() and collapse(). Expansion state is not persisted: save() does not emit group_by_depth or individually expanded rows."}},{"@type":"Question","name":"Can I change the UI language?","acceptedAnswer":{"@type":"Answer","text":"Perspective’s UI text is defined via CSS variables, which can be customized per theme. See the Icons and Translation section of the theming guide for details."}},{"@type":"Question","name":"How do I build Perspective from Rust?","acceptedAnswer":{"@type":"Answer","text":"See the Getting Started guide for Rust. The Rust crate wraps the C++ engine and requires a C++ toolchain. You need cmake installed and on your path to build the engine."}},{"@type":"Question","name":"Can I use Perspective without \u003cperspective-viewer>?","acceptedAnswer":{"@type":"Answer","text":"Yes. The perspective library (data engine) can be used independently for server-side data processing without any UI. Use table() and view() directly to query data."}},{"@type":"Question","name":"Can I use Perspective in Pyodide?","acceptedAnswer":{"@type":"Answer","text":"Yes. Perspective publishes Emscripten wheels to PyPI under PEP 783, so perspective-python can be installed by Pyodide’s own package resolution — there is no need to download and host a wheel yourself. Emscripten wheels are ABI-tied to a specific Emscripten version, and thus to the Pyodide versions built against it. If resolution fails, check that your Pyodide version matches a published wheel tag."}},{"@type":"Question","name":"How do I handle row selection events?","acceptedAnswer":{"@type":"Answer","text":"Listen for perspective-click and perspective-select events on the \u003cperspective-viewer> element."}}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -180,6 +191,7 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="faq"><a class="header" href="#faq">FAQ</a></h1>
+<!-- description: Answers to common questions about installing, bundling, configuring and troubleshooting Perspective, the WebAssembly data grid, pivot table and charting component, in JavaScript, Python and Jupyter. -->
 <h2 id="installation"><a class="header" href="#installation">Installation</a></h2>
 <h3 id="python-installation-fails-on-windows"><a class="header" href="#python-installation-fails-on-windows">Python installation fails on Windows</a></h3>
 <p>Python wheels are published for supported Python versions and platforms. On
@@ -225,7 +237,8 @@ published wheels.</p>
 <p>Perspective no longer exports bundler plugins. Instead, you must manually
 bootstrap the WASM binaries using your bundler’s asset handling. See
 <a href="./how_to/javascript/importing.html">Importing with or without a bundler</a> for
-complete examples for Vite, Webpack, esbuild, CDN, and inline builds.</p>
+complete examples for Vite, Webpack, esbuild and CDN usage. Prebuilt <em>inline</em>
+bundles (with the WebAssembly embedded in the <code>.js</code>) are no longer published.</p>
 <!-- _Related: [#1734](https://github.com/perspective-dev/perspective/issues/1734),
 [#2725](https://github.com/perspective-dev/perspective/issues/2725),
 [#857](https://github.com/perspective-dev/perspective/issues/857),
@@ -299,12 +312,21 @@ updates.</p>
 [#2624](https://github.com/perspective-dev/perspective/issues/2624)_ -->
 <h2 id="filters"><a class="header" href="#filters">Filters</a></h2>
 <h3 id="can-i-compose-filters-with-or-logic"><a class="header" href="#can-i-compose-filters-with-or-logic">Can I compose filters with OR logic?</a></h3>
-<p>Perspective
+<p>Yes. Perspective
 <a href="./explanation/view/config/selection_and_ordering.html#filter">filters</a> are
-composed with AND logic by default. As an alternative, you can use
-<a href="./explanation/view/config/expressions.html">expression columns</a> to create a
-boolean column that encodes your OR logic (or any arbitrary multi-column
-predicate), then filter on that column:</p>
+composed with AND logic by default; set <code>filter_op: "or"</code> to compose them with
+OR instead:</p>
+<pre><code class="language-javascript">const view = await table.view({
+    filter: [
+        ["State", "==", "Texas"],
+        ["State", "==", "California"],
+    ],
+    filter_op: "or",
+});
+</code></pre>
+<p>For a mix of AND and OR (or any arbitrary multi-column predicate), use an
+<a href="./explanation/view/config/expressions.html">expression column</a> to create a
+boolean column that encodes the logic, then filter on that column:</p>
 <pre><code class="language-javascript">const view = await table.view({
     expressions: {
         or_filter:
@@ -371,8 +393,10 @@ dependency order.</p>
 depending on the number of columns and available memory. Performance also
 significantly depends on column types (<code>"string"</code> being slower and larger than
 other types due to dictionary interning).</p>
-<p>For larger datasets or out-of-memory virtualized datasets, see
-<a href="./explanation/virtual_servers.html">Virtual Servers</a>.</p>
+<p>For tables larger than the engine’s memory, create the <code>Table</code> with
+<a href="./explanation/table/options.html#page_to_disk"><code>page_to_disk</code></a>, which pages
+columns out to disk (OPFS in the browser). For datasets which should not be
+loaded at all, see <a href="./explanation/virtual_servers.html">Virtual Servers</a>.</p>
 <!-- _Related: [#341](https://github.com/perspective-dev/perspective/issues/341),
 [#1719](https://github.com/perspective-dev/perspective/issues/1719),
 [#1089](https://github.com/perspective-dev/perspective/issues/1089)_ -->
@@ -393,13 +417,20 @@ theme via <code>restore()</code>:</p>
 <!-- _Related: [#950](https://github.com/perspective-dev/perspective/issues/950),
 [#882](https://github.com/perspective-dev/perspective/issues/882)_ -->
 <h3 id="can-i-create-a-custom-cell-renderer-for-the-datagrid"><a class="header" href="#can-i-create-a-custom-cell-renderer-for-the-datagrid">Can I create a custom cell renderer for the datagrid?</a></h3>
-<p>The datagrid plugin supports custom styling via
-<a href="https://perspective-dev.github.io/viewer/types/src_ts_ts-rs_ColumnConfigValues.ts.ColumnConfigValues.html"><code>column_config</code></a>
-and CSS custom properties, but custom cell renderers require building a custom
-plugin.</p>
+<p>The datagrid plugin supports per-column styling (colors, bars, gradients,
+number and date formats, fonts and alignment) via a panel’s <code>columns_config</code>,
+grid-wide options via <code>plugin_config</code>, and CSS custom properties — see the
+<code>ColumnConfig</code> and <code>DatagridPluginConfig</code> types in
+<a href="https://github.com/perspective-dev/perspective/blob/master/packages/viewer-datagrid/src/ts/types.ts"><code>@perspective-dev/viewer-datagrid</code></a>.
+Custom cell renderers require building a custom plugin.</p>
 <!-- _Related: [#1508](https://github.com/perspective-dev/perspective/issues/1508)_ -->
 <h3 id="how-do-i-customize-chart-colors"><a class="header" href="#how-do-i-customize-chart-colors">How do I customize chart colors?</a></h3>
-<p>Chart colors can be customized via
+<p>Per column, via a panel’s <code>columns_config</code>: chart columns take a <code>palette</code> (an
+ordered list of series colors) or a <code>gradient</code>, written as CSS
+<code>linear-gradient(...)</code> strings. A multi-panel viewer can also share named
+colors across every panel through the workspace <code>palette</code>. See
+<a href="./how_to/javascript/save_restore.html#colors-palettes-and-gradients">Colors, palettes and gradients</a>.
+The default colors come from the theme’s
 <a href="./how_to/javascript/theming.html#custom-themes">CSS custom properties</a> on the
 <code>&lt;perspective-viewer&gt;</code> element.</p>
 <!-- _Related:
@@ -484,8 +515,8 @@ proxy queries to external data sources, with built-in implementations for e.g.
 <a href="./explanation/view/config/expressions.html"><code>expressions</code></a>:</p>
 <pre><code class="language-javascript">await viewer.restore({
     columns: ["Sales", "Sales 2"],
-    expresions: { "Sales 2": '"Sales"' },
-    aggregate: {
+    expressions: { "Sales 2": '"Sales"' },
+    aggregates: {
         Sales: "sum",
         "Sales 2": "avg",
     },
@@ -493,9 +524,23 @@ proxy queries to external data sources, with built-in implementations for e.g.
 </code></pre>
 <!-- _Related: [#272](https://github.com/perspective-dev/perspective/issues/272)_ -->
 <h3 id="can-i-compute-a-ratio-between-aggregated-columns"><a class="header" href="#can-i-compute-a-ratio-between-aggregated-columns">Can I compute a ratio between aggregated columns?</a></h3>
-<p>Use <a href="./explanation/view/config/expressions.html">expression columns</a> on an
-aggregated View to compute ratios. Define an expression that divides one column
-by another.</p>
+<p>Not with an expression on the same <code>View</code>:
+<a href="./explanation/view/config/expressions.html">expression columns</a> are evaluated
+per row <em>before</em> aggregation, so <code>"Profit" / "Sales"</code> computes each row’s ratio
+and then aggregates those ratios. To divide the aggregates themselves, group in
+a <a href="./explanation/derived_table.html">derived <code>Table</code></a> and add the expression on
+top of it, where each row is already a group:</p>
+<pre><code class="language-javascript">await viewer.restore({
+    table: {
+        table: "superstore",
+        group_by: ["Region"],
+        group_rollup_mode: "flat",
+        columns: ["Sales", "Profit"],
+    },
+    columns: ["Region", "Margin"],
+    expressions: { Margin: '"Profit" / "Sales"' },
+});
+</code></pre>
 <!-- _Related:
 [#2994](https://github.com/perspective-dev/perspective/discussions/2994),
 [#3096](https://github.com/perspective-dev/perspective/discussions/3096)_ -->
@@ -510,10 +555,10 @@ by another.</p>
 <h3 id="what-data-formats-does-perspective-accept"><a class="header" href="#what-data-formats-does-perspective-accept">What data formats does Perspective accept?</a></h3>
 <p>Perspective accepts (see <a href="./explanation/table/loading_data.html">Loading data</a>):</p>
 <ul>
-<li><strong>JavaScript</strong>: JSON (row-oriented or column-oriented objects), CSV strings,
-Apache Arrow <code>ArrayBuffer</code></li>
-<li><strong>Python</strong>: <code>dict</code>, <code>list</code>, <code>pandas.DataFrame</code>, <code>pyarrow.Table</code>, CSV strings,
-Apache Arrow bytes</li>
+<li><strong>JavaScript</strong>: JSON (row-oriented or column-oriented objects), NDJSON, CSV
+strings, Apache Arrow <code>ArrayBuffer</code></li>
+<li><strong>Python</strong>: <code>dict</code>, <code>list</code>, <code>pandas.DataFrame</code>, <code>polars.DataFrame</code>,
+<code>pyarrow.Table</code>, NDJSON, CSV strings, Apache Arrow bytes</li>
 </ul>
 <!-- _Related: [#929](https://github.com/perspective-dev/perspective/issues/929),
 [#2524](https://github.com/perspective-dev/perspective/issues/2524)_ -->
@@ -558,7 +603,10 @@ with an <code>index</code> option, and pass the index values to remove.</p>
 <h3 id="how-do-i-save-and-restore-the-viewer-state"><a class="header" href="#how-do-i-save-and-restore-the-viewer-state">How do I save and restore the viewer state?</a></h3>
 <p>Use
 <a href="./how_to/javascript/save_restore.html"><code>viewer.save()</code> and <code>viewer.restore()</code></a> to
-serialize and deserialize the full viewer configuration.</p>
+serialize and deserialize a panel’s configuration. For a multi-panel viewer,
+<code>viewer.saveWorkspace()</code> and <code>viewer.restoreWorkspace()</code> serialize every panel
+together with the <a href="./how_to/javascript/layout.html">layout</a>, derived tables,
+master/detail links and palette.</p>
 <!-- _Related: [#1501](https://github.com/perspective-dev/perspective/issues/1501),
 [#1560](https://github.com/perspective-dev/perspective/issues/1560)_ -->
 <h3 id="can-i-hide-the-configuration-panel"><a class="header" href="#can-i-hide-the-configuration-panel">Can I hide the configuration panel?</a></h3>
@@ -568,9 +616,14 @@ serialize and deserialize the full viewer configuration.</p>
 [#2581](https://github.com/perspective-dev/perspective/discussions/2581),
 [#1085](https://github.com/perspective-dev/perspective/issues/1085)_ -->
 <h3 id="can-i-collapse-row-groups-by-default"><a class="header" href="#can-i-collapse-row-groups-by-default">Can I collapse row groups by default?</a></h3>
-<p>Row group can be closed imperatively via
-<a href="./explanation/view/advanced.html"><code>view.set_depth()</code></a>. Expansion state is not
-persisted or configurable via the <code>save</code>/<code>restore</code> API currently.</p>
+<p>Yes — set <code>group_by_depth</code> in the <code>View</code> config to open the row groups only to
+that depth (<code>1</code> shows just the top-level groups):</p>
+<pre><code class="language-javascript">await viewer.restore({ group_by: ["Region", "State"], group_by_depth: 1 });
+</code></pre>
+<p>Rows can also be expanded and collapsed imperatively via
+<a href="./explanation/view/advanced.html"><code>view.set_depth()</code>, <code>expand()</code> and <code>collapse()</code></a>.
+Expansion state is not persisted: <code>save()</code> does not emit <code>group_by_depth</code> or
+individually expanded rows.</p>
 <!-- _Related:
 [#2695](https://github.com/perspective-dev/perspective/discussions/2695),
 [#2861](https://github.com/perspective-dev/perspective/issues/2861)_ -->
@@ -621,7 +674,7 @@ events on the <code>&lt;perspective-viewer&gt;</code> element.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="api_reference.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="glossary.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -632,7 +685,7 @@ events on the <code>&lt;perspective-viewer&gt;</code> element.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="api_reference.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="glossary.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Advanced View Operations - Perspective</title>
+        <title>Advanced View Operations — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-e1e174b9.js"></script>
+        <script src="../../toc-6ad2c387.js"></script>
+        <meta name="description" content="Beyond the standard query configuration, View provides additional methods for interacting with hierarchical results and introspecting data." />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/advanced.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Advanced View Operations — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="Beyond the standard query configuration, View provides additional methods for interacting with hierarchical results and introspecting data." />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/explanation/view/advanced.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/explanation/view/advanced.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Concepts"},{"@type":"ListItem","position":4,"name":"Advanced View Operations","item":"https://perspective-dev.github.io/guide/explanation/view/advanced.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -242,10 +252,53 @@ which is useful for setting up scales in custom visualizations:</p>
 </code></pre>
 </div>
 
+<h2 id="describing-a-view-config"><a class="header" href="#describing-a-view-config">Describing a View Config</a></h2>
+<p><code>Table::describe</code> validates a complete view config against a table and reports
+the schema a <code>View</code> built from it would have - without creating one. <code>describe</code>
+reports a <code>view_schema</code> if and only if <code>Table::view</code> with the same config would
+succeed, and the two schemas are equal. It costs no engine resources, so it is
+the right way to check a config before applying it.</p>
+<div class="javascript">
+<pre><code class="language-javascript">const verdict = await table.describe({
+    columns: ["Sales", "margin"],
+    group_by: ["Region"],
+    expressions: { margin: '"Profit" / "Sales"' },
+    aggregates: { margin: "avg" },
+});
+
+if ("view_schema" in verdict) {
+    // { expression_schema: { margin: "float" },
+    //   view_schema: { Sales: "float", margin: "float" } }
+} else if ("expression_errors" in verdict) {
+    // { expression_schema: {...}, expression_errors: { margin: { error_message, line, column } } }
+} else {
+    // { config_error: "Invalid column 'Sales' found in View columns." }
+}
+</code></pre>
+</div>
+
+<div class="python">
+<pre><code class="language-python">verdict = table.describe(
+    columns=["Sales", "margin"],
+    group_by=["Region"],
+    expressions={"margin": '"Profit" / "Sales"'},
+    aggregates={"margin": "avg"},
+)
+
+if "view_schema" in verdict:
+    ...
+elif "expression_errors" in verdict:
+    ...
+else:
+    verdict["config_error"]
+</code></pre>
+</div>
+
 <h2 id="expression-validation"><a class="header" href="#expression-validation">Expression Validation</a></h2>
-<p>Before creating a <code>View</code> with expressions, you can validate them against the
-table’s schema using <code>Table::validate_expressions</code>. This returns information
-about which expressions are valid and their inferred types:</p>
+<p><code>Table::validate_expressions</code> is a specialization of <code>Table::describe</code> over a
+config that selects no columns, so only the expressions are checked. It returns
+which expressions are valid and their inferred types, plus an <code>expression_alias</code>
+map echoing the request:</p>
 <div class="javascript">
 <pre><code class="language-javascript">const result = await table.validate_expressions({
     expr1: '"Sales" + "Profit"',
@@ -342,20 +395,11 @@ view.remove_remove(callback)
 </code></pre>
 </div>
 
-<h2 id="flattening-a-view-into-a-table"><a class="header" href="#flattening-a-view-into-a-table">Flattening a View into a Table</a></h2>
-<p>A [<code>Table</code>] can be constructed on a [<code>Table::view</code>] instance, which will return
-a new [<code>Table</code>] based on the [<code>Table::view</code>]’s dataset, and all future updates
-that affect the [<code>Table::view</code>] will be forwarded to the new [<code>Table</code>]. This is
-particularly useful for implementing a
-<a href="../architecture/client_server.html">Client/Server Replicated</a> design, as it
-handles the <code>View</code> serialization and <code>on_update</code> forwarding for you. This
-pattern is available in JavaScript, Python and Rust.</p>
-<p>When the source <code>Table</code> has an <code>index</code>, and the <code>View</code> is unpivoted and includes
-the index column, the new <code>Table</code> inherits that <code>index</code> and subscribes to the
-source’s <code>on_remove()</code>, so in-place updates and <code>remove()</code> calls on the source
-are mirrored rather than appended. A pivoted <code>View</code>, or one which omits the
-index column, produces an unindexed, append-only <code>Table</code>. A <code>limit</code> is inherited
-the same way. <code>replace()</code> and <code>clear()</code> on the source are mirrored too.</p>
+<h2 id="constructing-a-table-from-a-view"><a class="header" href="#constructing-a-table-from-a-view">Constructing a <code>Table</code> from a <code>View</code></a></h2>
+<p>A <code>Table</code> can be constructed on a <code>View</code>, producing a read-only <code>Table</code> of that
+<code>View</code>’s output which the engine keeps current as the source is updated. See
+<a href="../derived_table.html">Derived <code>Table</code>s</a> for its columns, its constraints and
+what it is good for.</p>
 <div class="javascript">
 <pre><code class="language-javascript">const worker = await perspective.worker();
 const table = await worker.table(data);
@@ -380,7 +424,7 @@ table.update([{"State": "Texas", "City": "Austin"}])
 let data = TableData::Update(UpdateData::Csv("x,y\n1,2\n3,4".into()));
 let table = client.table(data, opts).await?;
 let view = table.view(None).await?;
-let table2 = client.table(TableData::View(view)).await?;
+let table2 = client.table(TableData::View(view), TableInitOptions::default()).await?;
 table.update(data).await?;
 <span class="boring">}</span></code></pre>
 </div>
@@ -394,7 +438,7 @@ table.update(data).await?;
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../explanation/join.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../explanation/derived_table.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -408,7 +452,7 @@ table.update(data).await?;
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../explanation/join.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../explanation/derived_table.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

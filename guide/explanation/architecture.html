@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Data Architecture - Perspective</title>
+        <title>Data Architecture — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-e1e174b9.js"></script>
+        <script src="../toc-6ad2c387.js"></script>
+        <meta name="description" content="Application developers can choose from Client (WebAssembly), Server (Python/Node) or Client/Server Replicated designs to bind data, and a web application can use one or a mix of these designs as needed. By serializing to Apache Arrow, tables are duplicated and synchronized across runtimes…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/architecture.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Data Architecture — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="Application developers can choose from Client (WebAssembly), Server (Python/Node) or Client/Server Replicated designs to bind data, and a web application can use one or a mix of these designs as needed. By serializing to Apache Arrow, tables are duplicated and synchronized across runtimes…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/explanation/architecture.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/explanation/architecture.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Concepts"},{"@type":"ListItem","position":4,"name":"Data Architecture","item":"https://perspective-dev.github.io/guide/explanation/architecture.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -196,7 +206,7 @@ any <code>Client</code>/<code>Server</code> combination.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../perspective.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../use_cases/agent.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -210,7 +220,7 @@ any <code>Client</code>/<code>Server</code> combination.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../perspective.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../use_cases/agent.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

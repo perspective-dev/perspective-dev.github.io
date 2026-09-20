@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Configuring the LLM agent - Perspective</title>
+        <title>Configuring the LLM agent (JavaScript) — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-e1e174b9.js"></script>
+        <script src="../../toc-6ad2c387.js"></script>
+        <meta name="description" content="&lt;perspective-viewer&gt; ships with an embedded LLM agent which drives the viewer through its public API — reading the schema, writing the ViewerConfig, choosing a plugin, authoring ExprTK expressions and managing panels. It is opt-in: the Chat tab in the settings sidebar stays hidden, and no network…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/agent.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Configuring the LLM agent (JavaScript) — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="&lt;perspective-viewer&gt; ships with an embedded LLM agent which drives the viewer through its public API — reading the schema, writing the ViewerConfig, choosing a plugin, authoring ExprTK expressions and managing panels. It is opt-in: the Chat tab in the settings sidebar stays hidden, and no network…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/how_to/javascript/agent.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/how_to/javascript/agent.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"JavaScript"},{"@type":"ListItem","position":4,"name":"Configuring the LLM agent","item":"https://perspective-dev.github.io/guide/how_to/javascript/agent.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -246,11 +256,39 @@ viewer.agentConfig({
     systemRole: "user",
 });
 </code></pre>
+<h2 id="what-the-agent-can-do"><a class="header" href="#what-the-agent-can-do">What the agent can do</a></h2>
+<p>The agent acts only through tools, each gated by an <em>entitlement</em>. Pass
+<code>entitlements</code> to <code>agentConfig</code> to grant a subset; the default grants every
+entitlement except <code>read_data</code>. A tool whose entitlement is withheld is never
+offered to the model.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Entitlement</th><th>Tools</th></tr>
+</thead>
+<tbody>
+<tr><td><code>read_view</code></td><td><code>get_schema</code>, <code>get_view_config</code>, <code>list_plugins</code>, <code>validate_expression</code>, <code>get_style_schema</code>, <code>list_panels</code>, <code>get_workspace</code></td></tr>
+<tr><td><code>configure_view</code></td><td><code>set_view_config</code></td></tr>
+<tr><td><code>manage_layout</code></td><td><code>add_panel</code>, <code>remove_panel</code>, <code>activate_panel</code>, <code>set_workspace</code></td></tr>
+<tr><td><code>read_docs</code></td><td><code>search_docs</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>manage_layout</code> covers the whole dashboard: adding and removing panels, and
+through <code>set_workspace</code> arranging them into a grid, defining derived tables,
+linking master/detail panels and setting the shared palette. Withhold it to
+keep the agent to configuring the existing panels:</p>
+<pre><code class="language-javascript">viewer.agentConfig({
+    ...providers.anthropic,
+    apiKey: "sk-ant-...",
+    entitlements: ["read_view", "configure_view", "read_docs"],
+});
+</code></pre>
 <h2 id="the-documentation-bundle"><a class="header" href="#the-documentation-bundle">The documentation bundle</a></h2>
 <p><code>&lt;perspective-viewer&gt;</code> publishes a metadata bundle at
 <code>dist/docs/perspective-docs.json</code> containing a searchable corpus of the
-Perspective documentation plus generated JSON schemas for the viewer’s config
-types. Passing it as <code>docs</code> is optional, but without it the agent will not be
+Perspective documentation on configuring the viewer, plus generated JSON
+schemas for the viewer’s config types. Passing it as <code>docs</code> is optional, but without it the agent will not be
 very capable — it is what lets the agent look things up rather than guess:</p>
 <pre><code class="language-javascript">import docs from "@perspective-dev/viewer/dist/docs/perspective-docs.json" with { type: "json" };
 

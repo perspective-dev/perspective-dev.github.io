@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+        <title>Benchmarks — Python by release — Perspective example</title>
+        <meta name="description" content="Y Line chart of Time (ms), grouped by version, split by benchmark, filtered to outlier == false, sorted by version_idx, with 1 computed expression column. Perspective's own benchmark results for perspective-python — the native engine, driven from a Node.js client over WebSocket — as published with…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/gallery/benchmarks-python-history.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Benchmarks — Python by release — Perspective example" />
+        <meta property="og:description" content="Y Line chart of Time (ms), grouped by version, split by benchmark, filtered to outlier == false, sorted by version_idx, with 1 computed expression column. Perspective's own benchmark results for perspective-python — the native engine, driven from a Node.js client over WebSocket — as published with…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/gallery/benchmarks-python-history.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/benchmarks-python-history.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Benchmarks — Python by release — Perspective example" />
+        <meta name="twitter:description" content="Y Line chart of Time (ms), grouped by version, split by benchmark, filtered to outlier == false, sorted by version_idx, with 1 computed expression column. Perspective's own benchmark results for perspective-python — the native engine, driven from a Node.js client over WebSocket — as published with…" />
+        <meta name="twitter:image" content="https://perspective-dev.github.io/projects/light/benchmarks-python-history.png" />
+        <link rel="icon" type="image/svg+xml" href="/svg/perspective_logo.svg" />
+        <link rel="stylesheet" href="/style.css" />
+        <noscript>
+            <style>
+                #app {
+                    display: none;
+                }
+
+                #about {
+                    display: block;
+                    position: static;
+                    margin: 0 auto;
+                    border: none;
+                    max-width: 860px;
+                    max-height: none;
+                }
+
+                #about .about__close {
+                    display: none;
+                }
+            </style>
+        </noscript>
+    </head>
+    <body>
+        <div class="app-shell" id="app" data-sidebar="expanded">
+            <perspective-viewer id="viewer"></perspective-viewer>
+        </div>
+        <dialog id="about" class="about">
+            <article class="about__body">
+    <button type="button" class="about__close" data-role="close" aria-label="Close">×</button>
+    <p class="about__crumbs"><a href="/">Perspective</a> › <a href="/gallery/index.html">Examples</a></p>
+    <h1>Benchmarks — Python by release</h1>
+    <p>Y Line chart of Time (ms), grouped by version, split by benchmark, filtered to outlier == false, sorted by version_idx, with 1 computed expression column.</p>
+    <p>Mean time of each Python benchmark case across every published Perspective release.</p>
+    <p><img
+        class="about__thumb"
+        loading="lazy"
+        decoding="async"
+        alt="Benchmarks — Python by release: Y Line chart of Time (ms), grouped by version, split by benchmark, filtered to outlier == false, sorted by version_idx, with 1 computed expression column."
+        src="/projects/light/benchmarks-python-history.png"
+    /></p>
+    <h2>Data</h2>
+    <p>Perspective's own benchmark results for perspective-python — the native engine, driven from a Node.js client over WebSocket — as published with each GitHub release: every timed iteration of table construction, streaming updates, pivots, expressions, joins and serialization over the Superstore dataset, for the current and prior releases, measured by CI on a GitHub Actions ubuntu-22.04 runner.</p>
+    <p>Loaded from <code>/data/benchmark-python.arrow</code> as arrow into the <code>perspective-server</code> engine.</p>
+    <h2>Configuration</h2>
+    <p>This example is a saved <code>&lt;perspective-viewer&gt;</code> workspace. Pass this JSON to <code>viewer.restoreWorkspace()</code> to reproduce it over the same table:</p>
+    <pre><code>{
+    &quot;layout&quot;: {
+        &quot;type&quot;: &quot;tab-layout&quot;,
+        &quot;tabs&quot;: [
+            &quot;p0&quot;
+        ],
+        &quot;selected&quot;: 0
+    },
+    &quot;panels&quot;: {
+        &quot;p0&quot;: {
+            &quot;table&quot;: &quot;&quot;,
+            &quot;title&quot;: &quot;Time by release&quot;,
+            &quot;plugin&quot;: &quot;Y Line&quot;,
+            &quot;group_by&quot;: [
+                &quot;version&quot;
+            ],
+            &quot;split_by&quot;: [
+                &quot;benchmark&quot;
+            ],
+            &quot;columns&quot;: [
+                &quot;Time (ms)&quot;
+            ],
+            &quot;expressions&quot;: {
+                &quot;Time (ms)&quot;: &quot;\&quot;real_time\&quot; / 1000&quot;
+            },
+            &quot;aggregates&quot;: {
+                &quot;Time (ms)&quot;: &quot;avg&quot;,
+                &quot;version_idx&quot;: &quot;avg&quot;
+            },
+            &quot;filter&quot;: [
+                [
+                    &quot;outlier&quot;,
+                    &quot;==&quot;,
+                    false
+                ]
+            ],
+            &quot;sort&quot;: [
+                [
+                    &quot;version_idx&quot;,
+                    &quot;desc&quot;
+                ]
+            ]
+        }
+    },
+    &quot;active&quot;: &quot;p0&quot;
+}</code></pre>
+    <h2>About Perspective</h2>
+    <p>Perspective is an open-source, WebAssembly-powered data grid, pivot table and charting component for large, real-time and streaming datasets — in the browser, Python, Jupyter, Node.js and Rust.</p>
+    <h2>Documentation</h2>
+<nav class="about__links"><section><h3>Guide</h3><ul><li><a href="/guide/index.html">What is Perspective</a></li><li><a href="/guide/explanation/architecture.html">Data architecture: client-only, replicated, server-only</a></li><li><a href="/guide/explanation/table.html">Table: streaming columnar storage</a></li><li><a href="/guide/explanation/view.html">View: pivots, aggregates, filters and expressions</a></li><li><a href="/guide/explanation/join.html">Joins</a></li><li><a href="/guide/explanation/virtual_servers.html">Virtual servers for DuckDB, ClickHouse, PostgreSQL and Polars</a></li><li><a href="/guide/benchmarks.html">Benchmarks</a></li><li><a href="/guide/glossary.html">Glossary</a></li><li><a href="/guide/FAQ.html">FAQ</a></li></ul></section><section><h3>Use cases</h3><ul><li><a href="/guide/use_cases/real_time_dashboard.html">Real-time dashboards over WebSocket</a></li><li><a href="/guide/use_cases/streaming_pivot_table.html">Streaming pivot tables</a></li><li><a href="/guide/use_cases/large_datasets.html">Millions of rows in the browser</a></li><li><a href="/guide/use_cases/market_data.html">Trading blotters, order books and market data</a></li><li><a href="/guide/use_cases/jupyter.html">Interactive pivot tables and charts in Jupyter</a></li><li><a href="/guide/use_cases/database_ui.html">A UI for DuckDB, ClickHouse and PostgreSQL</a></li><li><a href="/guide/use_cases/ducklake.html">Case study: a multi-billion row tick history in a browser tab with DuckLake and DuckDB-WASM</a></li><li><a href="/guide/use_cases/embedded_analytics.html">Embedded analytics in a web application</a></li><li><a href="/guide/use_cases/agent.html">LLM and agent-driven analytics</a></li></ul></section><section><h3>Get started</h3><ul><li><a href="/guide/how_to/javascript/installation.html">JavaScript installation</a></li><li><a href="/guide/how_to/javascript/react.html">React</a></li><li><a href="/guide/how_to/python/installation.html">Python installation</a></li><li><a href="/guide/how_to/python/jupyterlab.html">PerspectiveWidget for Jupyter</a></li><li><a href="/gallery/index.html">Example gallery</a></li></ul></section><section><h3>API reference</h3><ul><li><a href="/viewer/modules/perspective-viewer.html">perspective-viewer Web Component</a></li><li><a href="/browser/modules/src_ts_perspective.browser.ts.html">JavaScript client</a></li><li><a href="/react/index.html">React</a></li><li><a href="/python/index.html">Python</a></li><li><a href="https://docs.rs/perspective/latest/perspective/">Rust</a></li></ul></section></nav>
+    <footer class="about__footer"><p>
+        <a href="https://github.com/perspective-dev/perspective">GitHub</a> ·
+        <a href="https://www.npmjs.com/package/@perspective-dev/client">npm</a> ·
+        <a href="https://pypi.org/project/perspective-python/">PyPI</a> ·
+        <a href="https://crates.io/crates/perspective">crates.io</a> ·
+        Apache-2.0 · A member project of the
+        <a href="https://openjsf.org/">OpenJS Foundation</a>.
+    </p></footer>
+</article>
+        </dialog>
+        <script type="module" src="/index.js"></script>
+    </body>
+</html>

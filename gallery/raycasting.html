@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+        <title>Raycasting — Perspective example</title>
+        <meta name="description" content="Heatmap chart of color, grouped by x, split by y, with 3 computed expression columns. A raytraced torus rendered entirely by Perspective's columnar expression language over a generated pixel grid, as a heatmap." />
+        <link rel="canonical" href="https://perspective-dev.github.io/gallery/raycasting.html" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Raycasting — Perspective example" />
+        <meta property="og:description" content="Heatmap chart of color, grouped by x, split by y, with 3 computed expression columns. A raytraced torus rendered entirely by Perspective's columnar expression language over a generated pixel grid, as a heatmap." />
+        <meta property="og:url" content="https://perspective-dev.github.io/gallery/raycasting.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/raycasting.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Raycasting — Perspective example" />
+        <meta name="twitter:description" content="Heatmap chart of color, grouped by x, split by y, with 3 computed expression columns. A raytraced torus rendered entirely by Perspective's columnar expression language over a generated pixel grid, as a heatmap." />
+        <meta name="twitter:image" content="https://perspective-dev.github.io/projects/light/raycasting.png" />
+        <link rel="icon" type="image/svg+xml" href="/svg/perspective_logo.svg" />
+        <link rel="stylesheet" href="/style.css" />
+        <noscript>
+            <style>
+                #app {
+                    display: none;
+                }
+
+                #about {
+                    display: block;
+                    position: static;
+                    margin: 0 auto;
+                    border: none;
+                    max-width: 860px;
+                    max-height: none;
+                }
+
+                #about .about__close {
+                    display: none;
+                }
+            </style>
+        </noscript>
+    </head>
+    <body>
+        <div class="app-shell" id="app" data-sidebar="expanded">
+            <perspective-viewer id="viewer"></perspective-viewer>
+        </div>
+        <dialog id="about" class="about">
+            <article class="about__body">
+    <button type="button" class="about__close" data-role="close" aria-label="Close">×</button>
+    <p class="about__crumbs"><a href="/">Perspective</a> › <a href="/gallery/index.html">Examples</a></p>
+    <h1>Raycasting</h1>
+    <p>Heatmap chart of color, grouped by x, split by y, with 3 computed expression columns.</p>
+    <p>A raytraced torus, rendered by an ExprTK expression.</p>
+    <p><img
+        class="about__thumb"
+        loading="lazy"
+        decoding="async"
+        alt="Raycasting: Heatmap chart of color, grouped by x, split by y, with 3 computed expression columns."
+        src="/projects/light/raycasting.png"
+    /></p>
+    <h2>Data</h2>
+    <p>A raytraced torus rendered entirely by Perspective's columnar expression language over a generated pixel grid, as a heatmap.</p>
+    <p>Generated in the browser when the example loads.</p>
+    <h2>Configuration</h2>
+    <p>This example is a saved <code>&lt;perspective-viewer&gt;</code> workspace. Pass this JSON to <code>viewer.restoreWorkspace()</code> to reproduce it over the same table:</p>
+    <pre><code>{
+    &quot;layout&quot;: {
+        &quot;type&quot;: &quot;tab-layout&quot;,
+        &quot;tabs&quot;: [
+            &quot;p0&quot;
+        ],
+        &quot;selected&quot;: 0
+    },
+    &quot;panels&quot;: {
+        &quot;p0&quot;: {
+            &quot;table&quot;: &quot;&quot;,
+            &quot;title&quot;: &quot;Raycasting&quot;,
+            &quot;theme&quot;: null,
+            &quot;columns_config&quot;: {
+                &quot;color&quot;: {
+                    &quot;gradient&quot;: &quot;linear-gradient(to right, #242526 50%, #071841 69.5%, #3289c8 87%, #7ae4ff 100%)&quot;
+                }
+            },
+            &quot;plugin&quot;: &quot;Heatmap&quot;,
+            &quot;group_by&quot;: [
+                &quot;x&quot;
+            ],
+            &quot;split_by&quot;: [
+                &quot;y&quot;
+            ],
+            &quot;columns&quot;: [
+                &quot;color&quot;
+            ],
+            &quot;expressions&quot;: {
+                &quot;color&quot;: &quot;\n// Scene constants\nvar resolution := 100;\nvar fov := 30 * (pi / 180);\nvar camera[3] := {0, 0, -600};\nvar light[3] := {0.5, 1, 0};\n\n// Torus constants\nvar radius := 1;\nvar tube := 0.4;\nvar radialSegments := 12;\nvar tubularSegments := 16;\nvar rotation := 40 * (pi / 180);\n\n// Mesh\nvar arc := pi * 2;\nvar vs[663];\nfor (var j := 0; j &lt;= radialSegments; j += 1) {\n    for (var i := 0; i &lt;= tubularSegments; i += 1) {\n\n        // Vertex\n        var u := (i / tubularSegments) * arc;\n        var v := (j / radialSegments) * pi * 2;\n        var i0 := j * 3 * (tubularSegments + 1) + (i * 3);\n        vs[i0] := (radius + tube * cos(v)) * cos(u) * 100;\n        vs[i0 + 1] := (radius + tube * cos(v)) * sin(u) * 100;\n        vs[i0 + 2] := tube * sin(v) * 100;\n\n        // Rotate\n        var b := vs[i0 + 1];\n        var bcos := cos(rotation);\n        var bsin := sin(rotation);\n        vs[i0 + 1] := vs[i0 + 1] * bcos - vs[i0 + 2] * bsin;\n        vs[i0 + 2] := b * bsin + vs[i0 + 2] * bcos;\n        b := vs[i0];\n        vs[i0] := vs[i0] * bcos - vs[i0 + 2] * bsin;\n        vs[i0 + 2] := b * bsin + vs[i0 + 2] * bcos;\n    }\n};\n\n// Render scene\nvar scale := resolution / (tan(fov / 2) * 400);\nvar x := (floor(index() / resolution) - resolution / 2) / scale;\nvar y := (index() % resolution - resolution / 2) / scale;\nvar d[3] := {x, y, 200};\nvar color := 0;\nvar depth := inf;\nvar light_norm := norm3(light);\nfor (var j := 1; j &lt;= radialSegments; j += 1) {\n    for (var i := 1; i &lt;= tubularSegments; i += 1) {\n\n        // Index\n        var aa := (tubularSegments + 1) * j + i - 1;\n        var b := (tubularSegments + 1) * (j - 1) + i - 1;\n        var c := (tubularSegments + 1) * (j - 1) + i;\n        var dd := (tubularSegments + 1) * j + i;\n        var face[6] := {aa, b, dd, b, c, dd};\n        for (var ii:= 0; ii &lt; 2; ii += 1) {\n            var i0 := face[ii * 3];\n            var i1 := face[ii * 3 + 1];\n            var i2 := face[ii * 3 + 2];\n            var v0[3] := {vs[i0 * 3], vs[i0 * 3 + 1], vs[i0 * 3 + 2]};\n            var v1[3] := {vs[i1 * 3], vs[i1 * 3 + 1], vs[i1 * 3 + 2]};\n            var v2[3] := {vs[i2 * 3], vs[i2 * 3 + 1], vs[i2 * 3 + 2]};\n\n            // Render triangle\n            var e1[3] := v1 - v0;\n            var e2[3] := v2 - v0;\n            var h[3];\n            cross_product3(d, e2, h);\n            var a := dot_product3(e1, h);\n            if (a != 0) {\n                var f := 1 / a;\n                var s[3] := camera - v0;\n                var u := f * dot_product3(s, h);\n                if (u &gt; 0 and u &lt; 1) {\n                    var q[3];\n                    cross_product3(s, e1, q);\n                    var v := f * dot_product3(d, q);\n                    if (v &gt; 0 and u + v &lt; 1) {\n                        var t := f * dot_product3(e2, q);\n                        if (t &gt;= 0) {\n                            var t2 := 1 - u - v;\n                            var d1[3] := v0 * t2 + v1 * u + v2 * v;\n                            var dist := norm3(d1 - camera);\n                            if (dist &lt; depth) {\n                                depth := dist;\n\n                                // Lighting\n                                var n[3];\n                                cross_product3(v0 - v1, v2 - v1, n);\n                                color := acos(dot_product3(light, n) / (light_norm * norm3(n)))\n                            }\n                        }\n                    }\n                }\n            }\n        }\n    }\n};\n\ncolor;\n&quot;,
+                &quot;x&quot;: &quot;floor(index() / 100) - 100 / 2&quot;,
+                &quot;y&quot;: &quot;index() % 100 - 100 / 2&quot;
+            }
+        }
+    },
+    &quot;active&quot;: &quot;p0&quot;
+}</code></pre>
+    <h2>About Perspective</h2>
+    <p>Perspective is an open-source, WebAssembly-powered data grid, pivot table and charting component for large, real-time and streaming datasets — in the browser, Python, Jupyter, Node.js and Rust.</p>
+    <h2>Documentation</h2>
+<nav class="about__links"><section><h3>Guide</h3><ul><li><a href="/guide/index.html">What is Perspective</a></li><li><a href="/guide/explanation/architecture.html">Data architecture: client-only, replicated, server-only</a></li><li><a href="/guide/explanation/table.html">Table: streaming columnar storage</a></li><li><a href="/guide/explanation/view.html">View: pivots, aggregates, filters and expressions</a></li><li><a href="/guide/explanation/join.html">Joins</a></li><li><a href="/guide/explanation/virtual_servers.html">Virtual servers for DuckDB, ClickHouse, PostgreSQL and Polars</a></li><li><a href="/guide/benchmarks.html">Benchmarks</a></li><li><a href="/guide/glossary.html">Glossary</a></li><li><a href="/guide/FAQ.html">FAQ</a></li></ul></section><section><h3>Use cases</h3><ul><li><a href="/guide/use_cases/real_time_dashboard.html">Real-time dashboards over WebSocket</a></li><li><a href="/guide/use_cases/streaming_pivot_table.html">Streaming pivot tables</a></li><li><a href="/guide/use_cases/large_datasets.html">Millions of rows in the browser</a></li><li><a href="/guide/use_cases/market_data.html">Trading blotters, order books and market data</a></li><li><a href="/guide/use_cases/jupyter.html">Interactive pivot tables and charts in Jupyter</a></li><li><a href="/guide/use_cases/database_ui.html">A UI for DuckDB, ClickHouse and PostgreSQL</a></li><li><a href="/guide/use_cases/ducklake.html">Case study: a multi-billion row tick history in a browser tab with DuckLake and DuckDB-WASM</a></li><li><a href="/guide/use_cases/embedded_analytics.html">Embedded analytics in a web application</a></li><li><a href="/guide/use_cases/agent.html">LLM and agent-driven analytics</a></li></ul></section><section><h3>Get started</h3><ul><li><a href="/guide/how_to/javascript/installation.html">JavaScript installation</a></li><li><a href="/guide/how_to/javascript/react.html">React</a></li><li><a href="/guide/how_to/python/installation.html">Python installation</a></li><li><a href="/guide/how_to/python/jupyterlab.html">PerspectiveWidget for Jupyter</a></li><li><a href="/gallery/index.html">Example gallery</a></li></ul></section><section><h3>API reference</h3><ul><li><a href="/viewer/modules/perspective-viewer.html">perspective-viewer Web Component</a></li><li><a href="/browser/modules/src_ts_perspective.browser.ts.html">JavaScript client</a></li><li><a href="/react/index.html">React</a></li><li><a href="/python/index.html">Python</a></li><li><a href="https://docs.rs/perspective/latest/perspective/">Rust</a></li></ul></section></nav>
+    <footer class="about__footer"><p>
+        <a href="https://github.com/perspective-dev/perspective">GitHub</a> ·
+        <a href="https://www.npmjs.com/package/@perspective-dev/client">npm</a> ·
+        <a href="https://pypi.org/project/perspective-python/">PyPI</a> ·
+        <a href="https://crates.io/crates/perspective">crates.io</a> ·
+        Apache-2.0 · A member project of the
+        <a href="https://openjsf.org/">OpenJS Foundation</a>.
+    </p></footer>
+</article>
+        </dialog>
+        <script type="module" src="/index.js"></script>
+    </body>
+</html>

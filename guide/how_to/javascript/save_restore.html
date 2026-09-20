@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Saving and restoring UI state - Perspective</title>
+        <title>Saving and restoring UI state (JavaScript) — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-e1e174b9.js"></script>
+        <script src="../../toc-6ad2c387.js"></script>
+        <meta name="description" content="&lt;perspective-viewer&gt; is persistent, in that its entire state (sans the data itself) can be serialized or deserialized. This include all column, filter, pivot, expressions, etc. properties, as well as datagrid style settings, config panel visibility, and more. This overloaded feature covers a range…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/save_restore.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Saving and restoring UI state (JavaScript) — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="&lt;perspective-viewer&gt; is persistent, in that its entire state (sans the data itself) can be serialized or deserialized. This include all column, filter, pivot, expressions, etc. properties, as well as datagrid style settings, config panel visibility, and more. This overloaded feature covers a range…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/how_to/javascript/save_restore.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/how_to/javascript/save_restore.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"JavaScript"},{"@type":"ListItem","position":4,"name":"Saving and restoring UI state","item":"https://perspective-dev.github.io/guide/how_to/javascript/save_restore.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -277,16 +287,54 @@ await elem.restoreWorkspace(workspace_token);
 (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the
 single-panel <code>restore()</code> will <em>not</em> restore the layout (its <code>panels</code>/<code>layout</code>
 keys are ignored).</p>
+<p>The <code>layout</code> field is the tree arranging the panels into a grid of rows and
+columns or stacks of tabs, naming every panel id exactly once. See
+<a href="./layout.html">Arranging panels: layouts and dashboards</a> for its format and for
+rearranging, resizing and stacking existing panels.</p>
 <p>Like <code>restore()</code>, <code>restoreWorkspace()</code> applies an <em>update</em>: a field that is
 absent leaves that part of the element unchanged, <code>null</code> resets it to its
-default, and a value replaces it. <code>panels</code> is the whole panel set — when
-present every existing panel is replaced (<code>{}</code> empties the element); when
-absent the panels are kept, and <code>layout</code>, <code>active</code> and <code>masters</code> name them by
-their existing ids. So a cross-filter can be applied to the current panels
-without re-creating them:</p>
+default, and a value replaces it. <code>panels</code> is the whole panel set — when present
+every existing panel is replaced (<code>{}</code> empties the element); when absent the
+panels are kept, and <code>layout</code>, <code>active</code> and <code>masters</code> name them by their
+existing ids. So a cross-filter can be applied to the current panels without
+re-creating them:</p>
 <pre><code class="language-javascript">await elem.restoreWorkspace({ global_filters: [["Region", "==", "West"]] });
 await elem.restoreWorkspace({ global_filters: null }); // clear
 </code></pre>
+<h3 id="derived-tables"><a class="header" href="#derived-tables">Derived tables</a></h3>
+<p>A workspace token carries a top-level <code>derived_tables</code> map, one entry per
+derived <code>Table</code> the element owns, each naming the <code>table</code> its source <code>View</code>
+reads plus that view’s config:</p>
+<pre><code class="language-javascript">await elem.restoreWorkspace({
+    panels: { one: { table: "Region Totals", plugin: "Datagrid" } },
+    derived_tables: {
+        "Region Totals": { table: "superstore", group_by: ["Region"] },
+    },
+});
+</code></pre>
+<p>Within a workspace token, panels refer to tables by name, so a panel entry never
+contains a derivation of its own — <code>one</code> above simply binds <code>"Region Totals"</code>.
+Entries may name another derived table as their <code>table</code>, and they are built
+parent-first regardless of the order they appear in.</p>
+<p><code>derived_tables</code> follows the same update rule as <code>panels</code>: absent keeps the
+current set, a value replaces it entirely, and <code>{}</code> deletes every derived table.
+An entry whose definition has not changed is reused rather than rebuilt.</p>
+<p>A derived table whose <code>table</code> is not hosted yet does not fail the restore — it
+and anything under it wait, along with the panels bound to them, and are built
+when the parent table appears. A dependency cycle is rejected outright.</p>
+<p>The single-panel format inlines instead: <code>save()</code> of a panel bound to a derived
+table writes the whole definition recursively in the <code>table</code> field, so the token
+is self-contained:</p>
+<pre><code class="language-javascript">await elem.restore({
+    plugin: "Datagrid",
+    table: { table: "superstore", group_by: ["Region"] },
+});
+</code></pre>
+<p><code>restore()</code> rebinds to an existing derived table when one was built from a
+structurally identical definition, and otherwise creates one under a generated
+name. Only the single-panel <code>restore()</code> accepts the inline form — in
+<code>restoreWorkspace()</code> every <code>table</code> field is a name.</p>
+<p>See <a href="../../explanation/derived_table.html">Derived tables</a>.</p>
 <h2 id="colors-palettes-and-gradients"><a class="header" href="#colors-palettes-and-gradients">Colors, palettes and gradients</a></h2>
 <p>Per-column color styling lives in a panel’s <code>columns_config</code>, keyed by column
 name, and every color-scale value is a string usable verbatim in CSS:</p>
@@ -384,7 +432,7 @@ whole <code>restoreWorkspace()</code> before any panel changes.</p>
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../how_to/javascript/events.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../how_to/javascript/layout.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -398,7 +446,7 @@ whole <code>restoreWorkspace()</code> before any panel changes.</p>
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../how_to/javascript/events.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../how_to/javascript/layout.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

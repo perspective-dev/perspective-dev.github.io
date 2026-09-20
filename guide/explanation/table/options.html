@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>index and limit options - Perspective</title>
+        <title>index, limit and page_to_disk options — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-e1e174b9.js"></script>
+        <script src="../../toc-6ad2c387.js"></script>
+        <meta name="description" content="Initializing a Table with an index tells Perspective to treat a column as the primary key, allowing in-place updates of rows. Only a single column (of any type) can be used as an index. Indexed Table instances allow:" />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/table/options.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="index, limit and page_to_disk options — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="Initializing a Table with an index tells Perspective to treat a column as the primary key, allowing in-place updates of rows. Only a single column (of any type) can be used as an index. Indexed Table instances allow:" />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/explanation/table/options.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/explanation/table/options.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Concepts"},{"@type":"ListItem","position":4,"name":"index, limit and page_to_disk options","item":"https://perspective-dev.github.io/guide/explanation/table/options.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -222,6 +232,38 @@ property with an integer indicating the maximum rows:</p>
 </code></pre>
 </div>
 
+<h2 id="page_to_disk"><a class="header" href="#page_to_disk"><code>page_to_disk</code></a></h2>
+<p>By default a <code>Table</code> keeps its columns in memory. Initializing a <code>Table</code> with
+<code>page_to_disk</code> backs its column data with on-disk storage instead, so the
+<code>Table</code> can be larger than the memory available to the engine. It is otherwise
+an ordinary <code>Table</code>: <code>index</code>, <code>update()</code>, views, aggregates, expressions and
+Arrow round-trips all behave as they do in memory, and produce identical
+results.</p>
+<div class="javascript">
+<p>JavaScript:</p>
+<pre><code class="language-javascript">const table = await perspective.table(arrow, { page_to_disk: true });
+</code></pre>
+</div>
+
+<div class="python">
+<p>Python:</p>
+<pre><code class="language-python">table = perspective.table(arrow, page_to_disk=True)
+</code></pre>
+</div>
+
+<p>Where the data goes depends on the runtime:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Runtime</th><th>Backing storage</th></tr>
+</thead>
+<tbody>
+<tr><td>Browser (WebAssembly, in a Web Worker)</td><td>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system">Origin Private File System</a> (OPFS)</td></tr>
+<tr><td>Node.js (WebAssembly)</td><td>Files under the OS temp directory, via <code>node:fs</code></td></tr>
+<tr><td>Python and Rust (native)</td><td>Memory-mapped files under the OS temp directory</td></tr>
+</tbody>
+</table>
+</div>
 
                     </main>
 

@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Importing with or without a bundler - Perspective</title>
+        <title>Importing with or without a bundler (JavaScript) — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-e1e174b9.js"></script>
+        <script src="../../toc-6ad2c387.js"></script>
+        <meta name="description" content="Perspective requires the browser to have access to Perspective’s .wasm binaries in addition to the bundled .js files, and as a result the build process requires a few extra steps. Perspective’s NPM releases come with multiple prebuilt configurations." />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/importing.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Importing with or without a bundler (JavaScript) — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="Perspective requires the browser to have access to Perspective’s .wasm binaries in addition to the bundled .js files, and as a result the build process requires a few extra steps. Perspective’s NPM releases come with multiple prebuilt configurations." />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/how_to/javascript/importing.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/how_to/javascript/importing.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"JavaScript"},{"@type":"ListItem","position":4,"name":"Importing with or without a bundler","item":"https://perspective-dev.github.io/guide/how_to/javascript/importing.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -210,13 +220,12 @@ const viewer = document.createElement("perspective-viewer");
 </code></pre>
 <p>The exact syntax will vary slightly depending on the bundler.</p>
 <h3 id="memory64-wasm64"><a class="header" href="#memory64-wasm64">Memory64 (wasm64)</a></h3>
-<p><code>@perspective-dev/server</code> also ships a WebAssembly Memory64 build of the
-engine, <code>dist/wasm/perspective-server.memory64.wasm</code>, which raises the
-engine’s heap ceiling from 4GB to 16GB (at some engine performance cost).
-<code>init_server</code> accepts both binaries at once — register each as a <em>thunk</em> and
-only the selected binary is ever downloaded. The wasm64 binary is used
-whenever the browser supports Memory64; registering only the wasm32 binary
-(as above) opts out.</p>
+<p><code>@perspective-dev/server</code> also ships a WebAssembly Memory64 build of the engine,
+<code>dist/wasm/perspective-server.memory64.wasm</code>, which raises the engine’s heap
+ceiling from 4GB to 16GB (at some engine performance cost). <code>init_server</code>
+accepts both binaries at once — register each as a <em>thunk</em> and only the selected
+binary is ever downloaded. The wasm64 binary is used whenever the browser
+supports Memory64; registering only the wasm32 binary (as above) opts out.</p>
 <pre><code class="language-javascript">perspective.init_server({
     wasm32: () =&gt; fetch(SERVER_WASM),
     wasm64: () =&gt; fetch(SERVER_WASM64),
@@ -288,15 +297,83 @@ await Promise.all([
 }
 </code></pre>
 <h2 id="inline-builds-with-a-bundler"><a class="header" href="#inline-builds-with-a-bundler">Inline builds with a bundler</a></h2>
-<p><span class="warning">Inline builds are deprecated and will be removed in a
-future release.</span></p>
-<p>Perspective’s <em>Inline</em> Builds work by <em>inlining</em> WebAssembly binary content as
-a base64-encoded string. While inline builds work with most bundlers and <em>do
-not</em> require bootstrapping, there is an inherent file-size and boot-performance
-penalty. Prefer your bundler’s inlining features and Perspective ESM builds
-where possible.</p>
-<pre><code class="language-javascript">import "@perspective-dev/viewer/dist/esm/perspective-viewer.inline.js";
-import psp from "@perspective-dev/client/dist/esm/perspective.inline.js";
+<p><span class="warning">Perspective no longer publishes prebuilt <em>inline</em> bundles.
+The <code>@perspective-dev/client/inline</code> and <code>@perspective-dev/viewer/inline</code> entry
+points, and the <code>dist/esm/*.inline.js</code> files behind them, have been removed.
+Produce an equivalent build with your bundler’s asset inlining, as below.</span></p>
+<p>An <em>inline</em> build embeds the WebAssembly binaries in the <code>.js</code> bundle as base64
+instead of emitting them as separate assets, so nothing needs to be served
+alongside the bundle. It costs bundle size and boot time — base64 is 33% larger
+than the binary it encodes, and the browser must decode it before compiling — so
+prefer the ESM builds above where you control asset hosting.</p>
+<p>Only the bundler’s <code>.wasm</code> loader changes; the bootstrapping code is identical
+to the ESM builds.</p>
+<h3 id="esbuild-1"><a class="header" href="#esbuild-1">ESBuild</a></h3>
+<p>Use the <code>binary</code> loader in place of <code>file</code>. The imported value is a
+<code>Uint8Array</code>, which <code>init_server()</code> and <code>init_client()</code> accept directly.</p>
+<pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
+import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
+
+await Promise.all([
+    perspective.init_server(SERVER_WASM),
+    perspective_viewer.init_client(CLIENT_WASM),
+]);
+</code></pre>
+<p>ESBuild config JSON to encode this asset as <code>binary</code>:</p>
+<pre><code class="language-javascript">{
+    // ...
+    "loader": {
+        // ...
+        ".wasm": "binary"
+    }
+}
+</code></pre>
+<h3 id="webpack-1"><a class="header" href="#webpack-1">Webpack</a></h3>
+<p>Use <code>asset/inline</code> in place of <code>asset/resource</code>. The imported value is a <code>data:</code>
+URL rather than a path, so read it into an <code>ArrayBuffer</code> first.</p>
+<pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
+import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
+
+const buffer = async (url) =&gt; await (await fetch(url)).arrayBuffer();
+
+await Promise.all([
+    perspective.init_server(await buffer(SERVER_WASM)),
+    perspective_viewer.init_client(await buffer(CLIENT_WASM)),
+]);
+</code></pre>
+<p>Webpack config:</p>
+<pre><code class="language-javascript">{
+    // ...
+    module: {
+        // ...
+        rules: [
+            // ...
+            {
+                test: /\.wasm$/,
+                type: "asset/inline"
+            },
+        ]
+    },
+    experiments: {
+        // ...
+        asyncWebAssembly: false,
+        syncWebAssembly: false,
+    },
+}
+</code></pre>
+<h3 id="vite-1"><a class="header" href="#vite-1">Vite</a></h3>
+<p>Vite inlines assets below <code>build.assetsInlineLimit</code> as <code>data:</code> URLs. Raising the
+limit past the size of the <code>.wasm</code> binaries inlines them, and the <code>?url</code>
+bootstrapping from the ESM section applies unchanged. This threshold is a
+build-wide setting and its interaction with <code>?url</code> imports has changed between
+Vite major versions, so check the emitted bundle rather than assuming.</p>
+<pre><code class="language-javascript">import { defineConfig } from "vite";
+export default defineConfig({
+    build: {
+        target: "esnext",
+        assetsInlineLimit: 16 * 1024 * 1024,
+    },
+});
 </code></pre>
 <h2 id="cdn-builds"><a class="header" href="#cdn-builds">CDN builds</a></h2>
 <p>Perspective’s CDN builds are good for non-bundled scenarios, such as importing

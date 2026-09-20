@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>What is Perspective - Perspective</title>
+        <title>What is Perspective — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-e1e174b9.js"></script>
+        <script src="toc-6ad2c387.js"></script>
+        <meta name="description" content="Perspective is an open-source data grid, pivot table and charting component for large, real-time and streaming datasets. Build user-configurable reports, dashboards, notebooks and embedded analytics applications, backed by a high-performance streaming query engine that runs in-browser via…" />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/index.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="What is Perspective — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="Perspective is an open-source data grid, pivot table and charting component for large, real-time and streaming datasets. Build user-configurable reports, dashboards, notebooks and embedded analytics applications, backed by a high-performance streaming query engine that runs in-browser via…" />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/index.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/perspective.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Overview"},{"@type":"ListItem","position":4,"name":"What is Perspective","item":"https://perspective-dev.github.io/guide/index.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,7 +193,7 @@
 <a href="https://perspective-dev.github.io">
 <picture>
 <source media="(prefers-color-scheme: dark)" srcset="https://github.com/perspective-dev/perspective/raw/master/docs/static/svg/perspective-logo-dark.svg?raw=true">
-<img width="260" src="https://github.com/perspective-dev/perspective/raw/master/docs/static/svg/perspective-logo-light.svg?raw=true" />
+<img width="260" alt="Perspective" src="https://github.com/perspective-dev/perspective/raw/master/docs/static/svg/perspective-logo-light.svg?raw=true" />
 </picture>
 </a>
 <br /><br />
@@ -191,16 +201,20 @@
 <a href="https://www.npmjs.com/package/@perspective-dev/client"><img src="https://img.shields.io/npm/v/@perspective-dev/client.svg?style=for-the-badge" alt="npm"></a>
 <a href="https://pypi.python.org/pypi/perspective-python"><img src="https://img.shields.io/pypi/v/perspective-python.svg?style=for-the-badge" alt="PyPI"></a>
 <a href="https://crates.io/crates/perspective"><img src="https://img.shields.io/crates/v/perspective?style=for-the-badge" alt="crates.io"></a></p>
-<p>Perspective is an interactive analytics and data visualization component for
+<!-- site:begin -->
+<p>Perspective is an open-source data grid, pivot table and charting component for
 large, real-time and streaming datasets. Build user-configurable reports,
-dashboards, notebooks and applications, backed by a high-performance streaming
-query engine that runs in-browser via WebAssembly or server-side in Python,
-Node.js and Rust — or delegates to a database you already have.</p>
+dashboards, notebooks and embedded analytics applications, backed by a
+high-performance streaming query engine that runs in-browser via WebAssembly or
+server-side in Python, Node.js and Rust — or delegates to a database you
+already have.</p>
+<!-- site:end -->
 <br />
 <a href="https://perspective-dev.github.io"><picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/collage.png" />
-    <img src="https://perspective-dev.github.io/projects/light/collage.png" />
+    <img alt="A collage of Perspective data grids, pivot tables, charts and maps" src="https://perspective-dev.github.io/projects/light/collage.png" />
 </picture></a>
+<!-- site:begin -->
 <h2 id="features"><a class="header" href="#features">Features</a></h2>
 <ul>
 <li>
@@ -213,7 +227,8 @@ geographic maps, full theme support, and <a href="https://react.dev/">React</a> 
 <li>
 <p>A fast, memory-efficient streaming query engine written in C++ and compiled
 for <a href="https://webassembly.org/">WebAssembly</a> (including a 64-bit <code>memory64</code>
-build for in-browser datasets larger than 4GB),
+build for in-browser datasets larger than 4GB, and support for paging
+columns to disk via OPFS in the browser or memory-mapped files natively),
 <a href="https://www.python.org/">Python</a> and <a href="https://www.rust-lang.org/">Rust</a>.
 Tables update incrementally and views tick in real time, with reactive
 joins across tables, a columnar expression language based on
@@ -280,9 +295,9 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 </tr>
 
 <tr>
-<td><a href="https://perspective-dev.github.io/?project=superstore"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/superstore.png" /><img src="https://perspective-dev.github.io/projects/light/superstore.png" /></picture></a></td>
-<td><a href="https://perspective-dev.github.io/?project=superstore-overview"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/superstore-overview.png" /><img src="https://perspective-dev.github.io/projects/light/superstore-overview.png" /></picture></a></td>
-<td><a href="https://perspective-dev.github.io/?project=webcam-video-wall"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/webcam-video-wall.png" /><img src="https://perspective-dev.github.io/projects/light/webcam-video-wall.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=superstore"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/superstore.png" /><img alt="Perspective example: superstore" src="https://perspective-dev.github.io/projects/light/superstore.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=superstore-overview"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/superstore-overview.png" /><img alt="Perspective example: superstore overview" src="https://perspective-dev.github.io/projects/light/superstore-overview.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=webcam-video-wall"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/webcam-video-wall.png" /><img alt="Perspective example: webcam video wall" src="https://perspective-dev.github.io/projects/light/webcam-video-wall.png" /></picture></a></td>
 </tr>
 
 <tr>
@@ -290,9 +305,9 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 </tr>
 
 <tr>
-<td><a href="https://perspective-dev.github.io/?project=raycasting"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/raycasting.png" /><img src="https://perspective-dev.github.io/projects/light/raycasting.png" /></picture></a></td>
-<td><a href="https://perspective-dev.github.io/?project=market-trading-desk"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/market-trading-desk.png" /><img src="https://perspective-dev.github.io/projects/light/market-trading-desk.png" /></picture></a></td>
-<td><a href="https://perspective-dev.github.io/?project=nypd-4"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/nypd-4.png" /><img src="https://perspective-dev.github.io/projects/light/nypd-4.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=raycasting"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/raycasting.png" /><img alt="Perspective example: raycasting" src="https://perspective-dev.github.io/projects/light/raycasting.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=market-trading-desk"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/market-trading-desk.png" /><img alt="Perspective example: market trading desk" src="https://perspective-dev.github.io/projects/light/market-trading-desk.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=nypd-4"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/nypd-4.png" /><img alt="Perspective example: nypd 4" src="https://perspective-dev.github.io/projects/light/nypd-4.png" /></picture></a></td>
 </tr>
 
 <tr>
@@ -300,9 +315,9 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 </tr>
 
 <tr>
-<td><a href="https://perspective-dev.github.io/?project=movies"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/movies.png" /><img src="https://perspective-dev.github.io/projects/light/movies.png" /></picture></a></td>
-<td><a href="https://perspective-dev.github.io/?project=evictions-2"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/evictions-2.png" /><img src="https://perspective-dev.github.io/projects/light/evictions-2.png" /></picture></a></td>
-<td><a href="https://perspective-dev.github.io/?project=fractal"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/fractal.png" /><img src="https://perspective-dev.github.io/projects/light/fractal.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=movies"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/movies.png" /><img alt="Perspective example: movies" src="https://perspective-dev.github.io/projects/light/movies.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=evictions-2"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/evictions-2.png" /><img alt="Perspective example: evictions 2" src="https://perspective-dev.github.io/projects/light/evictions-2.png" /></picture></a></td>
+<td><a href="https://perspective-dev.github.io/?project=fractal"><picture><source media="(prefers-color-scheme: dark)" srcset="https://perspective-dev.github.io/projects/dark/fractal.png" /><img alt="Perspective example: fractal" src="https://perspective-dev.github.io/projects/light/fractal.png" /></picture></a></td>
 </tr>
 
 </tbody>
@@ -319,9 +334,9 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 </tr>
 
 <tr>
-<td><a href="https://www.youtube.com/watch?v=v5Y5ftlGNhU"><img width="240" src="https://img.youtube.com/vi/v5Y5ftlGNhU/0.jpg" /></a></td>
-<td><a href="https://www.youtube.com/watch?v=lDpIu4dnp78"><img width="240" src="https://img.youtube.com/vi/lDpIu4dnp78/0.jpg" /></a></td>
-<td><a href="https://www.youtube.com/watch?v=IO-HJsGdleE"><img width="240" src="https://img.youtube.com/vi/IO-HJsGdleE/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=v5Y5ftlGNhU"><img width="240" alt="Perspective conference talk" src="https://img.youtube.com/vi/v5Y5ftlGNhU/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=lDpIu4dnp78"><img width="240" alt="Perspective conference talk" src="https://img.youtube.com/vi/lDpIu4dnp78/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=IO-HJsGdleE"><img width="240" alt="Perspective conference talk" src="https://img.youtube.com/vi/IO-HJsGdleE/0.jpg" /></a></td>
 </tr>
 
 <tr>
@@ -331,8 +346,8 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 </tr>
 
 <tr>
-<td><a href="https://www.youtube.com/watch?v=no0qChjvdgQ"><img width="240" src="https://img.youtube.com/vi/no0qChjvdgQ/0.jpg" /></a></td>
-<td><a href="https://www.youtube.com/watch?v=0ut-ynvBpGI"><img width="240" src="https://img.youtube.com/vi/0ut-ynvBpGI/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=no0qChjvdgQ"><img width="240" alt="Perspective conference talk" src="https://img.youtube.com/vi/no0qChjvdgQ/0.jpg" /></a></td>
+<td><a href="https://www.youtube.com/watch?v=0ut-ynvBpGI"><img width="240" alt="Perspective conference talk" src="https://img.youtube.com/vi/0ut-ynvBpGI/0.jpg" /></a></td>
 <td></td>
 </tr>
 
@@ -342,7 +357,7 @@ interactive data analysis in JupyterLab and other notebook environments.</p>
 <hr><br />
 <picture>
 <source media="(prefers-color-scheme: dark)" srcset="https://github.com/openjs-foundation/artwork/raw/master/openjs_foundation/openjs_foundation-logo-horizontal-white.svg?raw=true">
-<img width="200" src="https://github.com/openjs-foundation/artwork/raw/master/openjs_foundation/openjs_foundation-logo-horizontal-black.svg?raw=true">
+<img width="200" alt="OpenJS Foundation" src="https://github.com/openjs-foundation/artwork/raw/master/openjs_foundation/openjs_foundation-logo-horizontal-black.svg?raw=true">
 </picture>
 <br />
 <br />
@@ -373,7 +388,7 @@ does not imply any affiliation with or endorsement by them.</p>
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next prefetch" href="explanation/architecture.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="use_cases/real_time_dashboard.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -384,7 +399,7 @@ does not imply any affiliation with or endorsement by them.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next prefetch" href="explanation/architecture.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="use_cases/real_time_dashboard.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

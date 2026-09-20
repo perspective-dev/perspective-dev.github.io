@@ -1,0 +1,49 @@
+User-agent: *
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: GPTBot
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: Claude-User
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /guide/print.html
+
+User-agent: CCBot
+Allow: /
+Disallow: /guide/print.html
+
+Sitemap: https://perspective-dev.github.io/sitemap.xml

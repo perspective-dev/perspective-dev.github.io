@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Window Columns - Perspective</title>
+        <title>Window Columns — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-e1e174b9.js"></script>
+        <script src="../../../toc-6ad2c387.js"></script>
+        <meta name="description" content="The windows property declares ordered, partitioned rolling computations over the rows of a Table — moving averages, cumulative sums, period-over-period differences — analogous to SQL window functions." />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/config/windows.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Window Columns — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="The windows property declares ordered, partitioned rolling computations over the rows of a Table — moving averages, cumulative sums, period-over-period differences — analogous to SQL window functions." />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/explanation/view/config/windows.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/explanation/view/config/windows.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Concepts"},{"@type":"ListItem","position":4,"name":"Window Columns","item":"https://perspective-dev.github.io/guide/explanation/view/config/windows.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -259,16 +269,20 @@ property does.</div>
 <tr><td><code>diff</code></td><td>This row’s value minus the value <code>offset</code> rows behind</td><td><code>float</code></td></tr>
 <tr><td><code>rate</code></td><td>Rate of change across the frame</td><td><code>float</code></td></tr>
 <tr><td><code>ema</code></td><td>Exponential moving average, smoothed by <code>alpha</code></td><td><code>float</code></td></tr>
+<tr><td><code>row_number</code></td><td>1-based position of the row in its partition’s order</td><td><code>integer</code></td></tr>
 </tbody>
 </table>
 </div>
 <p><code>sum</code>, <code>avg</code>, <code>stddev</code>, <code>var</code>, <code>diff</code>, <code>rate</code> and <code>ema</code> require a numeric
 input column.</p>
+<p><code>row_number</code> numbers rows, not values: it ignores <code>column</code> (any column
+satisfies it), never skips a row whose input is null, and breaks ties on
+<code>order_by</code> by primary key.</p>
 <h3 id="frame-compatibility"><a class="header" href="#frame-compatibility">Frame compatibility</a></h3>
 <ul>
 <li><code>sum</code>, <code>avg</code>, <code>count</code>, <code>min</code>, <code>max</code>, <code>stddev</code> and <code>var</code> accept any frame.</li>
-<li><code>lag</code>, <code>lead</code>, <code>diff</code> and <code>ema</code> are frame-independent — they are computed
-from row offsets rather than a frame.</li>
+<li><code>lag</code>, <code>lead</code>, <code>diff</code>, <code>ema</code> and <code>row_number</code> are frame-independent — they
+are computed from row positions rather than a frame.</li>
 <li><strong><code>rate</code> requires a <code>range</code> frame</strong>, and is invalid with <code>rows</code> or
 <code>cumulative</code>.</li>
 </ul>

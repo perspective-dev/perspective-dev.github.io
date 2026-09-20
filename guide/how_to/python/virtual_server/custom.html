@@ -3,12 +3,11 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Custom - Perspective</title>
+        <title>Custom (Python) — Perspective data grid, pivot table &amp; charts</title>
 
 
         <!-- Custom HTML head -->
 
-        <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -29,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-c29a9641.css">
+        <link rel="stylesheet" href="../../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +36,21 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-28e6cd8d.js";
+            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-e1e174b9.js"></script>
+        <script src="../../../toc-6ad2c387.js"></script>
+        <meta name="description" content="You can connect Perspective to any data source by subclassing VirtualServerHandler, wrapping it in a VirtualServer, and exposing that via a small session factory object which the WebSocket handlers use to give each connected client its own session." />
+        <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/python/virtual_server/custom.html" />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Perspective" />
+        <meta property="og:title" content="Custom (Python) — Perspective data grid, pivot table &amp; charts" />
+        <meta property="og:description" content="You can connect Perspective to any data source by subclassing VirtualServerHandler, wrapping it in a VirtualServer, and exposing that via a small session factory object which the WebSocket handlers use to give each connected client its own session." />
+        <meta property="og:url" content="https://perspective-dev.github.io/guide/how_to/python/virtual_server/custom.html" />
+        <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="alternate" type="text/markdown" href="/guide/how_to/python/virtual_server/custom.md" />
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Perspective","item":"https://perspective-dev.github.io/"},{"@type":"ListItem","position":2,"name":"Guide","item":"https://perspective-dev.github.io/guide/index.html"},{"@type":"ListItem","position":3,"name":"Python"},{"@type":"ListItem","position":4,"name":"Custom","item":"https://perspective-dev.github.io/guide/how_to/python/virtual_server/custom.html"}]}</script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -226,6 +236,16 @@ class MyHandler(VirtualServerHandler):
         # for later data retrieval.
         pass
 
+    def table_describe(self, table_name, config):
+        # Validate `config` against `table_name` and report the schema the
+        # temporary table would have, WITHOUT creating it. Return
+        # {"expression_schema", "view_schema"} when valid,
+        # {"expression_schema", "expression_errors"} when an expression is
+        # invalid, or {"config_error"} otherwise. A model with no cheaper
+        # answer may `return describe_via_make_view(self, table_name, config)`,
+        # which builds and drops a real temporary table - at that cost.
+        pass
+
     def view_delete(self, view_name):
         # Clean up resources for this view. The UI does this automatically,
         # and can recover if a view dies early.
@@ -234,7 +254,8 @@ class MyHandler(VirtualServerHandler):
     def view_get_data(self, view_name, config, viewport, data):
         # Serialize the rectangular slice `viewport` of the temporary table
         # `view_name` into `data`, a push-only `VirtualDataSlice`. Once a
-        # type has been pushed for a column name it must not change.
+        # type has been pushed for a column name it must not change. `data`
+        # is consumed when this method returns.
         pass
 </code></pre>
 <h3 id="optional-methods"><a class="header" href="#optional-methods">Optional methods</a></h3>
@@ -247,7 +268,6 @@ class MyHandler(VirtualServerHandler):
 <tr><td><code>get_features()</code></td><td><code>columns</code> only</td><td>Which UI controls to enable — see <a href="../../../explanation/virtual_servers.html#features-declaration">Features declaration</a></td></tr>
 <tr><td><code>view_schema(view_name, config)</code></td><td><code>table_schema</code></td><td>Schema of a temporary table, when it differs from its source</td></tr>
 <tr><td><code>view_size(view_name)</code></td><td><code>table_size</code></td><td>Row count of a temporary table, when it differs from its source</td></tr>
-<tr><td><code>table_validate_expression(view_name, expression)</code></td><td>allow all</td><td>Type-check an expression column; enabled by <code>"expressions"</code> in <code>get_features</code></td></tr>
 <tr><td><code>view_get_min_max(view_name, column_name, config)</code></td><td>unsupported</td><td>Column bounds as a <code>(min, max)</code> tuple — required for gradient and sparkbar column styles</td></tr>
 </tbody>
 </table>
@@ -256,7 +276,11 @@ class MyHandler(VirtualServerHandler):
 <p>The WebSocket handlers call <code>new_session(callback)</code> once per connection, so
 the object passed as <code>perspective_server</code> must provide it. Wrap your handler
 in a <code>perspective.VirtualServer</code> — which owns the protocol — and return one
-session per client:</p>
+session per client. Each session must provide <code>handle_request(msg)</code> and
+<code>close()</code>, which the handlers call when the connection ends;
+<code>VirtualServer.close()</code> deletes the views the client left open, via
+<code>view_delete</code>. <code>close()</code> should also release the session’s callback (which may
+otherwise form a reference cycle and leak):</p>
 <pre><code class="language-python">import perspective
 
 class MyVirtualSession:
@@ -266,6 +290,11 @@ class MyVirtualSession:
 
     def handle_request(self, msg):
         self.callback(self.session.handle_request(msg))
+
+    def close(self):
+        session, self.session, self.callback = self.session, None, None
+        if session is not None:
+            session.close()
 
 
 class MyVirtualServer:
