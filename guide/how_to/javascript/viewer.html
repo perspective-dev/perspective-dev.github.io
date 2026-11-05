@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="&lt;perspective-viewer&gt; provides a complete graphical UI for configuring the perspective library and formatting its output to the provided visualization plugins." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/viewer.html" />
         <meta property="og:type" content="article" />
@@ -225,15 +225,23 @@ When <code>name</code> is omitted a random one is assigned, so the
 the table after a page reload, and <code>restore()</code> will fail.</div>
 
 <h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
-<p><code>&lt;perspective-viewer&gt;</code> can be configured via HTML attributes or JavaScript
-properties. When set as attributes, the viewer will apply the configuration on
-initialization:</p>
-<pre><code class="language-html">&lt;perspective-viewer
-    columns='["Sales", "Profit"]'
-    group-by='["Region"]'
-    sort='[["Sales", "desc"]]'&gt;
-&lt;/perspective-viewer&gt;
+<p><code>&lt;perspective-viewer&gt;</code> reads one HTML attribute, <code>theme</code>, which selects the
+initial theme by the <code>--psp-theme-name</code> a loaded stylesheet declares. Every
+other setting is applied through the JavaScript API, typically <code>restore()</code>,
+and the viewer reflects the active theme back onto the same attribute when the
+user picks one:</p>
+<pre><code class="language-html">&lt;perspective-viewer theme="Pro Dark"&gt;&lt;/perspective-viewer&gt;
 </code></pre>
+<pre><code class="language-javascript">await viewer.restore({ columns: ["Sales", "Profit"], group_by: ["Region"] });
+</code></pre>
+<h2 id="editor-and-tooling-support"><a class="header" href="#editor-and-tooling-support">Editor and tooling support</a></h2>
+<p><code>@perspective-dev/viewer</code> ships a
+<a href="https://github.com/webcomponents/custom-elements-manifest">Custom Elements Manifest</a>
+at <code>dist/custom-elements.json</code>, advertised by the <code>customElements</code> field of its
+<code>package.json</code>. It enumerates the element’s methods, static methods, events,
+the <code>theme</code> attribute, slots, the <code>tab</code> shadow part and every theme CSS custom
+property, so editors, Storybook and documentation generators that read the
+manifest can offer completion and reference tables without any further setup.</p>
 <h2 id="ui-features"><a class="header" href="#ui-features">UI Features</a></h2>
 <p>The viewer provides an interactive side panel with:</p>
 <ul>
@@ -367,9 +375,23 @@ for charts and text for the datagrid.
 </tbody>
 </table>
 </div>
+<p>The element class also has page-wide static methods:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>registerPlugin(name)</code></td><td>Register a plugin custom element</td></tr>
+<tr><td><code>setPluginConfigDefaults(defaults, options?)</code> / <code>setColumnConfigDefaults(defaults, options?)</code></td><td>Replace plugins’ <code>plugin_config</code> / <code>columns_config</code> defaults</td></tr>
+<tr><td><code>getPluginConfigDefaults()</code> / <code>getColumnConfigDefaults()</code></td><td>Read the replaced defaults</td></tr>
+</tbody>
+</table>
+</div>
 <p>See <a href="./save_restore.html">Saving and restoring UI state</a> for the <code>save</code>/<code>restore</code>
-formats and the panel selector, and
-<a href="./plugin_settings.html">Plugin render limits</a> for <code>getPlugin</code>.</p>
+formats and the panel selector,
+<a href="./plugin_settings.html">Plugin render limits</a> for <code>getPlugin</code>, and
+<a href="./config_defaults.html">Configuration defaults</a> for the defaults methods.</p>
 
                     </main>
 

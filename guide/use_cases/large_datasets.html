@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-6ad2c387.js"></script>
+        <script src="../toc-b81732ec.js"></script>
         <meta name="description" content="How Perspective renders data grids, pivot tables and charts over millions of rows in a browser tab: a columnar C++ engine compiled to WebAssembly, Apache Arrow loading, virtual-scrolling grid, WebGL charts, a 64-bit memory64 build, and server-side virtualization for data that does not fit." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/use_cases/large_datasets.html" />
         <meta property="og:type" content="article" />
@@ -229,9 +229,10 @@ inference.</p>
 <a href="../how_to/javascript/importing.html">Memory64 build</a> which raises the ceiling
 to 16GB in browsers which support it. Register both binaries and only the one
 the browser selects is downloaded:</p>
-<pre><code class="language-javascript">perspective.init_server({
-    wasm32: () =&gt; fetch(SERVER_WASM),
-    wasm64: () =&gt; fetch(SERVER_WASM64),
+<pre><code class="language-javascript">await perspective_viewer.init({
+    server32: () =&gt; fetch(SERVER_WASM),
+    server64: () =&gt; fetch(SERVER_WASM64),
+    viewer: fetch(VIEWER_WASM),
 });
 </code></pre>
 <h2 id="more-than-memory-page_to_disk"><a class="header" href="#more-than-memory-page_to_disk">More than memory: <code>page_to_disk</code></a></h2>

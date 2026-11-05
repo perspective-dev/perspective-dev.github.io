@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-6ad2c387.js"></script>
+        <script src="../toc-b81732ec.js"></script>
         <meta name="description" content="A case study in exploring a multi-billion row tick and trade history lakehouse from a browser tab with no backend: DuckDB-WASM attaches a DuckLake catalog over HTTPS, prunes hundreds of thousands of Parquet files to the slice a user asks for, holds 10 to 100 million rows locally, and Perspective…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/use_cases/ducklake.html" />
         <meta property="og:type" content="article" />
@@ -236,7 +236,7 @@ import "@perspective-dev/viewer";
 import "@perspective-dev/viewer-datagrid";
 import "@perspective-dev/viewer-charts";
 import * as duckdb from "@duckdb/duckdb-wasm";
-import { DuckDBHandler } from "@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
+import { DuckDBHandler } from "@perspective-dev/client/virtual_servers/duckdb";
 
 const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
 const worker_url = URL.createObjectURL(

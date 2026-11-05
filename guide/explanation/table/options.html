@@ -36,16 +36,16 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
-        <meta name="description" content="Initializing a Table with an index tells Perspective to treat a column as the primary key, allowing in-place updates of rows. Only a single column (of any type) can be used as an index. Indexed Table instances allow:" />
+        <script src="../../toc-b81732ec.js"></script>
+        <meta name="description" content="Initializing a Table with an index tells Perspective to treat a column, or a combination of columns, as the primary key, allowing in-place updates of rows. A column of any type can be used as an index. Indexed Table instances allow:" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/table/options.html" />
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="Perspective" />
         <meta property="og:title" content="index, limit and page_to_disk options — Perspective data grid, pivot table &amp; charts" />
-        <meta property="og:description" content="Initializing a Table with an index tells Perspective to treat a column as the primary key, allowing in-place updates of rows. Only a single column (of any type) can be used as an index. Indexed Table instances allow:" />
+        <meta property="og:description" content="Initializing a Table with an index tells Perspective to treat a column, or a combination of columns, as the primary key, allowing in-place updates of rows. A column of any type can be used as an index. Indexed Table instances allow:" />
         <meta property="og:url" content="https://perspective-dev.github.io/guide/explanation/table/options.html" />
         <meta property="og:image" content="https://perspective-dev.github.io/projects/light/collage.png" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -192,9 +192,10 @@
                         <h2 id="index-and-limit"><a class="header" href="#index-and-limit">Index and Limit</a></h2>
 <div class="warning">`limit` cannot be used in conjunction with `index`.</div>
 
-<p>Initializing a <code>Table</code> with an <code>index</code> tells Perspective to treat a column as
-the primary key, allowing in-place updates of rows. Only a single column (of any
-type) can be used as an <code>index</code>. Indexed <code>Table</code> instances allow:</p>
+<p>Initializing a <code>Table</code> with an <code>index</code> tells Perspective to treat a column, or
+a combination of columns, as the primary key, allowing in-place updates of
+rows. A column of any type can be used as an <code>index</code>. Indexed <code>Table</code> instances
+allow:</p>
 <ul>
 <li>In-place <em>updates</em> whenever a new row shares an <code>index</code> values with an
 existing row</li>
@@ -215,6 +216,43 @@ name to be used as an index:</p>
 </code></pre>
 </div>
 
+<h3 id="composite-index"><a class="header" href="#composite-index">Composite index</a></h3>
+<p>A list of column names keys each row by the combination of those columns’
+values, in list order. A list of one column is the same as naming that column
+directly, and an empty list is an error.</p>
+<div class="javascript">
+<p>JavaScript:</p>
+<pre><code class="language-javascript">const table = await perspective.table(data, { index: ["name", "sector"] });
+await table.update([{ name: "AAPL", sector: "Tech", price: 1 }]);
+await table.remove([["AAPL", "Tech"]]);
+await table.get_index(); // ["name", "sector"]
+</code></pre>
+</div>
+
+<div class="python">
+<p>Python</p>
+<pre><code class="language-python">table = perspective.table(data, index=["name", "sector"])
+table.update([{"name": "AAPL", "sector": "Tech", "price": 1}])
+table.remove([["AAPL", "Tech"]])
+table.get_index()  # ["name", "sector"]
+</code></pre>
+</div>
+
+<p>A composite index differs from a single-column index in a few ways:</p>
+<ul>
+<li>Every <code>update()</code> row must supply every index column, and an update which
+omits one is rejected. A partial update may still omit any other column.</li>
+<li><code>remove()</code> takes a list of keys, each a list of the index column values in
+index order, or an Arrow with one column per index column.</li>
+<li>The <code>__INDEX__</code> column of an <code>update()</code>, and the <code>__ID__</code> and <code>__INDEX__</code>
+columns of a <code>View</code>, carry each key as a list of the index column values.
+<code>__INDEX__</code> is not supported in Arrow updates of a composite-indexed
+<code>Table</code>; include the index columns instead.</li>
+<li>A <code>View</code> with no <code>sort</code> orders rows by the index columns in index order,
+with each column ordered by its own type and <code>null</code> first.</li>
+<li><code>vlookup("column", key1, key2, ...)</code> takes one key argument per index
+column.</li>
+</ul>
 <p>Initializing a <code>Table</code> with a <code>limit</code> sets the total number of rows the <code>Table</code>
 is allowed to have. When the <code>Table</code> is updated, and the resulting size of the
 <code>Table</code> would exceed its <code>limit</code>, rows that exceed <code>limit</code> overwrite the oldest

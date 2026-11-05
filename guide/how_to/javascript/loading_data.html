@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="Data can be loaded into &lt;perspective-viewer&gt; in the form of a Table() or a Promise&lt;Table&gt; via the load() method." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/loading_data.html" />
         <meta property="og:type" content="article" />
@@ -250,6 +250,40 @@ than <code>&lt;perspective-viewer&gt;</code>s which rely on a Web Worker, and ca
 host application with Web Worker-bound <code>table()</code>s. The same <code>promise</code>-based API
 is used to communicate with the server-instantiated <code>view()</code>, only in this case
 it is over a websocket.</p>
+<h2 id="nested-columns"><a class="header" href="#nested-columns">Nested columns</a></h2>
+<p>Perspective’s data model is flat, so nested Arrow and JSON values are
+normalized on ingest, controlled by three <code>Table</code> options.</p>
+<p><code>struct_flatten</code> applies to Arrow <code>struct</code> columns and to JSON objects.
+<code>"pivot"</code> (the default) hoists each field into its own dotted column, so
+<code>{ s: { a: 1 } }</code> becomes a column <code>s.a</code>. <code>"stringify"</code> keeps the whole value
+as JSON text in a single string column, with datetimes as epoch milliseconds;
+<code>"stringify_formatted"</code> writes them as the text <code>to_json</code> emits under
+<code>formatted</code>.</p>
+<p><code>map_flatten</code> applies to Arrow <code>map</code> columns. <code>"pivot"</code> makes a map <code>m</code> one
+column <code>m.&lt;key&gt;</code> per distinct key in the batch, with a null where a row lacks
+the key, and <code>"stringify"</code> or <code>"stringify_formatted"</code> keeps the map as JSON
+text. When unset it follows <code>struct_flatten</code>. JSON has no map type, so JSON objects always follow
+<code>struct_flatten</code>.</p>
+<p><code>list_flatten</code> applies to Arrow <code>list</code> columns and JSON arrays. <code>"zip"</code> (the
+default) expands a row into one row per element, repeating its siblings, and
+requires sibling lists in a row to agree in length. <code>"cartesian"</code> expands to
+the product of the lists’ lengths. <code>"stringify"</code> keeps each list as a JSON
+array in a string column, with datetimes and dates as epoch milliseconds, as
+in <code>to_json</code>; <code>"stringify_formatted"</code> writes them as the text <code>to_json</code> emits
+under <code>formatted</code>.</p>
+<p>The options compose from the outside in: a list inside a stringified struct
+stays inside its JSON text, a struct inside an expanded list is stringified
+once per element row, and a struct under a pivoted map is stringified once per
+key column when <code>struct_flatten</code> is <code>"stringify"</code> and <code>map_flatten</code> is
+<code>"pivot"</code>.</p>
+<pre><code class="language-javascript">const table = await worker.table(
+    [{ id: 1, m: { a: 1, b: 2 } }, { id: 2, m: { b: 3 } }],
+    { struct_flatten: "pivot" },
+);
+
+// { id: [1, 2], "m.a": [1, null], "m.b": [2, 3] }
+await (await table.view()).to_columns();
+</code></pre>
 
                     </main>
 

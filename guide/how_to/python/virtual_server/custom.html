@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-6ad2c387.js"></script>
+        <script src="../../../toc-b81732ec.js"></script>
         <meta name="description" content="You can connect Perspective to any data source by subclassing VirtualServerHandler, wrapping it in a VirtualServer, and exposing that via a small session factory object which the WebSocket handlers use to give each connected client its own session." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/python/virtual_server/custom.html" />
         <meta property="og:type" content="article" />
@@ -269,6 +269,9 @@ class MyHandler(VirtualServerHandler):
 <tr><td><code>view_schema(view_name, config)</code></td><td><code>table_schema</code></td><td>Schema of a temporary table, when it differs from its source</td></tr>
 <tr><td><code>view_size(view_name)</code></td><td><code>table_size</code></td><td>Row count of a temporary table, when it differs from its source</td></tr>
 <tr><td><code>view_get_min_max(view_name, column_name, config)</code></td><td>unsupported</td><td>Column bounds as a <code>(min, max)</code> tuple — required for gradient and sparkbar column styles</td></tr>
+<tr><td><code>view_expand(view_name, config, row_index)</code></td><td>unsupported</td><td>Expand a row tree node — required by <code>expand_collapse</code>, see <a href="../../../explanation/virtual_servers.html#expand-and-collapse">Expand and collapse</a></td></tr>
+<tr><td><code>view_collapse(view_name, config, row_index)</code></td><td>unsupported</td><td>Collapse a row tree node — required by <code>expand_collapse</code></td></tr>
+<tr><td><code>view_set_depth(view_name, config, depth)</code></td><td>unsupported</td><td>Expand the row tree to a depth — required by <code>expand_collapse</code></td></tr>
 </tbody>
 </table>
 </div>

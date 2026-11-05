@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-6ad2c387.js"></script>
+        <script src="../../../toc-b81732ec.js"></script>
         <meta name="description" content="The expressions property specifies new columns in Perspective that are created using existing column values or arbitrary scalar values defined within the expression. In &lt;perspective-viewer&gt;, expressions are added using the “New Column” button in the side panel." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/config/expressions.html" />
         <meta property="og:type" content="article" />
@@ -358,7 +358,7 @@ to the nearest multiple of 10.</p>
 <tr><td><code>max(a, b, ...)</code></td><td>Maximum of inputs</td></tr>
 <tr><td><code>random()</code></td><td>Random float between 0.0 and 1.0</td></tr>
 <tr><td><code>col(name)</code></td><td>Look up a column by string name at runtime</td></tr>
-<tr><td><code>vlookup(col, key)</code></td><td>Look up a value in another column by row key</td></tr>
+<tr><td><code>vlookup(col, key, ...)</code></td><td>Look up a value in another column by row key, one key argument per <code>index</code> column</td></tr>
 </tbody>
 </table>
 </div>

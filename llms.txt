@@ -65,6 +65,7 @@ Perspective is Apache-2.0 licensed and a member project of the OpenJS Foundation
 - [Arranging panels: layouts and dashboards](https://perspective-dev.github.io/guide/how_to/javascript/layout.md)
 - [Listening for events](https://perspective-dev.github.io/guide/how_to/javascript/events.md)
 - [Plugin render limits](https://perspective-dev.github.io/guide/how_to/javascript/plugin_settings.md)
+- [Configuration defaults](https://perspective-dev.github.io/guide/how_to/javascript/config_defaults.md)
 - [Map tile sources](https://perspective-dev.github.io/guide/how_to/javascript/map_tile_sources.md)
 - [Configuring the LLM agent](https://perspective-dev.github.io/guide/how_to/javascript/agent.md)
 - [Virtual Servers](https://perspective-dev.github.io/guide/how_to/javascript/virtual_server.md)
@@ -94,6 +95,7 @@ Perspective is Apache-2.0 licensed and a member project of the OpenJS Foundation
 ## Rust
 
 - [Getting Started](https://perspective-dev.github.io/guide/how_to/rust.md)
+- [Migrating saved configs](https://perspective-dev.github.io/guide/how_to/rust/migrate.md)
 
 ## Integrations
 

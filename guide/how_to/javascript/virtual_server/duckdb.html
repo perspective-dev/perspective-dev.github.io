@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-6ad2c387.js"></script>
+        <script src="../../../toc-b81732ec.js"></script>
         <meta name="description" content="Perspective provides a built-in virtual server for DuckDB, allowing &lt;perspective-viewer&gt; to query DuckDB-WASM databases directly in the browser." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/virtual_server/duckdb.html" />
         <meta property="og:type" content="article" />
@@ -206,7 +206,7 @@ result of <code>db.connect()</code> — not the <code>AsyncDuckDB</code> itself.
 <pre><code class="language-javascript">import perspective, { createMessageHandler } from "@perspective-dev/client";
 import "@perspective-dev/viewer";
 import * as duckdb from "@duckdb/duckdb-wasm";
-import { DuckDBHandler } from "@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
+import { DuckDBHandler } from "@perspective-dev/client/virtual_servers/duckdb";
 
 // Initialize DuckDB-WASM
 const DUCKDB_BUNDLES = duckdb.getJsDelivrBundles();

@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="&lt;perspective-viewer&gt; is persistent, in that its entire state (sans the data itself) can be serialized or deserialized. This include all column, filter, pivot, expressions, etc. properties, as well as datagrid style settings, config panel visibility, and more. This overloaded feature covers a range…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/save_restore.html" />
         <meta property="og:type" content="article" />
@@ -202,24 +202,19 @@ panel visibility, and more. This overloaded feature covers a range of use cases:
 </ul>
 <h2 id="serializing-and-deserializing-the-viewer-state"><a class="header" href="#serializing-and-deserializing-the-viewer-state">Serializing and deserializing the viewer state</a></h2>
 <p>To retrieve the entire state as a JSON-ready JavaScript object, use the <code>save()</code>
-method. <code>save()</code> also supports a few other formats such as <code>"arraybuffer"</code> and
-<code>"string"</code> (base64, not JSON), which you may choose for size at the expense of
-easy migration/manual-editing.</p>
-<pre><code class="language-javascript">const json_token = await elem.save();
-const string_token = await elem.save("string");
+method.</p>
+<pre><code class="language-javascript">const token = await elem.save();
 </code></pre>
-<p>For any format, the serialized token can be restored to any
-<code>&lt;perspective-viewer&gt;</code> with a <code>Table</code> of identical schema, via the <code>restore()</code>
-method. Note that while the data for a token returned from <code>save()</code> may differ,
-generally its schema may not, as many other settings depend on column names and
-types.</p>
-<pre><code class="language-javascript">await elem.restore(json_token);
-await elem.restore(string_token);
+<p>The token can be restored to any <code>&lt;perspective-viewer&gt;</code> with a <code>Table</code> of
+identical schema, via the <code>restore()</code> method. Note that while the data for a
+token returned from <code>save()</code> may differ, generally its schema may not, as many
+other settings depend on column names and types.</p>
+<pre><code class="language-javascript">await elem.restore(token);
 </code></pre>
-<p>As <code>restore()</code> dispatches on the token’s type, it is important to make sure that
-these types match! A common source of error occurs when passing a
-JSON-stringified token to <code>restore()</code>, which will assume base64-encoded msgpack
-when a string token is used.</p>
+<p><code>restore()</code> validates its argument, rejecting for example a key the config
+format does not define; when a rejected token is stamped with another release’s
+<code>version</code>, the error names that release. Tokens saved by older releases should
+be upgraded first — see <a href="../rust/migrate.html">Migrating saved configs</a>.</p>
 <pre><code class="language-javascript">// This will error!
 await elem.restore(JSON.stringify(json_token));
 </code></pre>
@@ -285,8 +280,8 @@ await elem.restoreWorkspace(workspace_token);
 </code></pre>
 <p>A <code>saveWorkspace()</code> token is a <code>WorkspaceConfig</code>
 (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the
-single-panel <code>restore()</code> will <em>not</em> restore the layout (its <code>panels</code>/<code>layout</code>
-keys are ignored).</p>
+single-panel <code>restore()</code> is rejected (its <code>panels</code>/<code>layout</code> keys are not part
+of a <code>ViewerConfig</code>).</p>
 <p>The <code>layout</code> field is the tree arranging the panels into a grid of rows and
 columns or stacks of tabs, naming every panel id exactly once. See
 <a href="./layout.html">Arranging panels: layouts and dashboards</a> for its format and for
@@ -335,6 +330,26 @@ structurally identical definition, and otherwise creates one under a generated
 name. Only the single-panel <code>restore()</code> accepts the inline form — in
 <code>restoreWorkspace()</code> every <code>table</code> field is a name.</p>
 <p>See <a href="../../explanation/derived_table.html">Derived tables</a>.</p>
+<h2 id="datetime-formats"><a class="header" href="#datetime-formats">Datetime formats</a></h2>
+<p>A <code>date</code> or <code>datetime</code> column’s <code>date_format</code> is a subset of
+<code>Intl.DateTimeFormatOptions</code>: either the <code>dateStyle</code>/<code>timeStyle</code> presets or
+per-part fields (<code>weekday</code>, <code>year</code>, <code>month</code>, <code>day</code>, <code>hour</code>, <code>minute</code>, <code>second</code>,
+<code>fractionalSecondDigits</code>), never both, plus optional <code>timeZone</code> and <code>hour12</code>. As
+in <code>Intl</code>, a display field that is left out is not shown:</p>
+<pre><code class="language-javascript">await viewer.restore({
+    columns_config: {
+        "Order Date": { date_format: { dateStyle: "long", timeZone: "UTC" } },
+    },
+});
+</code></pre>
+<p>A column inherits the plugin’s display fields until it sets any of them, and
+inherits <code>timeZone</code> and <code>hour12</code> individually.</p>
+<p>Configs saved before 5.7.0 used a <code>"disabled"</code> value and a <code>format: "custom"</code>
+marker, and a missing preset field meant <code>short</code> date or <code>medium</code> time.
+<code>restore()</code> rejects the removed forms, and restores any other <code>date_format</code>
+with its current meaning — <code>{ dateStyle: "long" }</code> shows the date alone,
+whatever its <code>version</code>. <a href="../rust/migrate.html"><code>perspective-migrate</code></a> rewrites
+older tokens into the current form with their original rendering.</p>
 <h2 id="colors-palettes-and-gradients"><a class="header" href="#colors-palettes-and-gradients">Colors, palettes and gradients</a></h2>
 <p>Per-column color styling lives in a panel’s <code>columns_config</code>, keyed by column
 name, and every color-scale value is a string usable verbatim in CSS:</p>

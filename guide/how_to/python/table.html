@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="A Table can be created from a dataset or a schema, the specifics of which are discussed in the JavaScript section of the user’s guide. In Python, however, Perspective supports additional data types that are commonly used when processing data:" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/python/table.html" />
         <meta property="og:type" content="article" />
@@ -241,6 +241,11 @@ dataframe passed into Perspective, simply create the <code>Table</code> with
 treat the index as a primary key:</p>
 <pre><code class="language-python">data.set_index("datetime")
 table = perspective.table(data, index="index")
+</code></pre>
+<p>A <code>pandas.MultiIndex</code> arrives as one column per level, named after the level,
+so a composite <code>index</code> keyed by those columns preserves it:</p>
+<pre><code class="language-python">data = data.set_index(["name", "sector"])
+table = perspective.table(data, index=["name", "sector"])
 </code></pre>
 <h2 id="time-zone-handling"><a class="header" href="#time-zone-handling">Time Zone Handling</a></h2>
 <p>When parsing <code>"datetime"</code> strings, times without an explicit timezone offset are

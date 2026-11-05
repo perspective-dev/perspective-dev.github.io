@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-6ad2c387.js"></script>
+        <script src="../toc-b81732ec.js"></script>
         <meta name="description" content="A Table can be constructed from a View, producing a read-only Table whose rows are that View’s output. The engine maintains it in place: an update to the source Table is reflected in the derived Table, and in any View of it, within the same update cycle." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/derived_table.html" />
         <meta property="og:type" content="article" />
@@ -240,8 +240,8 @@ let totals = client.table(TableData::View(view), TableInitOptions::default()).aw
 <h2 id="columns"><a class="header" href="#columns">Columns</a></h2>
 <p>An unpivoted <code>View</code> yields a <code>Table</code> with the <code>View</code>’s own columns, including
 <code>expressions</code> and window columns, and one row for every row passing its
-<code>filter</code>. The source’s <code>index</code> is inherited when the index column is among the
-<code>View</code>’s <code>columns</code>, and its <code>limit</code> is inherited as well.</p>
+<code>filter</code>. The source’s <code>index</code> is inherited when every index column is among
+the <code>View</code>’s <code>columns</code>, and its <code>limit</code> is inherited as well.</p>
 <p>A pivoted <code>View</code> yields the table you see on screen. Each <code>group_by</code> column
 becomes a typed key column of the same name, and each data column takes the name
 <code>View::column_paths</code> gives it. A column that is both a <code>group_by</code> key and one of
@@ -481,8 +481,8 @@ orders the copy.</li>
 <li>A row updated out of the source <code>View</code>’s <code>filter</code> is removed, where the copy
 retained it with stale values.</li>
 <li>Updates arrive in the same cycle as the source rather than eventually.</li>
-<li>A <code>View</code> which omits its source’s index column is keyed by row identity, so
-updates apply in place rather than appending.</li>
+<li>A <code>View</code> which omits any of its source’s index columns is keyed by row
+identity, so updates apply in place rather than appending.</li>
 <li>A pivoted <code>View</code> yields named key columns and only the rows the <code>View</code>
 displays, where the copy appended its changed rows on every update.</li>
 </ul>

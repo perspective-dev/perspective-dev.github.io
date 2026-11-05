@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-6ad2c387.js"></script>
+        <script src="toc-b81732ec.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -591,9 +591,10 @@ inference.</p>
 <a href="#javascript---importing-with-or-without-a-bundler">Memory64 build</a> which raises the ceiling
 to 16GB in browsers which support it. Register both binaries and only the one
 the browser selects is downloaded:</p>
-<pre><code class="language-javascript">perspective.init_server({
-    wasm32: () =&gt; fetch(SERVER_WASM),
-    wasm64: () =&gt; fetch(SERVER_WASM64),
+<pre><code class="language-javascript">await perspective_viewer.init({
+    server32: () =&gt; fetch(SERVER_WASM),
+    server64: () =&gt; fetch(SERVER_WASM64),
+    viewer: fetch(VIEWER_WASM),
 });
 </code></pre>
 <h2 id="more-than-memory-page_to_disk"><a class="header" href="#more-than-memory-page_to_disk">More than memory: <code>page_to_disk</code></a></h2>
@@ -901,7 +902,7 @@ import "@perspective-dev/viewer";
 import "@perspective-dev/viewer-datagrid";
 import "@perspective-dev/viewer-charts";
 import * as duckdb from "@duckdb/duckdb-wasm";
-import { DuckDBHandler } from "@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
+import { DuckDBHandler } from "@perspective-dev/client/virtual_servers/duckdb";
 
 const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
 const worker_url = URL.createObjectURL(
@@ -1456,9 +1457,42 @@ only show controls for supported operations:</p>
 <tr><td><code>filter_ops</code></td><td><code>dict</code></td><td>Map of column type to list of supported filter operators</td></tr>
 <tr><td><code>aggregates</code></td><td><code>dict</code></td><td>Map of column type to list of supported aggregate functions</td></tr>
 <tr><td><code>on_update</code></td><td><code>bool</code></td><td>Whether update callbacks are supported</td></tr>
+<tr><td><code>expand_collapse</code></td><td><code>bool</code></td><td>Whether <code>View::expand</code>, <code>View::collapse</code> and <code>View::set_depth</code> are supported</td></tr>
+<tr><td><code>update</code></td><td><code>bool</code></td><td>Whether <code>Table::update</code> is supported; the datagrid omits its <code>"EDIT"</code> mode otherwise</td></tr>
 </tbody>
 </table>
 </div>
+<h2 id="expand-and-collapse"><a class="header" href="#expand-and-collapse">Expand and collapse</a></h2>
+<p>A <code>group_by</code> view in <code>"rollup"</code> mode presents its rows as a tree, which
+<code>View::expand</code>, <code>View::collapse</code> and <code>View::set_depth</code> open and close. A virtual
+server which declares <code>expand_collapse</code> must implement <code>view_expand()</code>,
+<code>view_collapse()</code> and <code>view_set_depth()</code> (<code>viewExpand()</code>, <code>viewCollapse()</code> and
+<code>viewSetDepth()</code> in JavaScript), which the <code>VirtualServer</code> forwards unchanged.
+The handler owns the tree state, ideally in the data store itself, and its
+subsequent <code>view_size()</code> and <code>view_get_data()</code> calls for that view must honor
+it. Implementations must match the semantics of Perspective’s own engine:</p>
+<ul>
+<li>A new view starts fully expanded.</li>
+<li><code>view_expand(view, config, row_index)</code> shows the direct children of that row,
+each collapsed, and returns the number of rows shown (<code>0</code> if already
+expanded, or a leaf).</li>
+<li><code>view_collapse(view, config, row_index)</code> hides every descendant of that row,
+forgetting their own expansion, and returns the number of rows hidden.</li>
+<li><code>view_set_depth(view, config, depth)</code> expands exactly the rows whose path is
+no longer than <code>depth</code> and collapses the rest, so the total row and its
+children are visible after <code>view_set_depth(..., 0)</code>.</li>
+</ul>
+<p>Row indices are positions in the view as currently expanded. The
+<code>VirtualServer</code> answers these requests itself, without calling the handler, for
+views without <code>group_by</code> or in <code>"flat"</code> or <code>"total"</code> mode, and ignores
+<code>set_depth</code> deeper than <code>group_by</code>.</p>
+<p>The bundled DuckDB virtual servers implement this through
+<code>GenericSQLVirtualServerModel</code>’s <code>expand_collapse</code> option, which adds a hidden
+<code>__HIDDEN__</code> column to each view’s temporary table and builds the <code>UPDATE</code>
+statements for <code>view_expand()</code>, <code>view_collapse()</code> and <code>view_set_depth()</code>. It
+requires a dialect whose views are tables scanned in insertion order, so the
+ClickHouse and PostgreSQL virtual servers, whose views are SQL <code>VIEW</code>s, do not
+support expand and collapse.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="table"><a class="header" href="#table">Table</a></h1>
 <p><code>Table</code> is Perspective’s columnar data frame, analogous to a Pandas <code>DataFrame</code>
@@ -1652,9 +1686,10 @@ let table = client.table(data.into(), options).await?;
 <h2 id="index-and-limit"><a class="header" href="#index-and-limit">Index and Limit</a></h2>
 <div class="warning">`limit` cannot be used in conjunction with `index`.</div>
 
-<p>Initializing a <code>Table</code> with an <code>index</code> tells Perspective to treat a column as
-the primary key, allowing in-place updates of rows. Only a single column (of any
-type) can be used as an <code>index</code>. Indexed <code>Table</code> instances allow:</p>
+<p>Initializing a <code>Table</code> with an <code>index</code> tells Perspective to treat a column, or
+a combination of columns, as the primary key, allowing in-place updates of
+rows. A column of any type can be used as an <code>index</code>. Indexed <code>Table</code> instances
+allow:</p>
 <ul>
 <li>In-place <em>updates</em> whenever a new row shares an <code>index</code> values with an
 existing row</li>
@@ -1675,6 +1710,43 @@ name to be used as an index:</p>
 </code></pre>
 </div>
 
+<h3 id="composite-index"><a class="header" href="#composite-index">Composite index</a></h3>
+<p>A list of column names keys each row by the combination of those columns’
+values, in list order. A list of one column is the same as naming that column
+directly, and an empty list is an error.</p>
+<div class="javascript">
+<p>JavaScript:</p>
+<pre><code class="language-javascript">const table = await perspective.table(data, { index: ["name", "sector"] });
+await table.update([{ name: "AAPL", sector: "Tech", price: 1 }]);
+await table.remove([["AAPL", "Tech"]]);
+await table.get_index(); // ["name", "sector"]
+</code></pre>
+</div>
+
+<div class="python">
+<p>Python</p>
+<pre><code class="language-python">table = perspective.table(data, index=["name", "sector"])
+table.update([{"name": "AAPL", "sector": "Tech", "price": 1}])
+table.remove([["AAPL", "Tech"]])
+table.get_index()  # ["name", "sector"]
+</code></pre>
+</div>
+
+<p>A composite index differs from a single-column index in a few ways:</p>
+<ul>
+<li>Every <code>update()</code> row must supply every index column, and an update which
+omits one is rejected. A partial update may still omit any other column.</li>
+<li><code>remove()</code> takes a list of keys, each a list of the index column values in
+index order, or an Arrow with one column per index column.</li>
+<li>The <code>__INDEX__</code> column of an <code>update()</code>, and the <code>__ID__</code> and <code>__INDEX__</code>
+columns of a <code>View</code>, carry each key as a list of the index column values.
+<code>__INDEX__</code> is not supported in Arrow updates of a composite-indexed
+<code>Table</code>; include the index columns instead.</li>
+<li>A <code>View</code> with no <code>sort</code> orders rows by the index columns in index order,
+with each column ordered by its own type and <code>null</code> first.</li>
+<li><code>vlookup("column", key1, key2, ...)</code> takes one key argument per index
+column.</li>
+</ul>
 <p>Initializing a <code>Table</code> with a <code>limit</code> sets the total number of rows the <code>Table</code>
 is allowed to have. When the <code>Table</code> is updated, and the resulting size of the
 <code>Table</code> would exceed its <code>limit</code>, rows that exceed <code>limit</code> overwrite the oldest
@@ -2128,7 +2200,6 @@ a given column accepts depends on its type — see
 </tbody>
 </table>
 </div>
-<p><code>sum not null</code> is accepted as a legacy alias for <code>sum</code>.</p>
 <p>A numeric aggregate widens to the input’s numeric class — <code>integer</code> columns
 accumulate as <code>integer</code>, <code>float</code> columns as <code>float</code>.</p>
 <h3 id="averages-and-dispersion"><a class="header" href="#averages-and-dispersion">Averages and dispersion</a></h3>
@@ -2285,10 +2356,8 @@ anywhere an aggregate is, and each group refers to one function:</p>
 <tr><td><code>last</code></td><td><code>last_value</code></td></tr>
 <tr><td><code>high</code></td><td><code>high_water_mark</code></td></tr>
 <tr><td><code>low</code></td><td><code>low_water_mark</code></td></tr>
-<tr><td><code>pct sum total</code></td><td><code>pct sum grand total</code>, <code>pct_sum_grand_total</code></td></tr>
 <tr><td><code>var</code></td><td><code>variance</code></td></tr>
 <tr><td><code>stddev</code></td><td><code>standard deviation</code></td></tr>
-<tr><td><code>sum</code></td><td><code>sum not null</code>, <code>sum_not_null</code> (legacy name)</td></tr>
 </tbody>
 </table>
 </div>
@@ -2595,7 +2664,7 @@ to the nearest multiple of 10.</p>
 <tr><td><code>max(a, b, ...)</code></td><td>Maximum of inputs</td></tr>
 <tr><td><code>random()</code></td><td>Random float between 0.0 and 1.0</td></tr>
 <tr><td><code>col(name)</code></td><td>Look up a column by string name at runtime</td></tr>
-<tr><td><code>vlookup(col, key)</code></td><td>Look up a value in another column by row key</td></tr>
+<tr><td><code>vlookup(col, key, ...)</code></td><td>Look up a value in another column by row key, one key argument per <code>index</code> column</td></tr>
 </tbody>
 </table>
 </div>
@@ -2894,7 +2963,10 @@ map echoing the request:</p>
 </div>
 
 <div class="python">
-<pre><code class="language-python">result = table.validate_expressions(['"Sales" + "Profit"', 'invalid + 1'])
+<pre><code class="language-python">result = table.validate_expressions({
+    "expr1": '"Sales" + "Profit"',
+    "expr2": "invalid_column + 1",
+})
 </code></pre>
 </div>
 
@@ -2942,7 +3014,7 @@ view.remove_update(callback);
 </div>
 
 <div class="python">
-<pre><code class="language-python">def on_update(port_id, delta):
+<pre><code class="language-python">def on_update(port_id, delta, reset):
     print("View updated", port_id)
 
 view.on_update(on_update, mode="row")
@@ -2952,14 +3024,17 @@ view.remove_update(on_update)
 
 <p>When <code>mode</code> is set to <code>"row"</code>, the callback receives a delta of only the rows
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
-tables across clients.</p>
+tables across clients. The callback also receives <code>reset</code>, which is <code>true</code> when
+the update step began with <code>clear()</code> or <code>replace()</code>; the delta is then relative
+to an empty <code>Table</code>, so a replica should apply it with <code>replace()</code> rather than
+<code>update()</code>.</p>
 <h2 id="remove-callbacks"><a class="header" href="#remove-callbacks">Remove Callbacks</a></h2>
 <p>Register a callback to be notified whenever rows are removed from the underlying
 <code>Table</code> by <code>remove()</code>, which requires an <code>index</code>. The callback receives the
-<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow of a single
-column named after the index. It fires once per update step, only for rows which
-existed before that step; <code>replace()</code> reports the keys it does not re-supply,
-and <code>clear()</code> reports every key:</p>
+<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow with one
+column per index column, named after that column. It fires once per update step,
+only for rows which existed before that step; <code>replace()</code> reports the keys it
+does not re-supply, and <code>clear()</code> reports every key:</p>
 <div class="javascript">
 <pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id }) =&gt; {
     replica.remove(indices);
@@ -3065,8 +3140,8 @@ let totals = client.table(TableData::View(view), TableInitOptions::default()).aw
 <h2 id="columns-1"><a class="header" href="#columns-1">Columns</a></h2>
 <p>An unpivoted <code>View</code> yields a <code>Table</code> with the <code>View</code>’s own columns, including
 <code>expressions</code> and window columns, and one row for every row passing its
-<code>filter</code>. The source’s <code>index</code> is inherited when the index column is among the
-<code>View</code>’s <code>columns</code>, and its <code>limit</code> is inherited as well.</p>
+<code>filter</code>. The source’s <code>index</code> is inherited when every index column is among
+the <code>View</code>’s <code>columns</code>, and its <code>limit</code> is inherited as well.</p>
 <p>A pivoted <code>View</code> yields the table you see on screen. Each <code>group_by</code> column
 becomes a typed key column of the same name, and each data column takes the name
 <code>View::column_paths</code> gives it. A column that is both a <code>group_by</code> key and one of
@@ -3306,8 +3381,8 @@ orders the copy.</li>
 <li>A row updated out of the source <code>View</code>’s <code>filter</code> is removed, where the copy
 retained it with stale values.</li>
 <li>Updates arrive in the same cycle as the source rather than eventually.</li>
-<li>A <code>View</code> which omits its source’s index column is keyed by row identity, so
-updates apply in place rather than appending.</li>
+<li>A <code>View</code> which omits any of its source’s index columns is keyed by row
+identity, so updates apply in place rather than appending.</li>
 <li>A pivoted <code>View</code> yields named key columns and only the rows the <code>View</code>
 displays, where the copy appended its changed rows on every update.</li>
 </ul>
@@ -3487,36 +3562,43 @@ import perspective from "@perspective-dev/client";
 const SERVER_WASM = ... // "@perspective-dev/server/dist/wasm/perspective-server.wasm"
 const CLIENT_WASM = ... // "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm"
 
-await Promise.all([
-    perspective.init_server(SERVER_WASM),
-    perspective_viewer.init_client(CLIENT_WASM),
-]);
+await perspective_viewer.init({
+    server: SERVER_WASM,
+    viewer: CLIENT_WASM,
+});
 
 // Now Perspective API will work!
 const worker = await perspective.worker();
 const viewer = document.createElement("perspective-viewer");
 </code></pre>
 <p>The exact syntax will vary slightly depending on the bundler.</p>
+<p><code>@perspective-dev/client</code>, <code>@perspective-dev/viewer</code> and the virtual server
+handlers share one page-wide registry of these binaries, published as the
+internal <code>@perspective-dev/client/registry</code> module, so a bundler links it once.
+Every Perspective package on a page must be the same release: <code>init()</code> throws
+if packages from another release have also loaded, for example when a
+dependency pins a different <code>@perspective-dev/client</code> version than your app.</p>
 <h3 id="memory64-wasm64"><a class="header" href="#memory64-wasm64">Memory64 (wasm64)</a></h3>
 <p><code>@perspective-dev/server</code> also ships a WebAssembly Memory64 build of the engine,
 <code>dist/wasm/perspective-server.memory64.wasm</code>, which raises the engine’s heap
-ceiling from 4GB to 16GB (at some engine performance cost). <code>init_server</code>
-accepts both binaries at once — register each as a <em>thunk</em> and only the selected
-binary is ever downloaded. The wasm64 binary is used whenever the browser
-supports Memory64; registering only the wasm32 binary (as above) opts out.</p>
-<pre><code class="language-javascript">perspective.init_server({
-    wasm32: () =&gt; fetch(SERVER_WASM),
-    wasm64: () =&gt; fetch(SERVER_WASM64),
+ceiling from 4GB to 16GB (at some engine performance cost). Register both
+binaries as <code>server32</code> and <code>server64</code> <em>thunks</em> and only the selected binary is
+ever downloaded. The wasm64 binary is used whenever the browser supports
+Memory64; registering a single <code>server</code> binary (as above) opts out.</p>
+<pre><code class="language-javascript">await perspective_viewer.init({
+    server32: () =&gt; fetch(SERVER_WASM),
+    server64: () =&gt; fetch(SERVER_WASM64),
+    viewer: fetch(CLIENT_WASM),
 });
 </code></pre>
 <h3 id="vite"><a class="header" href="#vite">Vite</a></h3>
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm?url";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm?url";
 
-await Promise.all([
-    perspective.init_server(fetch(SERVER_WASM)),
-    perspective_viewer.init_client(fetch(CLIENT_WASM)),
-]);
+await perspective_viewer.init({
+    server: fetch(SERVER_WASM),
+    viewer: fetch(CLIENT_WASM),
+});
 </code></pre>
 <p>You’ll also need to target <code>esnext</code> in your <code>vite.config.js</code> in order to run the
 <code>build</code> step:</p>
@@ -3531,10 +3613,10 @@ export default defineConfig({
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
 
-await Promise.all([
-    perspective.init_server(fetch(SERVER_WASM)),
-    perspective_viewer.init_client(fetch(CLIENT_WASM)),
-]);
+await perspective_viewer.init({
+    server: fetch(SERVER_WASM),
+    viewer: fetch(CLIENT_WASM),
+});
 </code></pre>
 <p>ESBuild config JSON to encode this asset as a <code>file</code>:</p>
 <pre><code class="language-javascript">{
@@ -3549,10 +3631,10 @@ await Promise.all([
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
 
-await Promise.all([
-    perspective.init_server(SERVER_WASM),
-    perspective_viewer.init_client(CLIENT_WASM),
-]);
+await perspective_viewer.init({
+    server: SERVER_WASM,
+    viewer: CLIENT_WASM,
+});
 </code></pre>
 <p>Webpack config:</p>
 <pre><code class="language-javascript">{
@@ -3588,14 +3670,14 @@ prefer the ESM builds above where you control asset hosting.</p>
 to the ESM builds.</p>
 <h3 id="esbuild-1"><a class="header" href="#esbuild-1">ESBuild</a></h3>
 <p>Use the <code>binary</code> loader in place of <code>file</code>. The imported value is a
-<code>Uint8Array</code>, which <code>init_server()</code> and <code>init_client()</code> accept directly.</p>
+<code>Uint8Array</code>, which <code>init()</code> accepts directly.</p>
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
 
-await Promise.all([
-    perspective.init_server(SERVER_WASM),
-    perspective_viewer.init_client(CLIENT_WASM),
-]);
+await perspective_viewer.init({
+    server: SERVER_WASM,
+    viewer: CLIENT_WASM,
+});
 </code></pre>
 <p>ESBuild config JSON to encode this asset as <code>binary</code>:</p>
 <pre><code class="language-javascript">{
@@ -3614,10 +3696,10 @@ import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wa
 
 const buffer = async (url) =&gt; await (await fetch(url)).arrayBuffer();
 
-await Promise.all([
-    perspective.init_server(await buffer(SERVER_WASM)),
-    perspective_viewer.init_client(await buffer(CLIENT_WASM)),
-]);
+await perspective_viewer.init({
+    server: await buffer(SERVER_WASM),
+    viewer: await buffer(CLIENT_WASM),
+});
 </code></pre>
 <p>Webpack config:</p>
 <pre><code class="language-javascript">{
@@ -3932,15 +4014,23 @@ When <code>name</code> is omitted a random one is assigned, so the
 the table after a page reload, and <code>restore()</code> will fail.</div>
 
 <h2 id="attributes"><a class="header" href="#attributes">Attributes</a></h2>
-<p><code>&lt;perspective-viewer&gt;</code> can be configured via HTML attributes or JavaScript
-properties. When set as attributes, the viewer will apply the configuration on
-initialization:</p>
-<pre><code class="language-html">&lt;perspective-viewer
-    columns='["Sales", "Profit"]'
-    group-by='["Region"]'
-    sort='[["Sales", "desc"]]'&gt;
-&lt;/perspective-viewer&gt;
+<p><code>&lt;perspective-viewer&gt;</code> reads one HTML attribute, <code>theme</code>, which selects the
+initial theme by the <code>--psp-theme-name</code> a loaded stylesheet declares. Every
+other setting is applied through the JavaScript API, typically <code>restore()</code>,
+and the viewer reflects the active theme back onto the same attribute when the
+user picks one:</p>
+<pre><code class="language-html">&lt;perspective-viewer theme="Pro Dark"&gt;&lt;/perspective-viewer&gt;
 </code></pre>
+<pre><code class="language-javascript">await viewer.restore({ columns: ["Sales", "Profit"], group_by: ["Region"] });
+</code></pre>
+<h2 id="editor-and-tooling-support"><a class="header" href="#editor-and-tooling-support">Editor and tooling support</a></h2>
+<p><code>@perspective-dev/viewer</code> ships a
+<a href="https://github.com/webcomponents/custom-elements-manifest">Custom Elements Manifest</a>
+at <code>dist/custom-elements.json</code>, advertised by the <code>customElements</code> field of its
+<code>package.json</code>. It enumerates the element’s methods, static methods, events,
+the <code>theme</code> attribute, slots, the <code>tab</code> shadow part and every theme CSS custom
+property, so editors, Storybook and documentation generators that read the
+manifest can offer completion and reference tables without any further setup.</p>
 <h2 id="ui-features"><a class="header" href="#ui-features">UI Features</a></h2>
 <p>The viewer provides an interactive side panel with:</p>
 <ul>
@@ -4074,9 +4164,23 @@ for charts and text for the datagrid.
 </tbody>
 </table>
 </div>
+<p>The element class also has page-wide static methods:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Method</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>registerPlugin(name)</code></td><td>Register a plugin custom element</td></tr>
+<tr><td><code>setPluginConfigDefaults(defaults, options?)</code> / <code>setColumnConfigDefaults(defaults, options?)</code></td><td>Replace plugins’ <code>plugin_config</code> / <code>columns_config</code> defaults</td></tr>
+<tr><td><code>getPluginConfigDefaults()</code> / <code>getColumnConfigDefaults()</code></td><td>Read the replaced defaults</td></tr>
+</tbody>
+</table>
+</div>
 <p>See <a href="#saving-and-restoring-ui-state">Saving and restoring UI state</a> for the <code>save</code>/<code>restore</code>
-formats and the panel selector, and
-<a href="#plugin-render-limits">Plugin render limits</a> for <code>getPlugin</code>.</p>
+formats and the panel selector,
+<a href="#plugin-render-limits">Plugin render limits</a> for <code>getPlugin</code>, and
+<a href="#configuration-defaults">Configuration defaults</a> for the defaults methods.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="loading-data-from-a-table"><a class="header" href="#loading-data-from-a-table">Loading data from a Table</a></h1>
 <p>Data can be loaded into <code>&lt;perspective-viewer&gt;</code> in the form of a <code>Table()</code> or a
@@ -4139,6 +4243,40 @@ than <code>&lt;perspective-viewer&gt;</code>s which rely on a Web Worker, and ca
 host application with Web Worker-bound <code>table()</code>s. The same <code>promise</code>-based API
 is used to communicate with the server-instantiated <code>view()</code>, only in this case
 it is over a websocket.</p>
+<h2 id="nested-columns"><a class="header" href="#nested-columns">Nested columns</a></h2>
+<p>Perspective’s data model is flat, so nested Arrow and JSON values are
+normalized on ingest, controlled by three <code>Table</code> options.</p>
+<p><code>struct_flatten</code> applies to Arrow <code>struct</code> columns and to JSON objects.
+<code>"pivot"</code> (the default) hoists each field into its own dotted column, so
+<code>{ s: { a: 1 } }</code> becomes a column <code>s.a</code>. <code>"stringify"</code> keeps the whole value
+as JSON text in a single string column, with datetimes as epoch milliseconds;
+<code>"stringify_formatted"</code> writes them as the text <code>to_json</code> emits under
+<code>formatted</code>.</p>
+<p><code>map_flatten</code> applies to Arrow <code>map</code> columns. <code>"pivot"</code> makes a map <code>m</code> one
+column <code>m.&lt;key&gt;</code> per distinct key in the batch, with a null where a row lacks
+the key, and <code>"stringify"</code> or <code>"stringify_formatted"</code> keeps the map as JSON
+text. When unset it follows <code>struct_flatten</code>. JSON has no map type, so JSON objects always follow
+<code>struct_flatten</code>.</p>
+<p><code>list_flatten</code> applies to Arrow <code>list</code> columns and JSON arrays. <code>"zip"</code> (the
+default) expands a row into one row per element, repeating its siblings, and
+requires sibling lists in a row to agree in length. <code>"cartesian"</code> expands to
+the product of the lists’ lengths. <code>"stringify"</code> keeps each list as a JSON
+array in a string column, with datetimes and dates as epoch milliseconds, as
+in <code>to_json</code>; <code>"stringify_formatted"</code> writes them as the text <code>to_json</code> emits
+under <code>formatted</code>.</p>
+<p>The options compose from the outside in: a list inside a stringified struct
+stays inside its JSON text, a struct inside an expanded list is stringified
+once per element row, and a struct under a pivoted map is stringified once per
+key column when <code>struct_flatten</code> is <code>"stringify"</code> and <code>map_flatten</code> is
+<code>"pivot"</code>.</p>
+<pre><code class="language-javascript">const table = await worker.table(
+    [{ id: 1, m: { a: 1, b: 2 } }, { id: 2, m: { b: 3 } }],
+    { struct_flatten: "pivot" },
+);
+
+// { id: [1, 2], "m.a": [1, null], "m.b": [2, 3] }
+await (await table.view()).to_columns();
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="theming"><a class="header" href="#theming">Theming</a></h1>
 <p>Theming is supported in <code>perspective-viewer</code> and its accompanying plugins. A
@@ -4229,24 +4367,19 @@ panel visibility, and more. This overloaded feature covers a range of use cases:
 </ul>
 <h2 id="serializing-and-deserializing-the-viewer-state"><a class="header" href="#serializing-and-deserializing-the-viewer-state">Serializing and deserializing the viewer state</a></h2>
 <p>To retrieve the entire state as a JSON-ready JavaScript object, use the <code>save()</code>
-method. <code>save()</code> also supports a few other formats such as <code>"arraybuffer"</code> and
-<code>"string"</code> (base64, not JSON), which you may choose for size at the expense of
-easy migration/manual-editing.</p>
-<pre><code class="language-javascript">const json_token = await elem.save();
-const string_token = await elem.save("string");
+method.</p>
+<pre><code class="language-javascript">const token = await elem.save();
 </code></pre>
-<p>For any format, the serialized token can be restored to any
-<code>&lt;perspective-viewer&gt;</code> with a <code>Table</code> of identical schema, via the <code>restore()</code>
-method. Note that while the data for a token returned from <code>save()</code> may differ,
-generally its schema may not, as many other settings depend on column names and
-types.</p>
-<pre><code class="language-javascript">await elem.restore(json_token);
-await elem.restore(string_token);
+<p>The token can be restored to any <code>&lt;perspective-viewer&gt;</code> with a <code>Table</code> of
+identical schema, via the <code>restore()</code> method. Note that while the data for a
+token returned from <code>save()</code> may differ, generally its schema may not, as many
+other settings depend on column names and types.</p>
+<pre><code class="language-javascript">await elem.restore(token);
 </code></pre>
-<p>As <code>restore()</code> dispatches on the token’s type, it is important to make sure that
-these types match! A common source of error occurs when passing a
-JSON-stringified token to <code>restore()</code>, which will assume base64-encoded msgpack
-when a string token is used.</p>
+<p><code>restore()</code> validates its argument, rejecting for example a key the config
+format does not define; when a rejected token is stamped with another release’s
+<code>version</code>, the error names that release. Tokens saved by older releases should
+be upgraded first — see <a href="#migrating-saved-configs">Migrating saved configs</a>.</p>
 <pre><code class="language-javascript">// This will error!
 await elem.restore(JSON.stringify(json_token));
 </code></pre>
@@ -4312,8 +4445,8 @@ await elem.restoreWorkspace(workspace_token);
 </code></pre>
 <p>A <code>saveWorkspace()</code> token is a <code>WorkspaceConfig</code>
 (<code>{ version, layout, panels, ... }</code>), not a <code>ViewerConfig</code> — passing it to the
-single-panel <code>restore()</code> will <em>not</em> restore the layout (its <code>panels</code>/<code>layout</code>
-keys are ignored).</p>
+single-panel <code>restore()</code> is rejected (its <code>panels</code>/<code>layout</code> keys are not part
+of a <code>ViewerConfig</code>).</p>
 <p>The <code>layout</code> field is the tree arranging the panels into a grid of rows and
 columns or stacks of tabs, naming every panel id exactly once. See
 <a href="#arranging-panels-layouts-and-dashboards">Arranging panels: layouts and dashboards</a> for its format and for
@@ -4362,6 +4495,26 @@ structurally identical definition, and otherwise creates one under a generated
 name. Only the single-panel <code>restore()</code> accepts the inline form — in
 <code>restoreWorkspace()</code> every <code>table</code> field is a name.</p>
 <p>See <a href="#derived-tables">Derived tables</a>.</p>
+<h2 id="datetime-formats"><a class="header" href="#datetime-formats">Datetime formats</a></h2>
+<p>A <code>date</code> or <code>datetime</code> column’s <code>date_format</code> is a subset of
+<code>Intl.DateTimeFormatOptions</code>: either the <code>dateStyle</code>/<code>timeStyle</code> presets or
+per-part fields (<code>weekday</code>, <code>year</code>, <code>month</code>, <code>day</code>, <code>hour</code>, <code>minute</code>, <code>second</code>,
+<code>fractionalSecondDigits</code>), never both, plus optional <code>timeZone</code> and <code>hour12</code>. As
+in <code>Intl</code>, a display field that is left out is not shown:</p>
+<pre><code class="language-javascript">await viewer.restore({
+    columns_config: {
+        "Order Date": { date_format: { dateStyle: "long", timeZone: "UTC" } },
+    },
+});
+</code></pre>
+<p>A column inherits the plugin’s display fields until it sets any of them, and
+inherits <code>timeZone</code> and <code>hour12</code> individually.</p>
+<p>Configs saved before 5.7.0 used a <code>"disabled"</code> value and a <code>format: "custom"</code>
+marker, and a missing preset field meant <code>short</code> date or <code>medium</code> time.
+<code>restore()</code> rejects the removed forms, and restores any other <code>date_format</code>
+with its current meaning — <code>{ dateStyle: "long" }</code> shows the date alone,
+whatever its <code>version</code>. <a href="#migrating-saved-configs"><code>perspective-migrate</code></a> rewrites
+older tokens into the current form with their original rendering.</p>
 <h2 id="colors-palettes-and-gradients"><a class="header" href="#colors-palettes-and-gradients">Colors, palettes and gradients</a></h2>
 <p>Per-column color styling lives in a panel’s <code>columns_config</code>, keyed by column
 name, and every color-scale value is a string usable verbatim in CSS:</p>
@@ -4463,8 +4616,8 @@ stacks several panels as tabs in one cell. The layout is the <code>layout</code>
 <li><code>split-layout</code> divides its space among its <code>children</code>. The <code>orientation</code>
 decides the direction: <code>"horizontal"</code> places the children side by side as
 columns, left to right, and <code>"vertical"</code> stacks them as rows, top to bottom.
-<code>sizes</code> gives each child’s fraction of the split, one number per child, and
-the sizes must sum to 1 (<code>[0.5, 0.5]</code> is an even split, <code>[0.25, 0.75]</code> a
+<code>sizes</code> gives each child’s share of the split, one number per child, as
+proportions of their total (<code>[0.5, 0.5]</code> is an even split, <code>[0.25, 0.75]</code> a
 narrow column next to a wide one).</li>
 <li><code>tab-layout</code> is a leaf cell holding a stack of panels, listed by panel id in
 <code>tabs</code>. Only one panel of a stack is visible at a time; <code>selected</code> is the
@@ -4476,7 +4629,8 @@ index of the visible tab (default <code>0</code>). A cell with one panel is a
 across the bottom row. A split nested directly inside a split of the same
 orientation is flattened into its parent, so <code>saveWorkspace()</code> may return an
 equivalent but flatter tree than the one you restored.</p>
-<p>Every panel must appear in the layout exactly once.</p>
+<p>Each panel may appear in the layout at most once. A panel the layout leaves out
+is removed, with a warning logged to the console.</p>
 <pre><code class="language-javascript">const layout = {
     type: "split-layout",
     orientation: "vertical",
@@ -4551,7 +4705,7 @@ panel’s tab header.</p>
 side by side; arrange them afterwards by restoring a <code>layout</code>, as below.</p>
 <h2 id="rearranging-existing-panels"><a class="header" href="#rearranging-existing-panels">Rearranging existing panels</a></h2>
 <p>A <code>restoreWorkspace()</code> call with a <code>layout</code> but no <code>panels</code> keeps every panel
-and only moves them. Name the panels by their existing ids, from
+the layout names and only moves them. Name the panels by their existing ids, from
 <code>getPanelNames()</code> or a <code>saveWorkspace()</code> token. This is how to move or swap a
 panel, resize a row or column, change a row into a column, or stack panels as
 tabs; nothing is re-created or re-queried.</p>
@@ -4584,12 +4738,9 @@ the viewer is left exactly as it was. A layout is rejected when:</p>
 <ul>
 <li>a panel id in <code>tabs</code> is unknown — without <code>panels</code> the ids must be existing
 panel ids, and with <code>panels</code> they must be <code>panels</code> keys;</li>
-<li>a panel is missing from the layout, or appears more than once — every panel
-must be placed exactly once;</li>
-<li>a <code>split-layout</code> has no <code>children</code>, or its <code>sizes</code> do not have one entry per
-child, or a size is zero or negative, or the sizes do not sum to 1;</li>
-<li>a <code>tab-layout</code> has empty <code>tabs</code>, or its <code>selected</code> index is past the end of
-<code>tabs</code>.</li>
+<li>a panel appears more than once;</li>
+<li>a <code>split-layout</code>’s <code>sizes</code> do not have one entry per child, or a size is
+negative or not finite, or every size is zero.</li>
 </ul>
 <p>The error message names the offending node by its path, e.g.
 <code>layout.children[1].tabs</code>, and lists the valid panel ids.</p>
@@ -4751,6 +4902,122 @@ browser’s DOM inspector):</p>
 plugin.max_cells = 1_000_000;
 plugin.max_columns = 1000;
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="configuration-defaults"><a class="header" href="#configuration-defaults">Configuration defaults</a></h1>
+<p>Every plugin declares a default for each <code>plugin_config</code> and <code>columns_config</code>
+key it understands. Two static methods on the <code>&lt;perspective-viewer&gt;</code> element
+class replace those defaults for every viewer on the page:</p>
+<pre><code class="language-javascript">const Viewer = customElements.get("perspective-viewer");
+
+// Every plugin that declares `group_pad` now defaults it to 10.
+Viewer.setPluginConfigDefaults({ group_pad: 10 });
+
+// Datetime columns render in UTC in every plugin.
+Viewer.setColumnConfigDefaults(
+    { date_format: { timeZone: "UTC" } },
+    { type: "datetime" },
+);
+</code></pre>
+<p>A replaced default behaves exactly like the plugin’s own:</p>
+<ul>
+<li>The settings and column style editors show it as the unedited value.</li>
+<li>A value equal to it is left out of <code>save()</code>, <code>saveWorkspace()</code> and the
+<code>perspective-config-update</code> event, so a column nobody edited saves nothing.</li>
+<li>The plugin renders it wherever the stored config leaves the key out.</li>
+<li><code>restore()</code> drops a value equal to it, like any other default.</li>
+</ul>
+<p>Defaults are part of the host application, like registered plugins and themes.
+They are never saved, and <code>restore()</code> and <code>reset()</code> never change them.</p>
+<h2 id="narrowing"><a class="header" href="#narrowing">Narrowing</a></h2>
+<p>Both methods take an <code>options</code> object:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Method</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>plugin</code></td><td>both</td><td>Applies only to the named plugin, e.g. <code>"Datagrid"</code> or <code>"X/Y Line"</code></td></tr>
+<tr><td><code>type</code></td><td><code>setColumnConfigDefaults</code></td><td>Applies only to columns of this view type: <code>integer</code>, <code>float</code>, <code>string</code>, <code>boolean</code>, <code>date</code> or <code>datetime</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Without <code>plugin</code>, a default applies to every plugin that declares the key and is
+ignored by the rest. When several defaults set the same key, the most specific
+wins:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Precedence (low to high)</th></tr>
+</thead>
+<tbody>
+<tr><td>The plugin’s declared default</td></tr>
+<tr><td><code>setColumnConfigDefaults(defaults)</code></td></tr>
+<tr><td><code>setColumnConfigDefaults(defaults, { type })</code></td></tr>
+<tr><td><code>setColumnConfigDefaults(defaults, { plugin })</code></td></tr>
+<tr><td><code>setColumnConfigDefaults(defaults, { plugin, type })</code></td></tr>
+<tr><td>The column’s own stored config</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>plugin_config</code> defaults follow the same order without the <code>type</code> levels.</p>
+<h2 id="merging-and-removing"><a class="header" href="#merging-and-removing">Merging and removing</a></h2>
+<p>Each call merges into the defaults set by earlier calls with the same options.
+<code>null</code> removes a default at any depth:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Call</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td><code>{ group_pad: 10 }</code></td><td>Sets <code>group_pad</code>, keeping everything else</td></tr>
+<tr><td><code>{ group_pad: null }</code></td><td>Removes <code>group_pad</code></td></tr>
+<tr><td><code>{ date_format: { timeZone: null } }</code></td><td>Removes only <code>timeZone</code> from <code>date_format</code></td></tr>
+<tr><td><code>null</code></td><td>Removes every default set with these options</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>getPluginConfigDefaults()</code> and <code>getColumnConfigDefaults()</code> return the current
+defaults, one entry per combination of options.</p>
+<h2 id="formats"><a class="header" href="#formats">Formats</a></h2>
+<p><code>date_format</code> and <code>number_format</code> defaults combine with the plugin’s declared
+format and with a column’s stored format by group rather than as a whole:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Format</th><th>Applies as one group</th><th>Applies individually</th></tr>
+</thead>
+<tbody>
+<tr><td><code>date_format</code></td><td><code>dateStyle</code>, <code>timeStyle</code>, <code>weekday</code>, <code>year</code>, <code>month</code>, <code>day</code>, <code>hour</code>, <code>minute</code>, <code>second</code>, <code>fractionalSecondDigits</code></td><td><code>timeZone</code>, <code>hour12</code></td></tr>
+<tr><td><code>number_format</code></td><td><code>style</code> and its <code>currency*</code>/<code>unit*</code> options; <code>notation</code> and <code>compactDisplay</code></td><td>everything else</td></tr>
+</tbody>
+</table>
+</div>
+<p>So a page-wide <code>timeZone</code> reaches a column whose user picked a long date, while
+a default <code>dateStyle</code> never mixes with a column’s own per-part fields. A
+<code>number_format</code> default that sets one digit bound inherits the other from the
+plugin, so <code>{ maximumFractionDigits: 4 }</code> on a datagrid float column means 2 to
+4 digits.</p>
+<p>In the charts, a <code>date_format</code> default that sets only <code>timeZone</code> or <code>hour12</code>
+keeps the adaptive axis labels, which choose their precision from the zoom
+level. A default that sets a display field, or any <code>number_format</code> default,
+fixes that type’s axis labels to the format, as a format chosen in the column
+style editor does.</p>
+<h2 id="setting-defaults-before-restoring"><a class="header" href="#setting-defaults-before-restoring">Setting defaults before restoring</a></h2>
+<p>Call these methods before <code>load()</code> and <code>restore()</code>. <code>restore()</code> drops values
+equal to the defaults in force at that moment, so a config restored first loses
+any value equal to the plugin’s own default, and a default set afterwards then
+replaces it.</p>
+<p>Saved configs leave out values equal to the defaults. Restoring one in an
+application without the same defaults renders the plugins’ own defaults instead.</p>
+<p>A default for a key whose plugin default comes from the column’s data, such as a
+gradient’s maximum, replaces that computed value with the fixed one.</p>
+<h2 id="errors"><a class="header" href="#errors">Errors</a></h2>
+<p>A call throws when its arguments are malformed: <code>defaults</code> is not an object or
+<code>null</code>, <code>plugin</code> names no registered plugin, <code>type</code> is not a column type, or a
+<code>date_format</code> mixes <code>dateStyle</code>/<code>timeStyle</code> with per-part fields. A value that a
+particular plugin cannot use, such as an <code>Enum</code> value outside its choices or a
+number outside its range, is logged as an error naming the plugin, column and
+key, and that plugin keeps its own default.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="map-tile-sources"><a class="header" href="#map-tile-sources">Map tile sources</a></h1>
 <p>The map plugins (<code>Map Scatter</code>, <code>Map Line</code>, <code>Map Density</code>) draw their glyphs
@@ -4972,7 +5239,7 @@ result of <code>db.connect()</code> — not the <code>AsyncDuckDB</code> itself.
 <pre><code class="language-javascript">import perspective, { createMessageHandler } from "@perspective-dev/client";
 import "@perspective-dev/viewer";
 import * as duckdb from "@duckdb/duckdb-wasm";
-import { DuckDBHandler } from "@perspective-dev/client/dist/esm/virtual_servers/duckdb.js";
+import { DuckDBHandler } from "@perspective-dev/client/virtual_servers/duckdb";
 
 // Initialize DuckDB-WASM
 const DUCKDB_BUNDLES = duckdb.getJsDelivrBundles();
@@ -5321,6 +5588,11 @@ treat the index as a primary key:</p>
 <pre><code class="language-python">data.set_index("datetime")
 table = perspective.table(data, index="index")
 </code></pre>
+<p>A <code>pandas.MultiIndex</code> arrives as one column per level, named after the level,
+so a composite <code>index</code> keyed by those columns preserves it:</p>
+<pre><code class="language-python">data = data.set_index(["name", "sector"])
+table = perspective.table(data, index=["name", "sector"])
+</code></pre>
 <h2 id="time-zone-handling"><a class="header" href="#time-zone-handling">Time Zone Handling</a></h2>
 <p>When parsing <code>"datetime"</code> strings, times without an explicit timezone offset are
 interpreted as <em>UTC</em>. Strings with a timezone offset (e.g., <code>+05:00</code>) are
@@ -5367,9 +5639,9 @@ both stream and file formats are auto-detected:</p>
 <pre><code class="language-python">with open("data.arrow", "rb") as f:
     table = perspective.table(f.read())
 </code></pre>
-<h3 id="nested-columns"><a class="header" href="#nested-columns">Nested columns</a></h3>
-<p>Perspective’s data model is flat, so Arrow <code>struct</code> and <code>list</code> columns are
-normalized on ingest.</p>
+<h3 id="nested-columns-1"><a class="header" href="#nested-columns-1">Nested columns</a></h3>
+<p>Perspective’s data model is flat, so Arrow <code>struct</code>, <code>map</code> and <code>list</code> columns
+are normalized on ingest.</p>
 <p>A <code>struct</code> column is hoisted into one dotted column per leaf, recursively. A
 null parent nulls every descendant leaf:</p>
 <pre><code class="language-python">arrow_table = pa.table({
@@ -5394,7 +5666,11 @@ one list column, their non-empty lengths must match.</li>
 <li><code>"cartesian"</code> expands a row into the product of its list columns’ lengths,
 with an empty or null list counting as a single null element.</li>
 <li><code>"stringify"</code> encodes each list as a JSON array in a single string column,
-leaving the row count unchanged.</li>
+leaving the row count unchanged. Datetimes and dates inside the text are
+epoch milliseconds, as in <code>to_json</code>; decimals are strings and binary is
+base64.</li>
+<li><code>"stringify_formatted"</code> is <code>"stringify"</code> with datetimes and dates written
+as the text <code>to_json</code> emits under <code>formatted</code>.</li>
 </ul>
 <pre><code class="language-python">arrow_table = pa.table({
     "x": pa.array([1, 2], type=pa.int64()),
@@ -5406,6 +5682,63 @@ perspective.table(arrow_table)
 
 # `{"x": [1, 2], "y": ["[10,20]", "[30]"]}`
 perspective.table(arrow_table, list_flatten="stringify")
+</code></pre>
+<p>A <code>map</code> column is pivoted into one column per distinct key, <code>m.&lt;key&gt;</code>, of the
+map’s item type, so an Arrow map and a JSON object produce the same columns. A
+key absent from a row yields a null in that row. A key absent from the whole
+batch yields no column, which on an indexed update leaves that cell unchanged,
+so declare the keys in a schema when updates must be stable. Only string keys
+are supported, and pivoting suits maps with a bounded key set since each key
+becomes a column:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "id": pa.array([1, 2], type=pa.int64()),
+    "m": pa.array(
+        [[("a", 1), ("b", 2)], [("b", 3)]],
+        type=pa.map_(pa.string(), pa.int64()),
+    ),
+})
+
+# `{"id": [1, 2], "m.a": [1, None], "m.b": [2, 3]}`
+perspective.table(arrow_table)
+</code></pre>
+<p>A <code>struct</code> column is controlled by the <code>struct_flatten</code> argument and a <code>map</code>
+column by the <code>map_flatten</code> argument, each taking:</p>
+<ul>
+<li><code>"pivot"</code> (default) hoists each field or key into its own dotted column,
+as above.</li>
+<li><code>"stringify"</code> keeps the whole value as JSON text in a single string
+column, with datetimes and dates as epoch milliseconds, as in <code>to_json</code>.</li>
+<li><code>"stringify_formatted"</code> is <code>"stringify"</code> with datetimes and dates written
+as the text <code>to_json</code> emits under <code>formatted</code>.</li>
+</ul>
+<p>An unset <code>map_flatten</code> follows <code>struct_flatten</code>, so <code>struct_flatten="stringify"</code>
+alone stringifies both. JSON objects always follow <code>struct_flatten</code>.</p>
+<p>The arguments compose from the outside in. A list inside a stringified struct
+is an array within its JSON text and is never expanded, while a struct inside
+an expanded list is stringified once per element row:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "s": pa.array(
+        [{"a": 1, "tags": ["x", "y"]}],
+        type=pa.struct([("a", pa.int64()), ("tags", pa.list_(pa.string()))]),
+    ),
+})
+
+# `{"s": ['{"a":1,"tags":["x","y"]}']}`
+perspective.table(arrow_table, struct_flatten="stringify")
+</code></pre>
+<p>Setting the two independently keeps a map with an open key set as text while
+its sibling structs still pivot, or stringifies each struct under a pivoted
+map:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "s": pa.array([{"a": 1}], type=pa.struct([("a", pa.int64())])),
+    "m": pa.array([[("k", 1)]], type=pa.map_(pa.string(), pa.int64())),
+})
+
+# `{"s.a": [1], "m": ['{"k":1}']}`
+perspective.table(arrow_table, map_flatten="stringify")
+
+# `{"s": ['{"a":1}'], "m.k": [1]}`
+perspective.table(arrow_table, struct_flatten="stringify", map_flatten="pivot")
 </code></pre>
 <h2 id="polars"><a class="header" href="#polars">Polars</a></h2>
 <pre><code class="language-python">import polars as pl
@@ -6065,6 +6398,9 @@ class MyHandler(VirtualServerHandler):
 <tr><td><code>view_schema(view_name, config)</code></td><td><code>table_schema</code></td><td>Schema of a temporary table, when it differs from its source</td></tr>
 <tr><td><code>view_size(view_name)</code></td><td><code>table_size</code></td><td>Row count of a temporary table, when it differs from its source</td></tr>
 <tr><td><code>view_get_min_max(view_name, column_name, config)</code></td><td>unsupported</td><td>Column bounds as a <code>(min, max)</code> tuple — required for gradient and sparkbar column styles</td></tr>
+<tr><td><code>view_expand(view_name, config, row_index)</code></td><td>unsupported</td><td>Expand a row tree node — required by <code>expand_collapse</code>, see <a href="#expand-and-collapse">Expand and collapse</a></td></tr>
+<tr><td><code>view_collapse(view_name, config, row_index)</code></td><td>unsupported</td><td>Collapse a row tree node — required by <code>expand_collapse</code></td></tr>
+<tr><td><code>view_set_depth(view_name, config, depth)</code></td><td>unsupported</td><td>Expand the row tree to a depth — required by <code>expand_collapse</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -6194,6 +6530,131 @@ let joined = client.join(
     JoinOptions::default(),
 ).await?;
 <span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="migrating-saved-configs"><a class="header" href="#migrating-saved-configs">Migrating saved configs</a></h1>
+<p><code>&lt;perspective-viewer&gt;</code>’s <code>restore()</code>, <code>addPanel()</code> and <code>restoreWorkspace()</code>
+accept only the current config schema: a config which fails validation (for
+example, a key the format does not define) is rejected, and when it is stamped
+with another release’s <code>version</code> the error names that release. Engine
+<code>ViewConfig</code>s passed to <code>table.view()</code> likewise accept only the current form
+(for example, <code>expressions</code> must be a map of names to expressions).</p>
+<p>Configs persisted by an older release — <code>save()</code> and <code>saveWorkspace()</code> tokens,
+<code>view.get_config()</code> output, or hand-written <code>ViewConfig</code>s — are upgraded by
+<code>migrate()</code>, which rewrites any JSON config written by a release since 2.0.0
+into the current schema. It is available from <code>@perspective-dev/client</code> (in the
+browser and in Node.js), from <code>@perspective-dev/viewer</code>, from the <code>perspective</code>
+Python package, and as the <code>perspective-migrate</code> Rust crate.</p>
+<h2 id="usage-7"><a class="header" href="#usage-7">Usage</a></h2>
+<p>The release that wrote a config is read from its <code>version</code> field, which <code>save()</code>
+and <code>saveWorkspace()</code> have stamped since 2.7.0. A config without one takes the
+optional <code>from_version</code> argument, and without either it is treated as written by
+2.0.0. Each workspace panel’s own <code>version</code> decides how that panel is upgraded,
+so a 2.x–4.x <code>&lt;perspective-workspace&gt;</code> layout, whose envelope was never stamped,
+needs no <code>from_version</code> when its panels were.</p>
+<p>In the browser, the migration WebAssembly binary is registered alongside the
+engine binaries and downloaded only by the first <code>migrate()</code> call (the CDN
+bundles register it automatically):</p>
+<pre><code class="language-javascript">import perspective from "@perspective-dev/client";
+import perspective_viewer from "@perspective-dev/viewer";
+
+await perspective_viewer.init({
+    server32: () =&gt; fetch(SERVER_WASM),
+    server64: () =&gt; fetch(SERVER_WASM64),
+    viewer: () =&gt; fetch(VIEWER_WASM),
+    migrate: () =&gt; fetch(MIGRATE_WASM),
+});
+
+const { value, notices } = await perspective_viewer.migrate("workspace", saved);
+await viewer.restoreWorkspace(value);
+</code></pre>
+<p><code>MIGRATE_WASM</code> is
+<code>@perspective-dev/client/dist/wasm/perspective-migrate.wasm</code>. In Node.js,
+<code>perspective.migrate()</code> needs no registration.</p>
+<pre><code class="language-python">import perspective
+
+result = perspective.migrate("viewer", token)
+viewer_config = result["value"]
+</code></pre>
+<pre><code class="language-bash">cargo add perspective-migrate
+</code></pre>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perspective_migrate::{Kind, Migrator};
+
+let migrated = Migrator::new().migrate(Kind::Viewer, None, token)?;
+for notice in &amp;migrated.notices {
+    eprintln!("{notice:?}");
+}
+
+save(migrated.value);
+<span class="boring">}</span></code></pre>
+<p>The first argument names the document being upgraded (<code>Kind</code> in Rust):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>JavaScript / Python</th><th>Rust</th><th>Document</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"view"</code></td><td><code>Kind::View</code></td><td>An engine <code>ViewConfig</code>, as passed to <code>table.view()</code></td></tr>
+<tr><td><code>"viewer"</code></td><td><code>Kind::Viewer</code></td><td>A <code>&lt;perspective-viewer&gt;</code> <code>save()</code> / <code>restore()</code> token</td></tr>
+<tr><td><code>"workspace"</code></td><td><code>Kind::Workspace</code></td><td>A <code>saveWorkspace()</code> token, or a 2.x–4.x <code>&lt;perspective-workspace&gt;</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Viewer and workspace output is stamped with the current <code>version</code>, so migrating
+it again changes nothing; <code>ViewConfig</code>s have no <code>version</code>, but every
+<code>ViewConfig</code> upgrade leaves a current config unchanged. Each upgrade also
+reports <code>notices</code> for information which has no current representation
+(<code>Dropped</code>, with the removed value) or which could only be approximated
+(<code>Approximated</code>), and <code>steps</code>, the ids of the schema changes that applied.</p>
+<p>A config is rejected with a <code>MigrateError</code> only when no valid current form
+exists — for example a pre-5.2 workspace panel with no <code>table</code>, or a 2.x
+<code>ViewConfig</code> which names both an alias and its canonical key (<code>row_pivot</code> and
+<code>group_by</code>).</p>
+<h2 id="third-party-plugins"><a class="header" href="#third-party-plugins">Third-party plugins</a></h2>
+<p>A plugin’s <code>plugin_config</code> and <code>columns_config</code> payloads are migrated by a
+<code>PluginMigration</code>, keyed by the Perspective release that wrote the token:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perspective_migrate::{Migrator, PluginMigration, Step, Version};
+
+struct Sparkline;
+
+impl PluginMigration for Sparkline {
+    fn plugins(&amp;self) -&gt; &amp;[&amp;'static str] {
+        &amp;["Sparkline"]
+    }
+
+    fn steps(&amp;self) -&gt; Vec&lt;Step&gt; {
+        vec![Step {
+            at: Version::new(3, 0, 0),
+            id: "sparkline.line_width",
+            apply: rename_width,
+        }]
+    }
+}
+
+let migrator = Migrator::new().with_plugin(Sparkline);
+<span class="boring">}</span></code></pre>
+<h2 id="what-is-not-migrated"><a class="header" href="#what-is-not-migrated">What is not migrated</a></h2>
+<p><code>perspective-migrate</code> produces a config which is <em>valid</em> for the current release
+and keeps the information the old config expressed. Changes to defaults and
+behavior are not reversed, so a migrated config renders as a new config with the
+same settings would today:</p>
+<ul>
+<li>Engine: 2.x ignored filters with a <code>null</code> term; date filter terms captured
+from 3.0.x – 3.4.2 <code>get_config()</code> used seconds and 0-based months; an
+all-<code>null</code> group’s <code>sum</code> is <code>null</code> rather than <code>0</code> since 5.6.0 (use
+<code>sum or zero</code>).</li>
+<li>Column styles: string <code>"series"</code> colors derived from a hue rotation (before
+5.3.0); float fraction-digit defaults merged rather than replaced (5.3.1).</li>
+<li>Charts: the <code>domain_mode</code>, <code>interpolate</code>, <code>facet_mode</code> and <code>legend_mode</code>
+defaults, and the map <code>numeric_axes</code> default.</li>
+<li>Derived tables created from grouped views before 5.6.0, whose key columns were
+named <code>"&lt;column&gt; (Group by N)"</code>.</li>
+<li>Binary <code>"string"</code> / <code>"arraybuffer"</code> tokens written by 2.0 – 4.0, which must be
+re-saved as JSON by the release that wrote them.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="perspective-with-fastapi-and-starlette"><a class="header" href="#perspective-with-fastapi-and-starlette">Perspective with FastAPI and Starlette</a></h1>
 <!-- description: Serve a real-time Perspective data grid, pivot table and charts from a FastAPI or Starlette application, using PerspectiveStarletteHandler to host streaming tables over a WebSocket route. -->

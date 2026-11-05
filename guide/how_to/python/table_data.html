@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="perspective-python accepts a Table constructor argument from any of the common Python columnar data libraries. In all three cases, perspective.table (and Table.update()) consume the input directly — there is no need to serialize to Apache Arrow IPC bytes yourself. However, note is still the most…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/python/table_data.html" />
         <meta property="og:type" content="article" />
@@ -217,8 +217,8 @@ both stream and file formats are auto-detected:</p>
     table = perspective.table(f.read())
 </code></pre>
 <h3 id="nested-columns"><a class="header" href="#nested-columns">Nested columns</a></h3>
-<p>Perspective’s data model is flat, so Arrow <code>struct</code> and <code>list</code> columns are
-normalized on ingest.</p>
+<p>Perspective’s data model is flat, so Arrow <code>struct</code>, <code>map</code> and <code>list</code> columns
+are normalized on ingest.</p>
 <p>A <code>struct</code> column is hoisted into one dotted column per leaf, recursively. A
 null parent nulls every descendant leaf:</p>
 <pre><code class="language-python">arrow_table = pa.table({
@@ -243,7 +243,11 @@ one list column, their non-empty lengths must match.</li>
 <li><code>"cartesian"</code> expands a row into the product of its list columns’ lengths,
 with an empty or null list counting as a single null element.</li>
 <li><code>"stringify"</code> encodes each list as a JSON array in a single string column,
-leaving the row count unchanged.</li>
+leaving the row count unchanged. Datetimes and dates inside the text are
+epoch milliseconds, as in <code>to_json</code>; decimals are strings and binary is
+base64.</li>
+<li><code>"stringify_formatted"</code> is <code>"stringify"</code> with datetimes and dates written
+as the text <code>to_json</code> emits under <code>formatted</code>.</li>
 </ul>
 <pre><code class="language-python">arrow_table = pa.table({
     "x": pa.array([1, 2], type=pa.int64()),
@@ -255,6 +259,63 @@ perspective.table(arrow_table)
 
 # `{"x": [1, 2], "y": ["[10,20]", "[30]"]}`
 perspective.table(arrow_table, list_flatten="stringify")
+</code></pre>
+<p>A <code>map</code> column is pivoted into one column per distinct key, <code>m.&lt;key&gt;</code>, of the
+map’s item type, so an Arrow map and a JSON object produce the same columns. A
+key absent from a row yields a null in that row. A key absent from the whole
+batch yields no column, which on an indexed update leaves that cell unchanged,
+so declare the keys in a schema when updates must be stable. Only string keys
+are supported, and pivoting suits maps with a bounded key set since each key
+becomes a column:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "id": pa.array([1, 2], type=pa.int64()),
+    "m": pa.array(
+        [[("a", 1), ("b", 2)], [("b", 3)]],
+        type=pa.map_(pa.string(), pa.int64()),
+    ),
+})
+
+# `{"id": [1, 2], "m.a": [1, None], "m.b": [2, 3]}`
+perspective.table(arrow_table)
+</code></pre>
+<p>A <code>struct</code> column is controlled by the <code>struct_flatten</code> argument and a <code>map</code>
+column by the <code>map_flatten</code> argument, each taking:</p>
+<ul>
+<li><code>"pivot"</code> (default) hoists each field or key into its own dotted column,
+as above.</li>
+<li><code>"stringify"</code> keeps the whole value as JSON text in a single string
+column, with datetimes and dates as epoch milliseconds, as in <code>to_json</code>.</li>
+<li><code>"stringify_formatted"</code> is <code>"stringify"</code> with datetimes and dates written
+as the text <code>to_json</code> emits under <code>formatted</code>.</li>
+</ul>
+<p>An unset <code>map_flatten</code> follows <code>struct_flatten</code>, so <code>struct_flatten="stringify"</code>
+alone stringifies both. JSON objects always follow <code>struct_flatten</code>.</p>
+<p>The arguments compose from the outside in. A list inside a stringified struct
+is an array within its JSON text and is never expanded, while a struct inside
+an expanded list is stringified once per element row:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "s": pa.array(
+        [{"a": 1, "tags": ["x", "y"]}],
+        type=pa.struct([("a", pa.int64()), ("tags", pa.list_(pa.string()))]),
+    ),
+})
+
+# `{"s": ['{"a":1,"tags":["x","y"]}']}`
+perspective.table(arrow_table, struct_flatten="stringify")
+</code></pre>
+<p>Setting the two independently keeps a map with an open key set as text while
+its sibling structs still pivot, or stringifies each struct under a pivoted
+map:</p>
+<pre><code class="language-python">arrow_table = pa.table({
+    "s": pa.array([{"a": 1}], type=pa.struct([("a", pa.int64())])),
+    "m": pa.array([[("k", 1)]], type=pa.map_(pa.string(), pa.int64())),
+})
+
+# `{"s.a": [1], "m": ['{"k":1}']}`
+perspective.table(arrow_table, map_flatten="stringify")
+
+# `{"s": ['{"a":1}'], "m.k": [1]}`
+perspective.table(arrow_table, struct_flatten="stringify", map_flatten="pivot")
 </code></pre>
 <h2 id="polars"><a class="header" href="#polars">Polars</a></h2>
 <pre><code class="language-python">import polars as pl

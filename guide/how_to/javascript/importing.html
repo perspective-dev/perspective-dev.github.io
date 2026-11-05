@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="Perspective requires the browser to have access to Perspective’s .wasm binaries in addition to the bundled .js files, and as a result the build process requires a few extra steps. Perspective’s NPM releases come with multiple prebuilt configurations." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/importing.html" />
         <meta property="og:type" content="article" />
@@ -209,36 +209,43 @@ import perspective from "@perspective-dev/client";
 const SERVER_WASM = ... // "@perspective-dev/server/dist/wasm/perspective-server.wasm"
 const CLIENT_WASM = ... // "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm"
 
-await Promise.all([
-    perspective.init_server(SERVER_WASM),
-    perspective_viewer.init_client(CLIENT_WASM),
-]);
+await perspective_viewer.init({
+    server: SERVER_WASM,
+    viewer: CLIENT_WASM,
+});
 
 // Now Perspective API will work!
 const worker = await perspective.worker();
 const viewer = document.createElement("perspective-viewer");
 </code></pre>
 <p>The exact syntax will vary slightly depending on the bundler.</p>
+<p><code>@perspective-dev/client</code>, <code>@perspective-dev/viewer</code> and the virtual server
+handlers share one page-wide registry of these binaries, published as the
+internal <code>@perspective-dev/client/registry</code> module, so a bundler links it once.
+Every Perspective package on a page must be the same release: <code>init()</code> throws
+if packages from another release have also loaded, for example when a
+dependency pins a different <code>@perspective-dev/client</code> version than your app.</p>
 <h3 id="memory64-wasm64"><a class="header" href="#memory64-wasm64">Memory64 (wasm64)</a></h3>
 <p><code>@perspective-dev/server</code> also ships a WebAssembly Memory64 build of the engine,
 <code>dist/wasm/perspective-server.memory64.wasm</code>, which raises the engine’s heap
-ceiling from 4GB to 16GB (at some engine performance cost). <code>init_server</code>
-accepts both binaries at once — register each as a <em>thunk</em> and only the selected
-binary is ever downloaded. The wasm64 binary is used whenever the browser
-supports Memory64; registering only the wasm32 binary (as above) opts out.</p>
-<pre><code class="language-javascript">perspective.init_server({
-    wasm32: () =&gt; fetch(SERVER_WASM),
-    wasm64: () =&gt; fetch(SERVER_WASM64),
+ceiling from 4GB to 16GB (at some engine performance cost). Register both
+binaries as <code>server32</code> and <code>server64</code> <em>thunks</em> and only the selected binary is
+ever downloaded. The wasm64 binary is used whenever the browser supports
+Memory64; registering a single <code>server</code> binary (as above) opts out.</p>
+<pre><code class="language-javascript">await perspective_viewer.init({
+    server32: () =&gt; fetch(SERVER_WASM),
+    server64: () =&gt; fetch(SERVER_WASM64),
+    viewer: fetch(CLIENT_WASM),
 });
 </code></pre>
 <h3 id="vite"><a class="header" href="#vite">Vite</a></h3>
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm?url";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm?url";
 
-await Promise.all([
-    perspective.init_server(fetch(SERVER_WASM)),
-    perspective_viewer.init_client(fetch(CLIENT_WASM)),
-]);
+await perspective_viewer.init({
+    server: fetch(SERVER_WASM),
+    viewer: fetch(CLIENT_WASM),
+});
 </code></pre>
 <p>You’ll also need to target <code>esnext</code> in your <code>vite.config.js</code> in order to run the
 <code>build</code> step:</p>
@@ -253,10 +260,10 @@ export default defineConfig({
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
 
-await Promise.all([
-    perspective.init_server(fetch(SERVER_WASM)),
-    perspective_viewer.init_client(fetch(CLIENT_WASM)),
-]);
+await perspective_viewer.init({
+    server: fetch(SERVER_WASM),
+    viewer: fetch(CLIENT_WASM),
+});
 </code></pre>
 <p>ESBuild config JSON to encode this asset as a <code>file</code>:</p>
 <pre><code class="language-javascript">{
@@ -271,10 +278,10 @@ await Promise.all([
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
 
-await Promise.all([
-    perspective.init_server(SERVER_WASM),
-    perspective_viewer.init_client(CLIENT_WASM),
-]);
+await perspective_viewer.init({
+    server: SERVER_WASM,
+    viewer: CLIENT_WASM,
+});
 </code></pre>
 <p>Webpack config:</p>
 <pre><code class="language-javascript">{
@@ -310,14 +317,14 @@ prefer the ESM builds above where you control asset hosting.</p>
 to the ESM builds.</p>
 <h3 id="esbuild-1"><a class="header" href="#esbuild-1">ESBuild</a></h3>
 <p>Use the <code>binary</code> loader in place of <code>file</code>. The imported value is a
-<code>Uint8Array</code>, which <code>init_server()</code> and <code>init_client()</code> accept directly.</p>
+<code>Uint8Array</code>, which <code>init()</code> accepts directly.</p>
 <pre><code class="language-javascript">import SERVER_WASM from "@perspective-dev/server/dist/wasm/perspective-server.wasm";
 import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm";
 
-await Promise.all([
-    perspective.init_server(SERVER_WASM),
-    perspective_viewer.init_client(CLIENT_WASM),
-]);
+await perspective_viewer.init({
+    server: SERVER_WASM,
+    viewer: CLIENT_WASM,
+});
 </code></pre>
 <p>ESBuild config JSON to encode this asset as <code>binary</code>:</p>
 <pre><code class="language-javascript">{
@@ -336,10 +343,10 @@ import CLIENT_WASM from "@perspective-dev/viewer/dist/wasm/perspective-viewer.wa
 
 const buffer = async (url) =&gt; await (await fetch(url)).arrayBuffer();
 
-await Promise.all([
-    perspective.init_server(await buffer(SERVER_WASM)),
-    perspective_viewer.init_client(await buffer(CLIENT_WASM)),
-]);
+await perspective_viewer.init({
+    server: await buffer(SERVER_WASM),
+    viewer: await buffer(CLIENT_WASM),
+});
 </code></pre>
 <p>Webpack config:</p>
 <pre><code class="language-javascript">{

@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-6ad2c387.js"></script>
+        <script src="../toc-b81732ec.js"></script>
         <meta name="description" content="A Virtual Server allows Perspective to query external data sources (such as DuckDB or ClickHouse) without loading the entire dataset into Perspective’s built-in data engine. Instead, Perspective translates its query operations (group by, sort, filter, etc.) into queries the external data source…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/virtual_servers.html" />
         <meta property="og:type" content="article" />
@@ -266,9 +266,42 @@ only show controls for supported operations:</p>
 <tr><td><code>filter_ops</code></td><td><code>dict</code></td><td>Map of column type to list of supported filter operators</td></tr>
 <tr><td><code>aggregates</code></td><td><code>dict</code></td><td>Map of column type to list of supported aggregate functions</td></tr>
 <tr><td><code>on_update</code></td><td><code>bool</code></td><td>Whether update callbacks are supported</td></tr>
+<tr><td><code>expand_collapse</code></td><td><code>bool</code></td><td>Whether <code>View::expand</code>, <code>View::collapse</code> and <code>View::set_depth</code> are supported</td></tr>
+<tr><td><code>update</code></td><td><code>bool</code></td><td>Whether <code>Table::update</code> is supported; the datagrid omits its <code>"EDIT"</code> mode otherwise</td></tr>
 </tbody>
 </table>
 </div>
+<h2 id="expand-and-collapse"><a class="header" href="#expand-and-collapse">Expand and collapse</a></h2>
+<p>A <code>group_by</code> view in <code>"rollup"</code> mode presents its rows as a tree, which
+<code>View::expand</code>, <code>View::collapse</code> and <code>View::set_depth</code> open and close. A virtual
+server which declares <code>expand_collapse</code> must implement <code>view_expand()</code>,
+<code>view_collapse()</code> and <code>view_set_depth()</code> (<code>viewExpand()</code>, <code>viewCollapse()</code> and
+<code>viewSetDepth()</code> in JavaScript), which the <code>VirtualServer</code> forwards unchanged.
+The handler owns the tree state, ideally in the data store itself, and its
+subsequent <code>view_size()</code> and <code>view_get_data()</code> calls for that view must honor
+it. Implementations must match the semantics of Perspective’s own engine:</p>
+<ul>
+<li>A new view starts fully expanded.</li>
+<li><code>view_expand(view, config, row_index)</code> shows the direct children of that row,
+each collapsed, and returns the number of rows shown (<code>0</code> if already
+expanded, or a leaf).</li>
+<li><code>view_collapse(view, config, row_index)</code> hides every descendant of that row,
+forgetting their own expansion, and returns the number of rows hidden.</li>
+<li><code>view_set_depth(view, config, depth)</code> expands exactly the rows whose path is
+no longer than <code>depth</code> and collapses the rest, so the total row and its
+children are visible after <code>view_set_depth(..., 0)</code>.</li>
+</ul>
+<p>Row indices are positions in the view as currently expanded. The
+<code>VirtualServer</code> answers these requests itself, without calling the handler, for
+views without <code>group_by</code> or in <code>"flat"</code> or <code>"total"</code> mode, and ignores
+<code>set_depth</code> deeper than <code>group_by</code>.</p>
+<p>The bundled DuckDB virtual servers implement this through
+<code>GenericSQLVirtualServerModel</code>’s <code>expand_collapse</code> option, which adds a hidden
+<code>__HIDDEN__</code> column to each view’s temporary table and builds the <code>UPDATE</code>
+statements for <code>view_expand()</code>, <code>view_collapse()</code> and <code>view_set_depth()</code>. It
+requires a dialect whose views are tables scanned in insertion order, so the
+ClickHouse and PostgreSQL virtual servers, whose views are SQL <code>VIEW</code>s, do not
+support expand and collapse.</p>
 
                     </main>
 

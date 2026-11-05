@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-6ad2c387.js"></script>
+        <script src="../../toc-b81732ec.js"></script>
         <meta name="description" content="Beyond the standard query configuration, View provides additional methods for interacting with hierarchical results and introspecting data." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/advanced.html" />
         <meta property="og:type" content="article" />
@@ -310,7 +310,10 @@ map echoing the request:</p>
 </div>
 
 <div class="python">
-<pre><code class="language-python">result = table.validate_expressions(['"Sales" + "Profit"', 'invalid + 1'])
+<pre><code class="language-python">result = table.validate_expressions({
+    "expr1": '"Sales" + "Profit"',
+    "expr2": "invalid_column + 1",
+})
 </code></pre>
 </div>
 
@@ -358,7 +361,7 @@ view.remove_update(callback);
 </div>
 
 <div class="python">
-<pre><code class="language-python">def on_update(port_id, delta):
+<pre><code class="language-python">def on_update(port_id, delta, reset):
     print("View updated", port_id)
 
 view.on_update(on_update, mode="row")
@@ -368,14 +371,17 @@ view.remove_update(on_update)
 
 <p>When <code>mode</code> is set to <code>"row"</code>, the callback receives a delta of only the rows
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
-tables across clients.</p>
+tables across clients. The callback also receives <code>reset</code>, which is <code>true</code> when
+the update step began with <code>clear()</code> or <code>replace()</code>; the delta is then relative
+to an empty <code>Table</code>, so a replica should apply it with <code>replace()</code> rather than
+<code>update()</code>.</p>
 <h2 id="remove-callbacks"><a class="header" href="#remove-callbacks">Remove Callbacks</a></h2>
 <p>Register a callback to be notified whenever rows are removed from the underlying
 <code>Table</code> by <code>remove()</code>, which requires an <code>index</code>. The callback receives the
-<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow of a single
-column named after the index. It fires once per update step, only for rows which
-existed before that step; <code>replace()</code> reports the keys it does not re-supply,
-and <code>clear()</code> reports every key:</p>
+<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow with one
+column per index column, named after that column. It fires once per update step,
+only for rows which existed before that step; <code>replace()</code> reports the keys it
+does not re-supply, and <code>clear()</code> reports every key:</p>
 <div class="javascript">
 <pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id }) =&gt; {
     replica.remove(indices);

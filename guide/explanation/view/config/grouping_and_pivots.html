@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-a9db3ffd.js";
+            window.path_to_searchindex_js = "../../../searchindex-67275574.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-6ad2c387.js"></script>
+        <script src="../../../toc-b81732ec.js"></script>
         <meta name="description" content="A group by groups the dataset by the unique values of each column used as a group by - a close analogue in SQL to the GROUP BY statement. The underlying dataset is aggregated to show the values belonging to each group, and a total row is calculated for each group, showing the currently selected…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/config/grouping_and_pivots.html" />
         <meta property="og:type" content="article" />
@@ -398,7 +398,6 @@ a given column accepts depends on its type — see
 </tbody>
 </table>
 </div>
-<p><code>sum not null</code> is accepted as a legacy alias for <code>sum</code>.</p>
 <p>A numeric aggregate widens to the input’s numeric class — <code>integer</code> columns
 accumulate as <code>integer</code>, <code>float</code> columns as <code>float</code>.</p>
 <h3 id="averages-and-dispersion"><a class="header" href="#averages-and-dispersion">Averages and dispersion</a></h3>
@@ -555,10 +554,8 @@ anywhere an aggregate is, and each group refers to one function:</p>
 <tr><td><code>last</code></td><td><code>last_value</code></td></tr>
 <tr><td><code>high</code></td><td><code>high_water_mark</code></td></tr>
 <tr><td><code>low</code></td><td><code>low_water_mark</code></td></tr>
-<tr><td><code>pct sum total</code></td><td><code>pct sum grand total</code>, <code>pct_sum_grand_total</code></td></tr>
 <tr><td><code>var</code></td><td><code>variance</code></td></tr>
 <tr><td><code>stddev</code></td><td><code>standard deviation</code></td></tr>
-<tr><td><code>sum</code></td><td><code>sum not null</code>, <code>sum_not_null</code> (legacy name)</td></tr>
 </tbody>
 </table>
 </div>
