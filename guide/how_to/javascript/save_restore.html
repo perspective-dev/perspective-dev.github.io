@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-b81732ec.js"></script>
+        <script src="../../toc-342e5dac.js"></script>
         <meta name="description" content="&lt;perspective-viewer&gt; is persistent, in that its entire state (sans the data itself) can be serialized or deserialized. This include all column, filter, pivot, expressions, etc. properties, as well as datagrid style settings, config panel visibility, and more. This overloaded feature covers a range…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/save_restore.html" />
         <meta property="og:type" content="article" />
@@ -214,7 +214,8 @@ other settings depend on column names and types.</p>
 <p><code>restore()</code> validates its argument, rejecting for example a key the config
 format does not define; when a rejected token is stamped with another release’s
 <code>version</code>, the error names that release. Tokens saved by older releases should
-be upgraded first — see <a href="../rust/migrate.html">Migrating saved configs</a>.</p>
+be upgraded first — see <a href="../rust/migrate.html">Migrating saved configs</a>, whose
+<code>validate()</code> runs the same check outside a viewer.</p>
 <pre><code class="language-javascript">// This will error!
 await elem.restore(JSON.stringify(json_token));
 </code></pre>

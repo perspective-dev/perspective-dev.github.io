@@ -30,7 +30,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-67275574.js";
+            window.path_to_searchindex_js = "searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-b81732ec.js"></script>
+        <script src="toc-342e5dac.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -1340,7 +1340,12 @@ loop.start()
 <p>Perspective’s websocket client interfaces with the Python server, then
 <em>replicates</em> the server-side Table. When the server-side <code>Table</code> has an <code>index</code>,
 the replica inherits it, and both <code>update()</code> and <code>remove()</code> on the server are
-mirrored in the browser.</p>
+mirrored in the browser, including rows which an <code>update()</code> moves outside the
+<code>View</code>’s <code>filter</code>. A replica of a <code>View</code> with <code>group_by</code> and
+<code>group_rollup_mode: "flat"</code> is indexed on the <code>group_by</code> columns instead, so
+groups which gain, change or lose all of their rows on the server are mirrored
+too; under the other rollup modes a subtotal row and a descendant with <code>null</code>
+keys would share a key, so the replica is left unindexed and only grows.</p>
 <pre><code class="language-javascript">const websocket = await perspective.websocket("ws://localhost:8080");
 const server_table = await websocket.open_table("my_table");
 const server_view = await server_table.view();
@@ -3024,19 +3029,33 @@ view.remove_update(on_update)
 
 <p>When <code>mode</code> is set to <code>"row"</code>, the callback receives a delta of only the rows
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
-tables across clients. The callback also receives <code>reset</code>, which is <code>true</code> when
-the update step began with <code>clear()</code> or <code>replace()</code>; the delta is then relative
-to an empty <code>Table</code>, so a replica should apply it with <code>replace()</code> rather than
-<code>update()</code>.</p>
+tables across clients. For a <code>View</code> with <code>group_by</code>, each delta row also carries
+the <code>group_by</code> columns, named and typed as <code>to_arrow()</code> emits them and <code>null</code>
+below the row’s depth, so the delta can be applied with <code>update()</code> to a replica
+indexed on those columns. The callback also receives <code>reset</code>, which is <code>true</code>
+when the update step began with <code>clear()</code> or <code>replace()</code>; the delta is then
+relative to an empty <code>Table</code>, so a replica should apply it with <code>replace()</code>
+rather than <code>update()</code>. In Python, a callback that does not declare <code>reset</code>,
+positionally or as a keyword, is called without it.</p>
 <h2 id="remove-callbacks"><a class="header" href="#remove-callbacks">Remove Callbacks</a></h2>
-<p>Register a callback to be notified whenever rows are removed from the underlying
-<code>Table</code> by <code>remove()</code>, which requires an <code>index</code>. The callback receives the
-<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow with one
-column per index column, named after that column. It fires once per update step,
-only for rows which existed before that step; <code>replace()</code> reports the keys it
-does not re-supply, and <code>clear()</code> reports every key:</p>
+<p>Register a callback to be notified whenever rows leave this <code>View</code>. The callback
+receives the <code>port_id</code>, the rows’ keys as an Apache Arrow, and a <code>cause</code> naming
+the rule they left under. For a <code>View</code> without <code>group_by</code>, the keys are the
+<code>index</code> column values, one column per index column named after it, and it
+requires an <code>index</code>: <code>cause</code> is <code>"key"</code> when the row was removed from the
+<code>Table</code> (<code>remove()</code>; <code>replace()</code> reports the keys it does not re-supply and
+<code>clear()</code> every key) and <code>"filter"</code> when an <code>update()</code> moved the row outside the
+View’s <code>filter</code>. For a <code>View</code> with <code>group_by</code>, <code>cause</code> is <code>"group"</code> and the keys
+are one column per <code>group_by</code> column named after it, <code>null</code> below the group’s
+depth, for each group which no longer has any rows. A flat <code>View</code> of a
+<a href="#derived-tables">derived <code>Table</code></a> made from a <code>group_rollup_mode: "flat"</code>
+<code>View</code> reports dissolved groups the same way but under <code>"key"</code>, since that
+<code>Table</code> is indexed on its <code>group_by</code> columns. In every case a replica indexed on
+those columns can pass the Arrow to <code>remove()</code> unchanged. It fires once per
+cause per update step, <code>"key"</code> first, only for rows which existed before that
+step:</p>
 <div class="javascript">
-<pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id }) =&gt; {
+<pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id, cause }) =&gt; {
     replica.remove(indices);
 });
 
@@ -3046,12 +3065,14 @@ await view.remove_remove(callback);
 </div>
 
 <div class="python">
-<pre><code class="language-python">def on_remove(port_id, indices):
+<pre><code class="language-python">def on_remove(port_id, indices, cause):
     replica.remove(indices)
 
 callback = view.on_remove(on_remove)
 view.remove_remove(callback)
 </code></pre>
+<p>A callback that does not declare <code>cause</code>, positionally or as a keyword, is
+called without it.</p>
 </div>
 
 <h2 id="constructing-a-table-from-a-view"><a class="header" href="#constructing-a-table-from-a-view">Constructing a <code>Table</code> from a <code>View</code></a></h2>
@@ -3159,11 +3180,23 @@ grand-total rows are represented.</p>
 default <code>group_rollup_mode</code> of <code>"rollup"</code> that includes every subtotal row and
 the grand total; under <code>"flat"</code> it is the leaves only; under <code>"total"</code> it is the
 single total row. <code>split_rollup_mode</code> selects the data columns the same way.</p>
+<p><code>sort</code>, <code>expand</code>/<code>collapse</code> and <code>group_by_depth</code> describe how a <code>View</code> is
+presented rather than what it contains, and do not affect the derived <code>Table</code>.</p>
 <p><span class="warning">Set <code>group_rollup_mode: "flat"</code> on the source <code>View</code>
 before grouping or filtering a derived <code>Table</code>, or its subtotal rows will be
 counted alongside the rows they already summarize.</span></p>
-<p><code>sort</code>, <code>expand</code>/<code>collapse</code> and <code>group_by_depth</code> describe how a <code>View</code> is
-presented rather than what it contains, and do not affect the derived <code>Table</code>.</p>
+<p>Under <code>group_rollup_mode: "flat"</code> every row is a leaf, so the <code>group_by</code>
+columns identify it: the derived <code>Table</code> is indexed on them, <code>get_index()</code>
+reports them, a <code>View</code>’s <code>__ID__</code> is the group key, and <code>vlookup</code> into the
+<code>Table</code> is by group values. A <code>null</code> group value is an ordinary key. Because the
+<code>Table</code> has an <code>index</code>, a flat <code>View</code> of it reports groups which lose all their
+rows through <code>on_remove</code> with <code>cause: "key"</code>, and a replica of that <code>View</code> on
+another client (see <a href="#clientserver-replicated">Client/Server Replicated</a>)
+inherits the index and mirrors the derived <code>Table</code> exactly.</p>
+<p>Under <code>"rollup"</code> and <code>"total"</code> the <code>Table</code> has no <code>index</code>: a subtotal row and a
+descendant whose remaining key values are <code>null</code> share the same key columns, so
+the key columns cannot identify a row. Omitting a key column through the
+<code>schema</code> option also leaves the <code>Table</code> unindexed.</p>
 <h2 id="read-only"><a class="header" href="#read-only">Read-only</a></h2>
 <p>The engine owns a derived <code>Table</code>’s rows, so <code>update()</code>, <code>remove()</code>, <code>clear()</code>
 and <code>replace()</code> all raise. Change the source <code>Table</code> instead. The <code>index</code> and
@@ -4283,8 +4316,12 @@ await (await table.view()).to_columns();
 number of themes come bundled with <code>perspective-viewer</code>; you can import any of
 these themes directly into your app, and the <code>perspective-viewer</code>s will be
 themed accordingly:</p>
-<pre><code class="language-javascript">// Themes based on Thought Merchants's Prospective design
+<pre><code class="language-javascript">// Themes based on Thought Merchants's Prospective design. `pro.css` ("Pro")
+// follows the page's `color-scheme`, or `prefers-color-scheme` when the page
+// declares none; `pro-light.css` ("Pro Light") and `pro-dark.css`
+// ("Pro Dark") pin one scheme.
 import "@perspective-dev/viewer/dist/css/pro.css";
+import "@perspective-dev/viewer/dist/css/pro-light.css";
 import "@perspective-dev/viewer/dist/css/pro-dark.css";
 
 // Other themes
@@ -4333,8 +4370,10 @@ await viewer.restore({ theme: "Pro Dark" });
 <p>The best way to write a new theme is to
 <a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes">fork and modify an existing theme</a>,
 which are <em>just</em> collections of regular CSS variables — Perspective’s own
-themes are plain <code>.css</code> files, with no preprocessor involved.
-<code>&lt;perspective-viewer&gt;</code> is
+themes are plain <code>.css</code> files, with no preprocessor involved (the one
+exception is the <code>Pro</code> family, whose three themes share one <code>light-dark()</code>
+palette).</p>
+<p><code>&lt;perspective-viewer&gt;</code> is
 not “themed” by default and will lack icons and label text in addition to colors
 and fonts, so starting from an empty theme forces you to define <em>every</em>
 theme-able variable to get a functional UI.</p>
@@ -4379,7 +4418,8 @@ other settings depend on column names and types.</p>
 <p><code>restore()</code> validates its argument, rejecting for example a key the config
 format does not define; when a rejected token is stamped with another release’s
 <code>version</code>, the error names that release. Tokens saved by older releases should
-be upgraded first — see <a href="#migrating-saved-configs">Migrating saved configs</a>.</p>
+be upgraded first — see <a href="#migrating-saved-configs">Migrating saved configs</a>, whose
+<code>validate()</code> runs the same check outside a viewer.</p>
 <pre><code class="language-javascript">// This will error!
 await elem.restore(JSON.stringify(json_token));
 </code></pre>
@@ -4878,6 +4918,186 @@ former; for per-panel config changes use
 <code>perspective-config-update</code>.</div>
 
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="adding-custom-commands"><a class="header" href="#adding-custom-commands">Adding custom commands</a></h1>
+<p>An application can add its own commands to a <code>&lt;perspective-viewer&gt;</code>: to the
+right-click menu, as buttons on Datagrid rows or cells, and on pinned chart
+tooltips. One function declares them all, and decides per location which to show
+from what is there.</p>
+<h2 id="declaring-commands"><a class="header" href="#declaring-commands">Declaring commands</a></h2>
+<p><code>setCommandSchema()</code> takes a function from a <em>context</em> to the list of commands
+to offer for it, and the surfaces it should be evaluated for:</p>
+<pre><code class="language-javascript">await viewer.setCommandSchema(
+    (context) =&gt; {
+        if (context.hit?.column_names[0] !== "security_id") {
+            return { commands: [] };
+        }
+
+        return {
+            commands: [
+                {
+                    kind: "Command",
+                    key: "open-order-ticket",
+                    label: `Open Order Ticket (${context.hit.value})`,
+                    icon: "ticket",
+                },
+            ],
+        };
+    },
+    { scopes: ["context-menu", "datagrid-cell"] },
+);
+</code></pre>
+<p>The function must be synchronous and have no effects of its own. Calling
+<code>setCommandSchema()</code> again replaces it, and <code>setCommandSchema(null)</code> removes it.
+It is not part of <code>save()</code> or <code>saveWorkspace()</code>, and survives <code>restore()</code>,
+<code>reset()</code>, <code>load()</code> and <code>eject()</code>.</p>
+<p>Each entry of <code>commands</code> is one of:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>kind</code></th><th>Fields</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"Command"</code></td><td><code>key</code>, <code>label</code>, <code>disabled?</code>, <code>icon?</code>, <code>title?</code></td><td>A row the user can pick</td></tr>
+<tr><td><code>"Group"</code></td><td><code>key</code>, <code>label</code>, <code>commands</code></td><td>A submenu of further entries</td></tr>
+</tbody>
+</table>
+</div>
+<p>In the context menu, custom commands are shown above the built-in items. As a
+button, a command shows its label as text, preceded by its <code>icon</code> when it has
+one, drawn through the theme’s <code>--psp-icon--&lt;icon&gt;--mask-image</code> property. An
+application supplies its own icons by defining that property on the
+<code>&lt;perspective-viewer&gt;</code> with a <code>url()</code> to an SVG, which the plugins use as a
+mask. Its tooltip, in the menu and on a button, is <code>title</code> when given and the
+label otherwise, so a button can read “Buy” while its tooltip reads “Buy 100
+PRSP”. A <code>Group</code> renders as one button that opens a menu.</p>
+<h2 id="scopes"><a class="header" href="#scopes">Scopes</a></h2>
+<p><code>scopes</code> names the surfaces the schema is evaluated for; it defaults to
+<code>["context-menu"]</code>, and an unknown scope rejects. The schema is never called for
+a surface outside its scopes, so a plugin pays nothing for a scope the
+application did not ask for.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Scope</th><th>Where the commands appear</th><th>Evaluated</th></tr>
+</thead>
+<tbody>
+<tr><td><code>"context-menu"</code></td><td>The right-click menu</td><td>Once per open</td></tr>
+<tr><td><code>"datagrid-row"</code></td><td>A button column on every Datagrid row</td><td>Once per row drawn</td></tr>
+<tr><td><code>"datagrid-cell"</code></td><td>Buttons beside every Datagrid cell value</td><td>Once per cell</td></tr>
+<tr><td><code>"chart-tooltip"</code></td><td>A button row under a pinned chart tooltip</td><td>Once per pin</td></tr>
+</tbody>
+</table>
+</div>
+<p>Each plugin can turn a surface off through its <code>plugin_config</code>, and offers the
+option only while the schema declares the scope. Call <code>setCommandSchema</code> before
+restoring one of these options; a value restored before its scope is declared is
+dropped, like any <code>plugin_config</code> key the plugin does not offer:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Plugin</th><th>Option</th><th>Values</th></tr>
+</thead>
+<tbody>
+<tr><td>Datagrid</td><td><code>command_column</code></td><td><code>"left"</code> (default), <code>"right"</code>, <code>"tree"</code> (after the group columns), <code>"none"</code></td></tr>
+<tr><td>Datagrid</td><td><code>command_cells</code></td><td><code>true</code> (default) or <code>false</code></td></tr>
+<tr><td>Charts</td><td><code>tooltip_commands</code></td><td><code>true</code> (default) or <code>false</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Chart hover tooltips are drawn on canvas and show no buttons; pinned tooltips
+do.</p>
+<h2 id="handling-a-command"><a class="header" href="#handling-a-command">Handling a command</a></h2>
+<p>Picking a command fires <code>perspective-command</code>, whose detail carries the
+command’s <code>key</code> and the same <code>context</code> object the schema function was called
+with:</p>
+<pre><code class="language-javascript">viewer.addEventListener("perspective-command", (event) =&gt; {
+    const { key, context } = event.detail;
+    if (key === "open-order-ticket") {
+        openOrderTicket(context.hit.value);
+    }
+});
+</code></pre>
+<h2 id="invalidating-commands"><a class="header" href="#invalidating-commands">Invalidating commands</a></h2>
+<p>A command listener usually changes the state the schema reads: after “Flag
+order” runs, the same row should offer “Unflag order”. The viewer cannot see
+that, so the listener says so with <code>invalidate()</code>, which redraws each panel’s
+plugin from its current view, re-querying the schema for every rendered button
+surface, and resolves when the plugins have redrawn. Calls within one task run
+as one, and <code>panel</code> limits the redraw to one panel:</p>
+<pre><code class="language-javascript">viewer.addEventListener("perspective-command", async (event) =&gt; {
+    const { key, context } = event.detail;
+    if (key === "flag") {
+        flagged.add(String(context.hit.id));
+        await viewer.invalidate({ panel: context.panel });
+    }
+});
+</code></pre>
+<p><code>setCommandSchema()</code> with a new function or new scopes performs the same
+re-query. The context menu re-queries on every open.</p>
+<h2 id="the-command-context"><a class="header" href="#the-command-context">The command context</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>location</code></td><td><code>PerspectiveCommandLocation</code></td><td>The scope the commands will be shown in</td></tr>
+<tr><td><code>panel</code></td><td><code>string?</code></td><td>The targeted panel; absent only at zero panels</td></tr>
+<tr><td><code>table</code></td><td><code>string?</code></td><td>The name of the panel’s <code>Table</code></td></tr>
+<tr><td><code>plugin</code></td><td><code>string?</code></td><td>The name of the panel’s plugin</td></tr>
+<tr><td><code>view_config</code></td><td><code>ViewConfig?</code></td><td>The panel’s view config, as from <code>getViewConfig()</code></td></tr>
+<tr><td><code>point</code></td><td><code>{x, y}?</code></td><td>Viewport coordinates of the right-click</td></tr>
+<tr><td><code>hit</code></td><td><code>PerspectiveHit?</code></td><td>What the plugin rendered at the location</td></tr>
+</tbody>
+</table>
+</div>
+<p>In the context menu, <code>hit</code> is present only when the right-click landed on
+something a plugin drew. It is absent over a panel’s tab, the status bar and the
+settings sidebar, and over empty space inside a plugin. In a button scope it is
+always present.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>kind</code></td><td><code>"cell" | "row" | "column"</code></td><td>Which axes the location addresses</td></tr>
+<tr><td><code>y</code></td><td><code>number?</code></td><td>The view row index, as drawn</td></tr>
+<tr><td><code>x</code></td><td><code>number?</code></td><td>The view column index, as drawn</td></tr>
+<tr><td><code>id</code></td><td><code>Scalar[]?</code></td><td>The row’s index value(s), or its <code>group_by</code> path</td></tr>
+<tr><td><code>row_path</code></td><td><code>Scalar[]</code></td><td>The row’s <code>group_by</code> values, outermost first</td></tr>
+<tr><td><code>column_path</code></td><td><code>Scalar[]</code></td><td>The column’s <code>split_by</code> values, outermost first</td></tr>
+<tr><td><code>column_names</code></td><td><code>string[]</code></td><td>The column targeted</td></tr>
+<tr><td><code>value</code></td><td><code>Scalar?</code></td><td>The cell’s value, for a <code>"cell"</code> hit</td></tr>
+<tr><td><code>config</code></td><td><code>ViewConfigUpdate</code></td><td>A <code>restore()</code> patch selecting the target</td></tr>
+</tbody>
+</table>
+</div>
+<p>A chart mark is a <code>"cell"</code> of its measure column, without a <code>value</code>.</p>
+<p><code>config.filter</code> is the panel’s filter plus one clause per <code>group_by</code> level of
+the row and per <code>split_by</code> level of the column, and, when the view is not
+grouped and the table has an index, one clause per index column from <code>id</code>. For a
+composite index, <code>id</code> is the key tuple in index order, such as
+<code>["AAPL", "Tech"]</code>, rather than the nested <code>[["AAPL", "Tech"]]</code> that
+<code>to_json({ id: true })</code> reports. <code>config.expressions</code> is the panel’s expressions
+whenever it has any, so the patch is viewable when a filter names one. A flat
+row of an unindexed table has no stable identity, so its <code>config</code> selects only
+what the panel’s filter does.</p>
+<p>The hit does not carry the row. A command that needs more of it fetches it in
+its listener, where <code>async</code> is available. <code>y</code> and <code>x</code> address the view as it was
+drawn and are stale after the next update on a live table; <code>config</code> identifies
+the row and column against the data, so <code>table.view(context.hit.config)</code> reads
+the row regardless of what has moved since:</p>
+<pre><code class="language-javascript">viewer.addEventListener("perspective-command", async (event) =&gt; {
+    const { context } = event.detail;
+    const table = await viewer.getTable({ panel: context.panel });
+    const view = await table.view(context.hit.config);
+    const [row] = await view.to_json({ end_row: 1 });
+    await view.delete();
+    openOrderTicket(row);
+});
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="plugin-render-limits"><a class="header" href="#plugin-render-limits">Plugin render limits</a></h1>
 <p><code>&lt;perspective-viewer&gt;</code> plugins (especially charts) may in some cases generate
 extremely large output which may lock up the browser. In order to prevent
@@ -5133,8 +5353,8 @@ viewer.agentConfig({
 <h2 id="what-the-agent-can-do"><a class="header" href="#what-the-agent-can-do">What the agent can do</a></h2>
 <p>The agent acts only through tools, each gated by an <em>entitlement</em>. Pass
 <code>entitlements</code> to <code>agentConfig</code> to grant a subset; the default grants every
-entitlement except <code>read_data</code>. A tool whose entitlement is withheld is never
-offered to the model.</p>
+entitlement except <code>execute_code</code> and <code>read_data</code>. A tool whose entitlement is
+withheld is never offered to the model.</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -5145,6 +5365,7 @@ offered to the model.</p>
 <tr><td><code>configure_view</code></td><td><code>set_view_config</code></td></tr>
 <tr><td><code>manage_layout</code></td><td><code>add_panel</code>, <code>remove_panel</code>, <code>activate_panel</code>, <code>set_workspace</code></td></tr>
 <tr><td><code>read_docs</code></td><td><code>search_docs</code></td></tr>
+<tr><td><code>execute_code</code></td><td><code>run_script</code>, <code>list_scripts</code>, <code>stop_script</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -5158,6 +5379,9 @@ keep the agent to configuring the existing panels:</p>
     entitlements: ["read_view", "configure_view", "read_docs"],
 });
 </code></pre>
+<p><code>execute_code</code> lets the agent write and run JavaScript that loads external data
+into new tables. It is experimental and never granted by default; see
+<a href="#letting-the-agent-load-data-with-scripts">Letting the agent load data with scripts</a>.</p>
 <h2 id="the-documentation-bundle"><a class="header" href="#the-documentation-bundle">The documentation bundle</a></h2>
 <p><code>&lt;perspective-viewer&gt;</code> publishes a metadata bundle at
 <code>dist/docs/perspective-docs.json</code> containing a searchable corpus of the
@@ -5204,6 +5428,205 @@ viewer.agentConfig({
 </code></pre>
 <p>An inline <code>[{title?, text}]</code> array may also be passed as <code>docs</code> on its own, when
 you have host notes but no packaged bundle.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="letting-the-agent-load-data-with-scripts"><a class="header" href="#letting-the-agent-load-data-with-scripts">Letting the agent load data with scripts</a></h1>
+<p>The <code>execute_code</code> entitlement lets the agent bring new data into the viewer by
+writing JavaScript. The agent writes an ES module that fetches or streams data
+and loads it with <code>psp.emit()</code>, and <code>run_script</code> hosts the result as a named
+table that panels can display. The feature is <strong>experimental</strong> and is never
+granted by default:</p>
+<pre><code class="language-javascript">viewer.agentConfig({
+    ...providers.anthropic,
+    apiKey: "sk-ant-...",
+    docs,
+    entitlements: [
+        "read_view",
+        "configure_view",
+        "manage_layout",
+        "read_docs",
+        "execute_code",
+    ],
+});
+
+await viewer.agentPrompt(
+    "Create a chart of the NY Giants NFL point record by year",
+);
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tool</th><th>What it does</th></tr>
+</thead>
+<tbody>
+<tr><td><code>run_script</code></td><td>Runs a module in a new sandbox and creates (or replaces) the table <code>name</code> from what it emits.</td></tr>
+<tr><td><code>list_scripts</code></td><td>Lists the scripts, with their status, table schema, row count, last error and recent log lines.</td></tr>
+<tr><td><code>stop_script</code></td><td>Stops a script, keeping its table unless <code>drop_table</code> is set.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="the-sandbox"><a class="header" href="#the-sandbox">The sandbox</a></h2>
+<p>Each script runs in a module Web Worker owned by a hidden
+<code>&lt;iframe sandbox="allow-scripts"&gt;</code>. The iframe gives the script an opaque
+(<code>null</code>) origin, and the worker keeps it off the page’s main thread so it can be
+terminated at any time. The script never receives a Perspective object: it posts
+data to the viewer, and the viewer creates and updates the table.</p>
+<p>A script <strong>can</strong>:</p>
+<ul>
+<li><code>fetch()</code> any server whose CORS headers allow every origin
+(<code>Access-Control-Allow-Origin: *</code>).</li>
+<li>Open a <code>WebSocket</code> to any server.</li>
+<li><code>import()</code> ES modules from a CDN that serves them with permissive CORS, such
+as <code>esm.sh</code>, <code>cdn.jsdelivr.net</code> or <code>unpkg.com</code>.</li>
+<li>Use timers, <code>TextDecoder</code>, <code>crypto</code> and the other APIs available to a worker.</li>
+</ul>
+<p>A script <strong>cannot</strong>:</p>
+<ul>
+<li>Read the page’s DOM, cookies, <code>localStorage</code> or JavaScript state.</li>
+<li>Send the page’s cookies or credentials, so same-origin APIs that need a login
+are unreachable.</li>
+<li>Use <code>document</code>, <code>window</code> or <code>DOMParser</code>, because a worker has no DOM. Read
+HTML with a parser imported from a CDN instead.</li>
+</ul>
+<p>Consider before granting <code>execute_code</code>:</p>
+<ul>
+<li>The code is written by the model and runs in the user’s browser. It can reach
+any CORS-open server or WebSocket that the browser can reach, including hosts
+on the user’s private network.</li>
+<li>Row data stays in the browser. The model sees each table’s schema and row
+count, plus anything the script writes with <code>psp.log()</code> or <code>console.log()</code>.</li>
+<li>A host page whose Content-Security-Policy forbids <code>blob:</code> workers or sandboxed
+frames blocks scripts. <code>run_script</code> then fails with an error naming the
+policy.</li>
+</ul>
+<h2 id="the-psp-api"><a class="header" href="#the-psp-api">The <code>psp</code> API</a></h2>
+<p>A script is a whole ES module, so top-level <code>await</code> and static <code>import</code> both
+work and <code>psp</code> is a global. It is not a function body: a top-level <code>return</code> is a
+syntax error, and data reaches the table only through <code>psp.emit()</code>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Member</th><th>Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td><code>psp.emit(data)</code></td><td>Loads rows. <code>data</code> is an array of row objects, an object of column arrays, a CSV string, or Arrow IPC bytes (<code>ArrayBuffer</code> or <code>Uint8Array</code>).</td></tr>
+<tr><td><code>psp.emit(data, {replace: true})</code></td><td>Replaces the table’s entire contents with <code>data</code>.</td></tr>
+<tr><td><code>psp.log(...values)</code></td><td>Adds a line to the script log returned to the model. <code>console.log</code> and the other <code>console</code> methods do the same.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The first emit creates the table, with column types inferred the same way as
+<code>client.table(data)</code>. Later emits append rows, or update rows in place when the
+table has an <code>index</code>. An exception thrown after the first emit is recorded as
+the script’s <code>last_error</code>, and the script keeps running.</p>
+<p><code>run_script</code> takes <code>table</code> options for the created table:</p>
+<ul>
+<li><code>index</code> is a column name, or a list of names, keying each row. Re-emitted rows
+with the same key update the existing row instead of appending.</li>
+<li><code>limit</code> is the maximum number of rows kept. The oldest rows are dropped first.</li>
+</ul>
+<h2 id="script-lifetime"><a class="header" href="#script-lifetime">Script lifetime</a></h2>
+<p><code>run_script</code> returns as soon as the first emit has been loaded, reporting the
+table’s schema and row count. It fails if the script throws or emits nothing
+within <code>start_timeout_ms</code> (30 seconds by default), and the error includes the
+script log so the model can fix the module. A module that sets up a socket or
+timer and returns is not finished: its first emit may come from a callback, so
+the timeout alone decides.</p>
+<p>After that the script keeps running for as long as it has timers or open
+sockets, so a polling or streaming table stays live. Scripts survive later
+prompts, <code>agentReset()</code> and <code>agentConfig()</code>, and they stop on <code>stop_script</code>,
+<code>viewer.delete()</code>, or when <code>run_script</code> is called again with the same <code>name</code>.</p>
+<p>Re-running a <code>name</code> replaces the old script and its table. If a panel is still
+displaying that table, the table cannot be deleted, so its contents are replaced
+in place and it keeps its original columns. Use a new <code>name</code> to change the
+columns of a table that is on screen.</p>
+<p>Script tables are ordinary hosted tables. <code>saveWorkspace()</code> does not record the
+scripts that produce them, so a restored workspace that references one shows the
+table only while its script is running.</p>
+<h2 id="recipes"><a class="header" href="#recipes">Recipes</a></h2>
+<h3 id="polling-a-json-endpoint"><a class="header" href="#polling-a-json-endpoint">Polling a JSON endpoint</a></h3>
+<p>Fetch the whole document on a timer and re-emit it with <code>replace: true</code> when it
+is a snapshot with no key column. Map fields to flat, Perspective-friendly rows
+first.</p>
+<pre><code class="language-javascript">async function load() {
+    const response = await fetch("https://example.com/api/quotes.json");
+    const json = await response.json();
+    return json.data.items.map((item) =&gt; ({
+        symbol: item.ticker,
+        price: Number(item.quote.last),
+        updated: new Date(item.quote.time * 1000),
+    }));
+}
+
+psp.emit(await load());
+setInterval(async () =&gt; psp.emit(await load(), { replace: true }), 60_000);
+</code></pre>
+<p>If each row has a stable key, create the table with <code>table: {index: "symbol"}</code>
+and emit without <code>replace</code>, so rows update in place.</p>
+<h3 id="streaming-from-a-websocket"><a class="header" href="#streaming-from-a-websocket">Streaming from a WebSocket</a></h3>
+<p>Send any control messages once the socket opens, then emit each decoded frame.
+Arrow frames can be emitted directly.</p>
+<pre><code class="language-javascript">const socket = new WebSocket("wss://example.com/feed");
+socket.binaryType = "arraybuffer";
+socket.onopen = () =&gt; {
+    socket.send(JSON.stringify({ op: "auth", token: "public" }));
+    socket.send(JSON.stringify({ op: "subscribe", channel: "trades" }));
+};
+
+socket.onmessage = (event) =&gt; {
+    if (event.data instanceof ArrayBuffer) {
+        psp.emit(event.data);
+    } else {
+        const message = JSON.parse(event.data);
+        if (message.type === "trade") {
+            psp.emit([{ id: message.id, price: message.p, size: message.q }]);
+        }
+    }
+};
+
+socket.onerror = () =&gt; psp.log("socket error");
+</code></pre>
+<p><code>run_script</code> waits for the first emit, so a feed that is quiet at first needs a
+larger <code>start_timeout_ms</code>. Pass <code>table: {limit: 100000}</code> to bound an append-only
+stream.</p>
+<h3 id="importing-a-client-library-from-a-cdn"><a class="header" href="#importing-a-client-library-from-a-cdn">Importing a client library from a CDN</a></h3>
+<p>Import the library’s browser ES module build, then emit what it returns.</p>
+<pre><code class="language-javascript">import { createClient } from "https://esm.sh/@example/data-client@2";
+
+const client = createClient({ endpoint: "https://data.example.com" });
+const rows = await client.query("SELECT * FROM prices LIMIT 1000");
+psp.emit(rows);
+</code></pre>
+<h3 id="reading-an-html-table-from-wikipedia"><a class="header" href="#reading-an-html-table-from-wikipedia">Reading an HTML table from Wikipedia</a></h3>
+<p>Wikipedia’s article URLs do not allow cross-origin requests, but the MediaWiki
+API does when it is called with <code>origin=*</code>. Its <code>parse</code> action returns the
+article HTML as a string. A worker has no <code>DOMParser</code>, so parse the HTML with
+<code>node-html-parser</code> from a CDN.</p>
+<pre><code class="language-javascript">import { parse } from "https://esm.sh/node-html-parser@6";
+
+const page = "New_York_Giants_seasons";
+const url = `https://en.wikipedia.org/w/api.php?action=parse&amp;page=${page}&amp;prop=text&amp;format=json&amp;formatversion=2&amp;origin=*`;
+const json = await (await fetch(url)).json();
+const table = parse(json.parse.text).querySelector("table.wikitable");
+const cells = table
+    .querySelectorAll("tr")
+    .map((tr) =&gt; tr.querySelectorAll("th, td").map((x) =&gt; x.text.trim()));
+
+const [header, ...body] = cells;
+psp.log("columns:", header);
+const toNumber = (x) =&gt; Number(x.replace(/[^0-9.-]/g, "")) || null;
+psp.emit(
+    body
+        .filter((row) =&gt; row.length === header.length)
+        .map((row) =&gt; ({
+            Season: toNumber(row[0]),
+            "Points For": toNumber(row[header.indexOf("PF")]),
+            "Points Against": toNumber(row[header.indexOf("PA")]),
+        })),
+);
+</code></pre>
+<p>Pages often hold several <code>wikitable</code>s, and header rows can span two lines.
+Logging the header first, as above, shows the model which columns exist when the
+first attempt picks the wrong table.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="virtual-servers-1"><a class="header" href="#virtual-servers-1">Virtual Servers</a></h1>
 <p>Perspective’s Virtual Server feature lets you connect <code>&lt;perspective-viewer&gt;</code> to
@@ -6597,6 +7020,7 @@ save(migrated.value);
 <tbody>
 <tr><td><code>"view"</code></td><td><code>Kind::View</code></td><td>An engine <code>ViewConfig</code>, as passed to <code>table.view()</code></td></tr>
 <tr><td><code>"viewer"</code></td><td><code>Kind::Viewer</code></td><td>A <code>&lt;perspective-viewer&gt;</code> <code>save()</code> / <code>restore()</code> token</td></tr>
+<tr><td><code>"panel"</code></td><td><code>Kind::Panel</code></td><td>One workspace panel: a <code>panels</code> entry, with no <code>settings</code></td></tr>
 <tr><td><code>"workspace"</code></td><td><code>Kind::Workspace</code></td><td>A <code>saveWorkspace()</code> token, or a 2.x–4.x <code>&lt;perspective-workspace&gt;</code></td></tr>
 </tbody>
 </table>
@@ -6610,7 +7034,37 @@ reports <code>notices</code> for information which has no current representation
 <p>A config is rejected with a <code>MigrateError</code> only when no valid current form
 exists — for example a pre-5.2 workspace panel with no <code>table</code>, or a 2.x
 <code>ViewConfig</code> which names both an alias and its canonical key (<code>row_pivot</code> and
-<code>group_by</code>).</p>
+<code>group_by</code>). Every result is checked against the current config types before it
+is returned, so a migration can never hand back a config <code>restore()</code> would
+reject.</p>
+<h2 id="validating-configs"><a class="header" href="#validating-configs">Validating configs</a></h2>
+<p><code>validate()</code> runs that final check alone, without migrating: it deserializes a
+config into the current types and reports the first problem by JSON pointer.
+Unknown keys, wrong types and inconsistent workspaces (a <code>layout</code> naming an
+unknown panel or a panel twice, a negative <code>sizes</code> entry, a <code>palette</code> key
+without a <code>--psp-user--&lt;kind&gt;-</code> prefix, a cycle in <code>derived_tables</code>) are
+rejected; table names, column names, plugin names and plugin payloads are not
+checked, because only a running viewer knows them.</p>
+<p>By default a config is checked in the field-wise form <code>restore()</code> and
+<code>restoreWorkspace()</code> accept, where every key is optional. The strict form
+requires the complete token <code>save()</code> and <code>saveWorkspace()</code> emit:</p>
+<pre><code class="language-javascript">import perspective from "@perspective-dev/client";
+
+await perspective.validate("workspace", token);
+await perspective.validate("workspace", token, { strict: true });
+</code></pre>
+<pre><code class="language-python">import perspective
+
+perspective.validate("viewer", token)
+perspective.validate("viewer", token, strict=True)
+</code></pre>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perspective_migrate::{Form, Kind, validate};
+
+validate(Kind::Panel, Form::Complete, &amp;panel)?;
+<span class="boring">}</span></code></pre>
+<p>In the browser <code>validate()</code> uses the same <code>migrate</code> binary as <code>migrate()</code>.</p>
 <h2 id="third-party-plugins"><a class="header" href="#third-party-plugins">Third-party plugins</a></h2>
 <p>A plugin’s <code>plugin_config</code> and <code>columns_config</code> payloads are migrated by a
 <code>PluginMigration</code>, keyed by the Perspective release that wrote the token:</p>
@@ -7073,6 +7527,72 @@ ten thousand; the query is what scales.</li>
 </ul>
 <p>For guidance on sizing, see
 <a href="#visualizing-millions-of-rows-in-the-browser">Visualizing millions of rows in the browser</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="versioning"><a class="header" href="#versioning">Versioning</a></h1>
+<!-- description: Perspective's release numbering and compatibility guarantees for packages, the client/server protocol and saved viewer and workspace configs. -->
+<p>Every Perspective package is released together under one version: the
+<code>@perspective-dev/*</code> npm packages, the <code>perspective-python</code> wheel and the
+<code>perspective*</code> Rust crates. <code>major.minor</code> is the compatibility boundary.
+Perspective does not follow strict semver: a minor release may contain breaking
+changes.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Release</th><th>May contain</th></tr>
+</thead>
+<tbody>
+<tr><td>Patch (<code>5.9.1</code> → <code>5.9.2</code>)</td><td>Fixes and additive features. No breaking API changes, no client/server protocol changes and no saved-config schema changes.</td></tr>
+<tr><td>Minor (<code>5.8.0</code> → <code>5.9.0</code>)</td><td>Breaking changes to any public API, the client/server protocol, the saved-config schema, defaults, and the minimum supported Node.js, Python or browser versions. Each is listed under <strong>Breaking</strong> in the <a href="https://github.com/perspective-dev/perspective/blob/master/CHANGELOG.md">changelog</a>.</td></tr>
+<tr><td>Major (<code>4.x</code> → <code>5.0.0</code>)</td><td>Changes to architecture or packaging which need more than a config migration to adopt.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Removed APIs are not deprecated first: a removal ships in the minor release that
+replaces it. Saved configs are covered by
+<a href="#migrating-saved-configs"><code>perspective-migrate</code></a> instead.</p>
+<h2 id="mixing-versions"><a class="header" href="#mixing-versions">Mixing versions</a></h2>
+<p>Use the same version of every Perspective package in an application. Within a
+<code>major.minor</code>, mixing is tolerated:</p>
+<ul>
+<li><strong>Package ranges.</strong> The <code>@perspective-dev/*</code> npm packages depend on each other
+with <code>~x.y.z</code> ranges, and the <code>perspective*</code> crates with <code>~x.y.z</code>
+requirements, so a package manager never pairs releases of different minors.
+<code>@perspective-dev/client</code> pins <code>@perspective-dev/server</code> exactly, because the
+client’s JavaScript loads the server’s WebAssembly directly.</li>
+<li><strong>One <code>major.minor</code> per page.</strong> In the browser, copies of Perspective of the
+same <code>major.minor</code> share one registry of WebAssembly binaries and runtimes.
+Each copy of another patch release logs a console warning when it loads, and
+Perspective’s <code>init()</code> functions throw when a release of another <code>major.minor</code>
+has registered on the same page.</li>
+<li><strong>Client and server.</strong> A client and a server of the same <code>major.minor</code>
+interoperate over a WebSocket, whatever their patch versions. The protocol has
+no version handshake, so a mismatch across minor releases is not detected up
+front: it surfaces as a decode error or as missing fields.</li>
+<li><strong>Python and Jupyter.</strong> <code>PerspectiveWidget</code> loads the
+<code>@perspective-dev/viewer</code> release matching the installed <code>perspective-python</code>,
+and treats <code>version</code> stamps of the same <code>major.minor</code> as equal.</li>
+</ul>
+<h2 id="saved-configs"><a class="header" href="#saved-configs">Saved configs</a></h2>
+<p><code>save()</code> and <code>saveWorkspace()</code> stamp the <code>version</code> that wrote the token.</p>
+<ul>
+<li><strong>Same <code>major.minor</code>.</strong> <code>restore()</code>, <code>restoreWorkspace()</code> and <code>addPanel()</code>
+accept a token saved by any release of the same <code>major.minor</code>, older or newer
+patch. They validate the config’s shape and do not check <code>version</code>; when a
+token fails to restore and was saved by a release of another <code>major.minor</code>,
+the error names that release.</li>
+<li><strong>Older releases.</strong> <code>migrate()</code> upgrades a config written by any release since
+2.0.0 to the current schema, and reports what it could not carry over as
+<code>notices</code>. It keeps information, not behavior: changed defaults are not
+reversed.</li>
+<li><strong>Newer patch releases.</strong> <code>migrate()</code> passes a config from a newer patch of
+its own <code>major.minor</code> through unmigrated and with its <code>version</code> unchanged,
+with a <code>NewerPatch</code> notice. The config must still validate against the current
+types.</li>
+<li><strong>Newer minor or major releases.</strong> <code>migrate()</code> rejects the config with a
+<code>FromFuture</code> error.</li>
+<li><strong><code>validate()</code></strong> checks a config’s shape against the current types and ignores
+<code>version</code>.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
 <!-- description: Definitions of the terms used by Perspective and by data grid, pivot table and streaming analytics tools generally: Table, View, group by, split by, virtual server, replicated and server-only modes, virtual scrolling, Apache Arrow, WebAssembly and Memory64. -->

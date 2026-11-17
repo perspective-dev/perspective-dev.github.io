@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-b81732ec.js"></script>
+        <script src="../../toc-342e5dac.js"></script>
         <meta name="description" content="Beyond the standard query configuration, View provides additional methods for interacting with hierarchical results and introspecting data." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/view/advanced.html" />
         <meta property="og:type" content="article" />
@@ -371,19 +371,33 @@ view.remove_update(on_update)
 
 <p>When <code>mode</code> is set to <code>"row"</code>, the callback receives a delta of only the rows
 that changed (as Apache Arrow), which is useful for efficiently synchronizing
-tables across clients. The callback also receives <code>reset</code>, which is <code>true</code> when
-the update step began with <code>clear()</code> or <code>replace()</code>; the delta is then relative
-to an empty <code>Table</code>, so a replica should apply it with <code>replace()</code> rather than
-<code>update()</code>.</p>
+tables across clients. For a <code>View</code> with <code>group_by</code>, each delta row also carries
+the <code>group_by</code> columns, named and typed as <code>to_arrow()</code> emits them and <code>null</code>
+below the row’s depth, so the delta can be applied with <code>update()</code> to a replica
+indexed on those columns. The callback also receives <code>reset</code>, which is <code>true</code>
+when the update step began with <code>clear()</code> or <code>replace()</code>; the delta is then
+relative to an empty <code>Table</code>, so a replica should apply it with <code>replace()</code>
+rather than <code>update()</code>. In Python, a callback that does not declare <code>reset</code>,
+positionally or as a keyword, is called without it.</p>
 <h2 id="remove-callbacks"><a class="header" href="#remove-callbacks">Remove Callbacks</a></h2>
-<p>Register a callback to be notified whenever rows are removed from the underlying
-<code>Table</code> by <code>remove()</code>, which requires an <code>index</code>. The callback receives the
-<code>port_id</code> and the removed <code>index</code> column values as an Apache Arrow with one
-column per index column, named after that column. It fires once per update step,
-only for rows which existed before that step; <code>replace()</code> reports the keys it
-does not re-supply, and <code>clear()</code> reports every key:</p>
+<p>Register a callback to be notified whenever rows leave this <code>View</code>. The callback
+receives the <code>port_id</code>, the rows’ keys as an Apache Arrow, and a <code>cause</code> naming
+the rule they left under. For a <code>View</code> without <code>group_by</code>, the keys are the
+<code>index</code> column values, one column per index column named after it, and it
+requires an <code>index</code>: <code>cause</code> is <code>"key"</code> when the row was removed from the
+<code>Table</code> (<code>remove()</code>; <code>replace()</code> reports the keys it does not re-supply and
+<code>clear()</code> every key) and <code>"filter"</code> when an <code>update()</code> moved the row outside the
+View’s <code>filter</code>. For a <code>View</code> with <code>group_by</code>, <code>cause</code> is <code>"group"</code> and the keys
+are one column per <code>group_by</code> column named after it, <code>null</code> below the group’s
+depth, for each group which no longer has any rows. A flat <code>View</code> of a
+<a href="../derived_table.html">derived <code>Table</code></a> made from a <code>group_rollup_mode: "flat"</code>
+<code>View</code> reports dissolved groups the same way but under <code>"key"</code>, since that
+<code>Table</code> is indexed on its <code>group_by</code> columns. In every case a replica indexed on
+those columns can pass the Arrow to <code>remove()</code> unchanged. It fires once per
+cause per update step, <code>"key"</code> first, only for rows which existed before that
+step:</p>
 <div class="javascript">
-<pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id }) =&gt; {
+<pre><code class="language-javascript">const callback = await view.on_remove(({ indices, port_id, cause }) =&gt; {
     replica.remove(indices);
 });
 
@@ -393,12 +407,14 @@ await view.remove_remove(callback);
 </div>
 
 <div class="python">
-<pre><code class="language-python">def on_remove(port_id, indices):
+<pre><code class="language-python">def on_remove(port_id, indices, cause):
     replica.remove(indices)
 
 callback = view.on_remove(on_remove)
 view.remove_remove(callback)
 </code></pre>
+<p>A callback that does not declare <code>cause</code>, positionally or as a keyword, is
+called without it.</p>
 </div>
 
 <h2 id="constructing-a-table-from-a-view"><a class="header" href="#constructing-a-table-from-a-view">Constructing a <code>Table</code> from a <code>View</code></a></h2>

@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-b81732ec.js"></script>
+        <script src="../../toc-342e5dac.js"></script>
         <meta name="description" content="&lt;perspective-viewer&gt; ships with an embedded LLM agent which drives the viewer through its public API — reading the schema, writing the ViewerConfig, choosing a plugin, authoring ExprTK expressions and managing panels. It is opt-in: the Chat tab in the settings sidebar stays hidden, and no network…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/agent.html" />
         <meta property="og:type" content="article" />
@@ -259,8 +259,8 @@ viewer.agentConfig({
 <h2 id="what-the-agent-can-do"><a class="header" href="#what-the-agent-can-do">What the agent can do</a></h2>
 <p>The agent acts only through tools, each gated by an <em>entitlement</em>. Pass
 <code>entitlements</code> to <code>agentConfig</code> to grant a subset; the default grants every
-entitlement except <code>read_data</code>. A tool whose entitlement is withheld is never
-offered to the model.</p>
+entitlement except <code>execute_code</code> and <code>read_data</code>. A tool whose entitlement is
+withheld is never offered to the model.</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -271,6 +271,7 @@ offered to the model.</p>
 <tr><td><code>configure_view</code></td><td><code>set_view_config</code></td></tr>
 <tr><td><code>manage_layout</code></td><td><code>add_panel</code>, <code>remove_panel</code>, <code>activate_panel</code>, <code>set_workspace</code></td></tr>
 <tr><td><code>read_docs</code></td><td><code>search_docs</code></td></tr>
+<tr><td><code>execute_code</code></td><td><code>run_script</code>, <code>list_scripts</code>, <code>stop_script</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -284,6 +285,9 @@ keep the agent to configuring the existing panels:</p>
     entitlements: ["read_view", "configure_view", "read_docs"],
 });
 </code></pre>
+<p><code>execute_code</code> lets the agent write and run JavaScript that loads external data
+into new tables. It is experimental and never granted by default; see
+<a href="./agent_scripts.html">Letting the agent load data with scripts</a>.</p>
 <h2 id="the-documentation-bundle"><a class="header" href="#the-documentation-bundle">The documentation bundle</a></h2>
 <p><code>&lt;perspective-viewer&gt;</code> publishes a metadata bundle at
 <code>dist/docs/perspective-docs.json</code> containing a searchable corpus of the
@@ -339,7 +343,7 @@ you have host notes but no packaged bundle.</p>
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../how_to/javascript/virtual_server.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../how_to/javascript/agent_scripts.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -353,7 +357,7 @@ you have host notes but no packaged bundle.</p>
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../how_to/javascript/virtual_server.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../how_to/javascript/agent_scripts.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

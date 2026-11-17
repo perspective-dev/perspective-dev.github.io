@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-b81732ec.js"></script>
+        <script src="../../toc-342e5dac.js"></script>
         <meta name="description" content="Theming is supported in perspective-viewer and its accompanying plugins. A number of themes come bundled with perspective-viewer; you can import any of these themes directly into your app, and the perspective-viewers will be themed accordingly:" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/javascript/theming.html" />
         <meta property="og:type" content="article" />
@@ -194,8 +194,12 @@
 number of themes come bundled with <code>perspective-viewer</code>; you can import any of
 these themes directly into your app, and the <code>perspective-viewer</code>s will be
 themed accordingly:</p>
-<pre><code class="language-javascript">// Themes based on Thought Merchants's Prospective design
+<pre><code class="language-javascript">// Themes based on Thought Merchants's Prospective design. `pro.css` ("Pro")
+// follows the page's `color-scheme`, or `prefers-color-scheme` when the page
+// declares none; `pro-light.css` ("Pro Light") and `pro-dark.css`
+// ("Pro Dark") pin one scheme.
 import "@perspective-dev/viewer/dist/css/pro.css";
+import "@perspective-dev/viewer/dist/css/pro-light.css";
 import "@perspective-dev/viewer/dist/css/pro-dark.css";
 
 // Other themes
@@ -244,8 +248,10 @@ await viewer.restore({ theme: "Pro Dark" });
 <p>The best way to write a new theme is to
 <a href="https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes">fork and modify an existing theme</a>,
 which are <em>just</em> collections of regular CSS variables — Perspective’s own
-themes are plain <code>.css</code> files, with no preprocessor involved.
-<code>&lt;perspective-viewer&gt;</code> is
+themes are plain <code>.css</code> files, with no preprocessor involved (the one
+exception is the <code>Pro</code> family, whose three themes share one <code>light-dark()</code>
+palette).</p>
+<p><code>&lt;perspective-viewer&gt;</code> is
 not “themed” by default and will lack icons and label text in addition to colors
 and fonts, so starting from an empty theme forces you to define <em>every</em>
 theme-able variable to get a functional UI.</p>

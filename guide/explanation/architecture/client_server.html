@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-b81732ec.js"></script>
+        <script src="../../toc-342e5dac.js"></script>
         <meta name="description" content="For medium-sized, real-time, synchronized and/or editable data sets with many concurrent users." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/architecture/client_server.html" />
         <meta property="og:type" content="article" />
@@ -226,7 +226,12 @@ loop.start()
 <p>Perspective’s websocket client interfaces with the Python server, then
 <em>replicates</em> the server-side Table. When the server-side <code>Table</code> has an <code>index</code>,
 the replica inherits it, and both <code>update()</code> and <code>remove()</code> on the server are
-mirrored in the browser.</p>
+mirrored in the browser, including rows which an <code>update()</code> moves outside the
+<code>View</code>’s <code>filter</code>. A replica of a <code>View</code> with <code>group_by</code> and
+<code>group_rollup_mode: "flat"</code> is indexed on the <code>group_by</code> columns instead, so
+groups which gain, change or lose all of their rows on the server are mirrored
+too; under the other rollup modes a subtotal row and a descendant with <code>null</code>
+keys would share a key, so the replica is left unindexed and only grows.</p>
 <pre><code class="language-javascript">const websocket = await perspective.websocket("ws://localhost:8080");
 const server_table = await websocket.open_table("my_table");
 const server_view = await server_table.view();

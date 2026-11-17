@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b81732ec.js"></script>
+        <script src="../toc-342e5dac.js"></script>
         <meta name="description" content="A Table can be constructed from a View, producing a read-only Table whose rows are that View’s output. The engine maintains it in place: an update to the source Table is reflected in the derived Table, and in any View of it, within the same update cycle." />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/explanation/derived_table.html" />
         <meta property="og:type" content="article" />
@@ -259,11 +259,23 @@ grand-total rows are represented.</p>
 default <code>group_rollup_mode</code> of <code>"rollup"</code> that includes every subtotal row and
 the grand total; under <code>"flat"</code> it is the leaves only; under <code>"total"</code> it is the
 single total row. <code>split_rollup_mode</code> selects the data columns the same way.</p>
+<p><code>sort</code>, <code>expand</code>/<code>collapse</code> and <code>group_by_depth</code> describe how a <code>View</code> is
+presented rather than what it contains, and do not affect the derived <code>Table</code>.</p>
 <p><span class="warning">Set <code>group_rollup_mode: "flat"</code> on the source <code>View</code>
 before grouping or filtering a derived <code>Table</code>, or its subtotal rows will be
 counted alongside the rows they already summarize.</span></p>
-<p><code>sort</code>, <code>expand</code>/<code>collapse</code> and <code>group_by_depth</code> describe how a <code>View</code> is
-presented rather than what it contains, and do not affect the derived <code>Table</code>.</p>
+<p>Under <code>group_rollup_mode: "flat"</code> every row is a leaf, so the <code>group_by</code>
+columns identify it: the derived <code>Table</code> is indexed on them, <code>get_index()</code>
+reports them, a <code>View</code>’s <code>__ID__</code> is the group key, and <code>vlookup</code> into the
+<code>Table</code> is by group values. A <code>null</code> group value is an ordinary key. Because the
+<code>Table</code> has an <code>index</code>, a flat <code>View</code> of it reports groups which lose all their
+rows through <code>on_remove</code> with <code>cause: "key"</code>, and a replica of that <code>View</code> on
+another client (see <a href="./architecture/client_server.html">Client/Server Replicated</a>)
+inherits the index and mirrors the derived <code>Table</code> exactly.</p>
+<p>Under <code>"rollup"</code> and <code>"total"</code> the <code>Table</code> has no <code>index</code>: a subtotal row and a
+descendant whose remaining key values are <code>null</code> share the same key columns, so
+the key columns cannot identify a row. Omitting a key column through the
+<code>schema</code> option also leaves the <code>Table</code> unindexed.</p>
 <h2 id="read-only"><a class="header" href="#read-only">Read-only</a></h2>
 <p>The engine owns a derived <code>Table</code>’s rows, so <code>update()</code>, <code>remove()</code>, <code>clear()</code>
 and <code>replace()</code> all raise. Change the source <code>Table</code> instead. The <code>index</code> and

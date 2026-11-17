@@ -28,7 +28,7 @@
 
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="../../md/perspective-8cbf3dad.css">
-        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-57f4a3d5.css">
+        <link rel="stylesheet" href="../../node_modules/@perspective-dev/viewer/dist/css/themes-916c5cdc.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-67275574.js";
+            window.path_to_searchindex_js = "../../searchindex-4e7f156f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-b81732ec.js"></script>
+        <script src="../../toc-342e5dac.js"></script>
         <meta name="description" content="&lt;perspective-viewer&gt;’s restore(), addPanel() and restoreWorkspace() accept only the current config schema: a config which fails validation (for example, a key the format does not define) is rejected, and when it is stamped with another release’s version the error names that release. Engine…" />
         <link rel="canonical" href="https://perspective-dev.github.io/guide/how_to/rust/migrate.html" />
         <meta property="og:type" content="article" />
@@ -255,6 +255,7 @@ save(migrated.value);
 <tbody>
 <tr><td><code>"view"</code></td><td><code>Kind::View</code></td><td>An engine <code>ViewConfig</code>, as passed to <code>table.view()</code></td></tr>
 <tr><td><code>"viewer"</code></td><td><code>Kind::Viewer</code></td><td>A <code>&lt;perspective-viewer&gt;</code> <code>save()</code> / <code>restore()</code> token</td></tr>
+<tr><td><code>"panel"</code></td><td><code>Kind::Panel</code></td><td>One workspace panel: a <code>panels</code> entry, with no <code>settings</code></td></tr>
 <tr><td><code>"workspace"</code></td><td><code>Kind::Workspace</code></td><td>A <code>saveWorkspace()</code> token, or a 2.x–4.x <code>&lt;perspective-workspace&gt;</code></td></tr>
 </tbody>
 </table>
@@ -268,7 +269,37 @@ reports <code>notices</code> for information which has no current representation
 <p>A config is rejected with a <code>MigrateError</code> only when no valid current form
 exists — for example a pre-5.2 workspace panel with no <code>table</code>, or a 2.x
 <code>ViewConfig</code> which names both an alias and its canonical key (<code>row_pivot</code> and
-<code>group_by</code>).</p>
+<code>group_by</code>). Every result is checked against the current config types before it
+is returned, so a migration can never hand back a config <code>restore()</code> would
+reject.</p>
+<h2 id="validating-configs"><a class="header" href="#validating-configs">Validating configs</a></h2>
+<p><code>validate()</code> runs that final check alone, without migrating: it deserializes a
+config into the current types and reports the first problem by JSON pointer.
+Unknown keys, wrong types and inconsistent workspaces (a <code>layout</code> naming an
+unknown panel or a panel twice, a negative <code>sizes</code> entry, a <code>palette</code> key
+without a <code>--psp-user--&lt;kind&gt;-</code> prefix, a cycle in <code>derived_tables</code>) are
+rejected; table names, column names, plugin names and plugin payloads are not
+checked, because only a running viewer knows them.</p>
+<p>By default a config is checked in the field-wise form <code>restore()</code> and
+<code>restoreWorkspace()</code> accept, where every key is optional. The strict form
+requires the complete token <code>save()</code> and <code>saveWorkspace()</code> emit:</p>
+<pre><code class="language-javascript">import perspective from "@perspective-dev/client";
+
+await perspective.validate("workspace", token);
+await perspective.validate("workspace", token, { strict: true });
+</code></pre>
+<pre><code class="language-python">import perspective
+
+perspective.validate("viewer", token)
+perspective.validate("viewer", token, strict=True)
+</code></pre>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use perspective_migrate::{Form, Kind, validate};
+
+validate(Kind::Panel, Form::Complete, &amp;panel)?;
+<span class="boring">}</span></code></pre>
+<p>In the browser <code>validate()</code> uses the same <code>migrate</code> binary as <code>migrate()</code>.</p>
 <h2 id="third-party-plugins"><a class="header" href="#third-party-plugins">Third-party plugins</a></h2>
 <p>A plugin’s <code>plugin_config</code> and <code>columns_config</code> payloads are migrated by a
 <code>PluginMigration</code>, keyed by the Perspective release that wrote the token:</p>

@@ -64,10 +64,12 @@ Perspective is Apache-2.0 licensed and a member project of the OpenJS Foundation
 - [Saving and restoring UI state](https://perspective-dev.github.io/guide/how_to/javascript/save_restore.md)
 - [Arranging panels: layouts and dashboards](https://perspective-dev.github.io/guide/how_to/javascript/layout.md)
 - [Listening for events](https://perspective-dev.github.io/guide/how_to/javascript/events.md)
+- [Adding custom commands](https://perspective-dev.github.io/guide/how_to/javascript/commands.md)
 - [Plugin render limits](https://perspective-dev.github.io/guide/how_to/javascript/plugin_settings.md)
 - [Configuration defaults](https://perspective-dev.github.io/guide/how_to/javascript/config_defaults.md)
 - [Map tile sources](https://perspective-dev.github.io/guide/how_to/javascript/map_tile_sources.md)
 - [Configuring the LLM agent](https://perspective-dev.github.io/guide/how_to/javascript/agent.md)
+- [Letting the agent load data with scripts](https://perspective-dev.github.io/guide/how_to/javascript/agent_scripts.md)
 - [Virtual Servers](https://perspective-dev.github.io/guide/how_to/javascript/virtual_server.md)
 - [DuckDB](https://perspective-dev.github.io/guide/how_to/javascript/virtual_server/duckdb.md)
 - [ClickHouse](https://perspective-dev.github.io/guide/how_to/javascript/virtual_server/clickhouse.md)
@@ -114,6 +116,7 @@ Perspective is Apache-2.0 licensed and a member project of the OpenJS Foundation
 ## Reference
 
 - [Benchmarks](https://perspective-dev.github.io/guide/benchmarks.md)
+- [Versioning](https://perspective-dev.github.io/guide/versioning.md)
 - [Glossary](https://perspective-dev.github.io/guide/glossary.md)
 - [FAQ](https://perspective-dev.github.io/guide/FAQ.md)
 
